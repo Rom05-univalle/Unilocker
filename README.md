@@ -249,14 +249,14 @@ curl http://localhost:(puerto)/api/computers/classrooms
 
 ## 👥 Equipo de Desarrollo
 
-- **Desarrollador Principal:** [Tu Nombre]
-- **Repositorio:** https://github.com/TU_USUARIO/unilocker
+- **Desarrollador Principal:** Rommel Rodirgo Gutierrez Herrera
+- **Repositorio:** https://github.com/Rom05-univalle/Unilocker
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto es privado y de uso académico.
+Este proyecto es publico y de uso académico.
 
 ---
 
