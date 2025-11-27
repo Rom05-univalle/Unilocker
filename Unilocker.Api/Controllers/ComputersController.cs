@@ -19,11 +19,7 @@ public class ComputersController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Registra una nueva computadora o retorna una existente si el UUID ya existe
-    /// </summary>
-    /// <param name="request">Datos de la computadora a registrar</param>
-    /// <returns>Información de la computadora registrada</returns>
+   
     [HttpPost("register")]
     [ProducesResponseType(typeof(ComputerResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ComputerResponse), StatusCodes.Status200OK)]
@@ -127,10 +123,7 @@ public class ComputersController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Obtiene la lista de aulas disponibles para registro
-    /// </summary>
-    /// <returns>Lista de aulas con información de ubicación</returns>
+   
     [HttpGet("classrooms")]
     [ProducesResponseType(typeof(IEnumerable<ClassroomInfo>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ClassroomInfo>>> GetClassrooms()
@@ -164,11 +157,7 @@ public class ComputersController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Obtiene los detalles de una computadora por su ID
-    /// </summary>
-    /// <param name="id">ID de la computadora</param>
-    /// <returns>Información detallada de la computadora</returns>
+   
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ComputerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
