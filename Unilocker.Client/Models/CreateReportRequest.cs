@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unilocker.Client.Models
+namespace Unilocker.Client.Models;
+
+public class CreateReportRequest
 {
-    internal class CreateReportRequest
-    {
-    }
+    public int SessionId { get; set; }
+    public int ProblemTypeId { get; set; }
+    public string Description { get; set; } = string.Empty;
 }

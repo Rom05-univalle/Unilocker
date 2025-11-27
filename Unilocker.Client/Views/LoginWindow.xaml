@@ -3,10 +3,144 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Unilocker.Client.Views"
         mc:Ignorable="d"
-        Title="LoginWindow" Height="450" Width="800">
-    <Grid>
-        
+        Title="Unilocker - Inicio de Sesión" 
+        Height="575" 
+        Width="450"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F5F5F5">
+
+    <Grid Margin="0,0,0,27">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="68*"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2196F3" Padding="20">
+            <StackPanel>
+                <TextBlock Text="🔒 UNILOCKER" 
+                           FontSize="28" 
+                           FontWeight="Bold" 
+                           Foreground="White"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Sistema de Control de Laboratorios" 
+                           FontSize="12" 
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Login Form -->
+        <Border Grid.Row="1" 
+                Margin="40,30,40,34" 
+                Background="White"
+                CornerRadius="10"
+                Padding="30">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="15" 
+                                  ShadowDepth="3" 
+                                  Opacity="0.3"/>
+            </Border.Effect>
+
+            <StackPanel>
+                <TextBlock Text="Iniciar Sesión" 
+                           FontSize="20" 
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,20"
+                           HorizontalAlignment="Center"/>
+
+                <!-- Username -->
+                <TextBlock Text="Usuario:" 
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,5"/>
+                <TextBox x:Name="TxtUsername" 
+                         Height="35"
+                         FontSize="14"
+                         Padding="8"
+                         Margin="0,0,0,15"
+                         BorderBrush="#CCCCCC"
+                         BorderThickness="1"/>
+
+                <!-- Password -->
+                <TextBlock Text="Contraseña:" 
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,5"/>
+                <PasswordBox x:Name="TxtPassword" 
+                             Height="35"
+                             FontSize="14"
+                             Padding="8"
+                             Margin="0,0,0,20"
+                             BorderBrush="#CCCCCC"
+                             BorderThickness="1"
+                             KeyDown="TxtPassword_KeyDown"/>
+
+                <!-- Error Message -->
+                <TextBlock x:Name="TxtError" 
+                           Text="" 
+                           Foreground="Red"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,10"
+                           Visibility="Collapsed"/>
+
+                <!-- Progress Bar -->
+                <ProgressBar x:Name="ProgressBar" 
+                             Height="4"
+                             IsIndeterminate="True"
+                             Margin="0,0,0,15"
+                             Visibility="Collapsed"/>
+
+                <!-- Login Button -->
+                <Button x:Name="BtnLogin" 
+                        Content="INICIAR SESIÓN"
+                        Height="40"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Background="#2196F3"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="BtnLogin_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#2196F3"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="5"
+                                                Padding="10">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#1976D2"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#CCCCCC"/>
+                                    <Setter Property="Foreground" Value="#666666"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Computer Info -->
+                <TextBlock x:Name="TxtComputerInfo" 
+                           Text="" 
+                           FontSize="10"
+                           Foreground="#666666"
+                           HorizontalAlignment="Center"
+                           Margin="0,15,0,0"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

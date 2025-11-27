@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unilocker.Client.Models
+namespace Unilocker.Client.Models;
+
+public class StartSessionRequest
 {
-    internal class StartSessionRequest
-    {
-    }
+    public int UserId { get; set; }
+    public int ComputerId { get; set; }
 }

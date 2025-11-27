@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Management;
+using Unilocker.Client.Models;
 
 namespace Unilocker.Client.Services;
 
@@ -88,10 +89,3 @@ public class HardwareService
     }
 }
 
-public class HardwareInfo
-{
-    public string ComputerName { get; set; } = string.Empty;
-    public string? Manufacturer { get; set; }
-    public string? Model { get; set; }
-    public string? SerialNumber { get; set; }
-}

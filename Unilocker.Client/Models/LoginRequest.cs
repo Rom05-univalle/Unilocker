@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unilocker.Client.Models
+namespace Unilocker.Client.Models;
+
+public class LoginRequest
 {
-    internal class LoginRequest
-    {
-    }
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }

@@ -181,6 +181,11 @@ public partial class RegisterWindow : Window
             // Marcar como registrado
             _configService.MarkAsRegistered(response.Id);
 
+            // Guardar el Computer ID para usar en sesiones
+            _configService.SaveComputerId(response.Id);
+
+            HideProgress();
+
             HideProgress();
 
             // Mostrar mensaje de éxito

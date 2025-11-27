@@ -3,10 +3,192 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Unilocker.Client"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Unilocker - Sesión Activa" 
+        Height="500" 
+        Width="700"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanMinimize"
+        Background="#F5F5F5"
+        Closing="Window_Closing">
 
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#4CAF50" Padding="20">
+            <Grid>
+                <StackPanel>
+                    <TextBlock Text="🔓 SESIÓN ACTIVA" 
+                               FontSize="24" 
+                               FontWeight="Bold" 
+                               Foreground="White"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="TxtWelcome"
+                               Text="Bienvenido" 
+                               FontSize="13" 
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Border Grid.Row="1" Margin="30" Background="White" CornerRadius="10" Padding="30">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+            </Border.Effect>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Status Icon -->
+                    <TextBlock Text="✓" 
+                               FontSize="60" 
+                               Foreground="#4CAF50"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,20"/>
+
+                    <TextBlock Text="Tu sesión está activa" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,10"/>
+
+                    <TextBlock Text="El sistema está monitoreando tu uso de esta computadora" 
+                               FontSize="13" 
+                               Foreground="#666"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Margin="0,0,0,30"/>
+
+                    <!-- Session Info -->
+                    <Border Background="#F9F9F9" 
+                            CornerRadius="8" 
+                            Padding="20"
+                            Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock Text="Información de la Sesión" 
+                                       FontSize="15" 
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,15"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Usuario:" FontWeight="SemiBold" Margin="0,0,10,8"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtUserName" Text="-" Margin="0,0,0,8"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Computadora:" FontWeight="SemiBold" Margin="0,0,10,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtComputerName" Text="-" Margin="0,0,0,8"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Aula:" FontWeight="SemiBold" Margin="0,0,10,8"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TxtClassroom" Text="-" Margin="0,0,0,8"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Inicio de Sesión:" FontWeight="SemiBold" Margin="0,0,10,8"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStartTime" Text="-" Margin="0,0,0,8"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Duración:" FontWeight="SemiBold" Margin="0,0,10,8"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TxtDuration" Text="-" Margin="0,0,0,8"/>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Estado:" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+                                    <Ellipse x:Name="StatusIndicator" 
+                                             Width="10" 
+                                             Height="10" 
+                                             Fill="#4CAF50"
+                                             Margin="0,0,8,0"/>
+                                    <TextBlock x:Name="TxtStatus" Text="Activa" Foreground="#4CAF50"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Instructions -->
+                    <Border Background="#E3F2FD" 
+                            CornerRadius="8" 
+                            Padding="15"
+                            BorderBrush="#2196F3"
+                            BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="ℹ️ Instrucciones" 
+                                       FontSize="13" 
+                                       FontWeight="SemiBold"
+                                       Foreground="#1976D2"
+                                       Margin="0,0,0,10"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#555">
+                                • Puedes minimizar esta ventana y seguir trabajando normalmente<LineBreak/>
+                                • El sistema enviará señales automáticas cada 30 segundos<LineBreak/>
+                                • Al cerrar sesión o apagar el equipo, podrás reportar problemas<LineBreak/>
+                                • NO cierres esta ventana manualmente
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="White" Padding="20" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <Grid>
+                <TextBlock x:Name="TxtLastHeartbeat" 
+                           Text="Última señal: Hace un momento" 
+                           FontSize="11" 
+                           Foreground="#999"
+                           VerticalAlignment="Center"/>
+
+                <Button x:Name="BtnLogout" 
+                        Content="Cerrar Sesión"
+                        HorizontalAlignment="Right"
+                        Height="35"
+                        Width="130"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Background="#F44336"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="BtnLogout_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#F44336"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="5"
+                                                Padding="10,5">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#D32F2F"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

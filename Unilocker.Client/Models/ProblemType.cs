@@ -4,9 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unilocker.Client.Models
+namespace Unilocker.Client.Models;
+
+public class ProblemType
 {
-    internal class ProblemType
-    {
-    }
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool Status { get; set; }
 }

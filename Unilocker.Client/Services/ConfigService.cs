@@ -101,4 +101,86 @@ public class ConfigService
         return appSettings["ApiSettings"]?["BaseUrl"]?.ToString()
             ?? "https://localhost:5001";
     }
+
+    private readonly string _tokenFile = "auth_token.dat";
+    private readonly string _computerIdFile = "computer.id";
+
+    /// <summary>
+    /// Guarda el token JWT de forma cifrada
+    /// </summary>
+    public void SaveToken(string token)
+    {
+        string filePath = Path.Combine(_dataDirectory, _tokenFile);
+        // Cifrado simple (en producción usar ProtectedData)
+        byte[] tokenBytes = System.Text.Encoding.UTF8.GetBytes(token);
+        string encoded = Convert.ToBase64String(tokenBytes);
+        File.WriteAllText(filePath, encoded);
+    }
+
+    /// <summary>
+    /// Obtiene el token JWT guardado
+    /// </summary>
+    public string? GetStoredToken()
+    {
+        string filePath = Path.Combine(_dataDirectory, _tokenFile);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            string encoded = File.ReadAllText(filePath);
+            byte[] tokenBytes = Convert.FromBase64String(encoded);
+            return System.Text.Encoding.UTF8.GetString(tokenBytes);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Elimina el token guardado
+    /// </summary>
+    public void ClearToken()
+    {
+        string filePath = Path.Combine(_dataDirectory, _tokenFile);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    /// <summary>
+    /// Guarda el ID de la computadora registrada
+    /// </summary>
+    public void SaveComputerId(int computerId)
+    {
+        string filePath = Path.Combine(_dataDirectory, _computerIdFile);
+        File.WriteAllText(filePath, computerId.ToString());
+    }
+
+    /// <summary>
+    /// Obtiene el ID de la computadora guardado
+    /// </summary>
+    public int? GetStoredComputerId()
+    {
+        string filePath = Path.Combine(_dataDirectory, _computerIdFile);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            string content = File.ReadAllText(filePath);
+            if (int.TryParse(content, out int computerId))
+            {
+                return computerId;
+            }
+        }
+        catch
+        {
+            // Ignorar errores
+        }
+
+        return null;
+    }
 }

@@ -12,26 +12,54 @@ public partial class App : Application
 
         var configService = new ConfigService();
 
-        // Verificar si la computadora ya está registrada
-        if (configService.IsComputerRegistered())
-        {
-            // Ya está registrado - mostrar mensaje y cerrar
-            MessageBox.Show(
-                "Este equipo ya está registrado en el sistema Unilocker.\n\n" +
-                "No es necesario volver a registrarlo.",
-                "Equipo Registrado",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information
-            );
-
-            // Cerrar la aplicación
-            Shutdown();
-        }
-        else
+        // PASO 1: Verificar si la computadora está registrada
+        if (!configService.IsComputerRegistered())
         {
             // No está registrado - mostrar ventana de registro
             var registerWindow = new RegisterWindow();
-            registerWindow.Show();
+            registerWindow.ShowDialog();
+
+            // Después del registro, cerrar la aplicación
+            // El usuario debe ejecutar nuevamente para hacer login
+            MessageBox.Show(
+                "Equipo registrado exitosamente.\n\n" +
+                "Por favor, ejecuta la aplicación nuevamente para iniciar sesión.",
+                "Registro Completado",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            Shutdown();
+            return;
         }
+
+        // PASO 2: El equipo ya está registrado, verificar si hay token guardado
+        var storedToken = configService.GetStoredToken();
+
+        if (!string.IsNullOrEmpty(storedToken))
+        {
+            // Hay token guardado - intentar ir directamente al MainWindow
+            // (opcional: podrías validar el token con el backend primero)
+            try
+            {
+                var apiService = new ApiService(configService.GetApiBaseUrl());
+                apiService.SetBearerToken(storedToken);
+
+                var authService = new AuthService(apiService, configService);
+
+                // Abrir MainWindow directamente
+                var mainWindow = new MainWindow(authService, apiService, configService);
+                mainWindow.Show();
+                return;
+            }
+            catch
+            {
+                // Si falla, limpiar token y continuar al login
+                configService.ClearToken();
+            }
+        }
+
+        // PASO 3: No hay token válido - mostrar ventana de login
+        var loginWindow = new LoginWindow();
+        loginWindow.Show();
     }
 }
