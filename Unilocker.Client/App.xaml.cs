@@ -32,33 +32,9 @@ public partial class App : Application
             return;
         }
 
-        // PASO 2: El equipo ya está registrado, verificar si hay token guardado
-        var storedToken = configService.GetStoredToken();
-
-        if (!string.IsNullOrEmpty(storedToken))
-        {
-            // Hay token guardado - intentar ir directamente al MainWindow
-            // (opcional: podrías validar el token con el backend primero)
-            try
-            {
-                var apiService = new ApiService(configService.GetApiBaseUrl());
-                apiService.SetBearerToken(storedToken);
-
-                var authService = new AuthService(apiService, configService);
-
-                // Abrir MainWindow directamente
-                var mainWindow = new MainWindow(authService, apiService, configService);
-                mainWindow.Show();
-                return;
-            }
-            catch
-            {
-                // Si falla, limpiar token y continuar al login
-                configService.ClearToken();
-            }
-        }
-
-        // PASO 3: No hay token válido - mostrar ventana de login
+        // PASO 2: El equipo ya está registrado
+        // SIEMPRE mostrar LoginWindow (no restaurar sesión automáticamente)
+        // Esto permite que múltiples usuarios usen el mismo equipo
         var loginWindow = new LoginWindow();
         loginWindow.Show();
     }

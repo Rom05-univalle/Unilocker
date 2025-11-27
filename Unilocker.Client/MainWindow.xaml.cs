@@ -227,6 +227,9 @@ public partial class MainWindow : Window
                     MessageBoxImage.Information);
             }
 
+            // IMPORTANTE: Limpiar token para que el siguiente usuario tenga que hacer login
+            _configService.ClearToken();
+
             // Desuscribirse del evento
             SystemEvents.SessionEnding -= OnSystemSessionEnding;
 
@@ -241,6 +244,9 @@ public partial class MainWindow : Window
                 "Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
+
+            // Limpiar token incluso si hay error
+            _configService.ClearToken();
 
             Application.Current.Shutdown();
         }
