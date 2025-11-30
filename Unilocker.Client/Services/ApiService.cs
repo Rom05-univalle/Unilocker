@@ -251,4 +251,55 @@ public class ApiService
             return false;
         }
     }
+    /// <summary>
+    /// Verifica el código 2FA
+    /// </summary>
+    public async Task<LoginResponse> VerifyCodeAsync(VerifyCodeRequest request)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/auth/verify-code", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+
+                // Intentar extraer el mensaje de error
+                try
+                {
+                    var errorJson = System.Text.Json.JsonDocument.Parse(errorContent);
+                    if (errorJson.RootElement.TryGetProperty("message", out var messageElement))
+                    {
+                        throw new Exception(messageElement.GetString() ?? "Código inválido");
+                    }
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    // Si no es JSON, usar el contenido completo
+                }
+
+                throw new Exception($"Código inválido: {response.StatusCode}");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+            if (result == null || string.IsNullOrEmpty(result.Token))
+            {
+                throw new Exception("La respuesta del servidor está vacía");
+            }
+
+            // Configurar el token automáticamente
+            SetBearerToken(result.Token);
+
+            return result;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"Error de conexión con el servidor: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error al verificar código: {ex.Message}", ex);
+        }
+    }
 }

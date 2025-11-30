@@ -28,6 +28,7 @@ public class AuthService
 
     /// <summary>
     /// Intenta iniciar sesión con las credenciales proporcionadas
+    /// Retorna LoginResponse que puede requerir verificación 2FA
     /// </summary>
     public async Task<LoginResponse> LoginAsync(string username, string password)
     {
@@ -39,11 +40,37 @@ public class AuthService
 
         var response = await _apiService.LoginAsync(request);
 
+        // Si NO requiere verificación (login exitoso directo)
+        if (!response.RequiresVerification && !string.IsNullOrEmpty(response.Token))
+        {
+            _currentUser = response;
+            _configService.SaveToken(response.Token);
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// Verifica el código 2FA y completa el login
+    /// </summary>
+    public async Task<LoginResponse> VerifyCodeAsync(int userId, string code)
+    {
+        var request = new VerifyCodeRequest
+        {
+            UserId = userId,
+            Code = code
+        };
+
+        var response = await _apiService.VerifyCodeAsync(request);
+
         // Guardar información del usuario
         _currentUser = response;
 
         // Guardar token en disco
-        _configService.SaveToken(response.Token);
+        if (!string.IsNullOrEmpty(response.Token))
+        {
+            _configService.SaveToken(response.Token);
+        }
 
         return response;
     }
