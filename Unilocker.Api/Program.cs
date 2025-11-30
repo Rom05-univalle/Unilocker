@@ -39,6 +39,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Registrar servicio JWT
 builder.Services.AddScoped<JwtService>();
 // ===== FIN CONFIGURACIÓN JWT =====
+// Registrar servicio Email
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddSingleton<VerificationCodeService>();
 
 // Configurar CORS (para frontend web)
 builder.Services.AddCors(options =>

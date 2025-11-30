@@ -14,22 +14,26 @@ public class AuthController : ControllerBase
     private readonly UnilockerDbContext _context;
     private readonly JwtService _jwtService;
     private readonly ILogger<AuthController> _logger;
+    private readonly EmailService _emailService; // ← NUEVO
+    private readonly VerificationCodeService _verificationCodeService; // ← NUEVO
 
     public AuthController(
         UnilockerDbContext context,
         JwtService jwtService,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        EmailService emailService, // ← NUEVO
+        VerificationCodeService verificationCodeService) // ← NUEVO
     {
         _context = context;
         _jwtService = jwtService;
         _logger = logger;
+        _emailService = emailService; // ← NUEVO
+        _verificationCodeService = verificationCodeService; // ← NUEVO
     }
 
     /// <summary>
-    /// Endpoint de login - Autentica usuario y retorna JWT token
+    /// Endpoint de login - Autentica usuario y envía código 2FA
     /// </summary>
-    /// <param name="request">Credenciales de usuario</param>
-    /// <returns>Token JWT y datos del usuario</returns>
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -40,7 +44,6 @@ public class AuthController : ControllerBase
         {
             _logger.LogInformation("===== INICIO LOGIN =====");
             _logger.LogInformation("Usuario recibido: {Username}", request.Username);
-            _logger.LogInformation("Password recibido: {Password}", request.Password);
 
             // 1. Buscar usuario con su rol
             var user = await _context.Users
@@ -53,13 +56,7 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Credenciales inválidas" });
             }
 
-            _logger.LogInformation("✅ Usuario encontrado en BD:");
-            _logger.LogInformation("  - Id: {Id}", user.Id);
-            _logger.LogInformation("  - Username: {Username}", user.Username);
-            _logger.LogInformation("  - PasswordHash: {Hash}", user.PasswordHash);
-            _logger.LogInformation("  - Status: {Status}", user.Status);
-            _logger.LogInformation("  - IsBlocked: {IsBlocked}", user.IsBlocked);
-            _logger.LogInformation("  - Role cargado: {HasRole}", user.Role != null);
+            _logger.LogInformation("✅ Usuario encontrado: {Username} (ID: {Id})", user.Username, user.Id);
 
             // 2. Verificar si el usuario está bloqueado
             if (user.IsBlocked == true)
@@ -77,20 +74,16 @@ public class AuthController : ControllerBase
 
             // 4. Verificar contraseña con BCrypt
             _logger.LogInformation("🔐 Verificando contraseña...");
-            _logger.LogInformation("  - Password input: {Input}", request.Password);
-            _logger.LogInformation("  - Hash en BD: {Hash}", user.PasswordHash);
 
             bool isPasswordValid = false;
-
             try
             {
                 isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-                _logger.LogInformation("  - Resultado BCrypt.Verify: {Result}", isPasswordValid);
             }
             catch (Exception ex)
             {
                 _logger.LogError("❌ Error al verificar BCrypt: {Error}", ex.Message);
-                return StatusCode(500, new { message = "Error al verificar contraseña", error = ex.Message });
+                return StatusCode(500, new { message = "Error al verificar contraseña" });
             }
 
             if (!isPasswordValid)
@@ -99,7 +92,6 @@ public class AuthController : ControllerBase
 
                 // Incrementar intentos fallidos
                 user.FailedLoginAttempts = (user.FailedLoginAttempts ?? 0) + 1;
-                _logger.LogInformation("Intentos fallidos: {Attempts}", user.FailedLoginAttempts);
 
                 // Bloquear si excede 5 intentos
                 if (user.FailedLoginAttempts >= 5)
@@ -112,20 +104,139 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Credenciales inválidas" });
             }
 
-            _logger.LogInformation("✅ Contraseña válida - Generando token...");
+            _logger.LogInformation("✅ Contraseña válida");
 
-            // 5. Login exitoso - Generar token JWT
+            // 5. Verificar si tiene email configurado
+            if (string.IsNullOrEmpty(user.Email))
+            {
+                _logger.LogWarning("⚠️ Usuario sin email - Login sin 2FA (fallback)");
+
+                // Login sin 2FA (fallback)
+                var tokenFallback = _jwtService.GenerateToken(user);
+                var expiresAtFallback = _jwtService.GetTokenExpirationTime();
+
+                user.LastAccess = DateTime.Now;
+                user.FailedLoginAttempts = 0;
+                await _context.SaveChangesAsync();
+
+                return Ok(new LoginResponse
+                {
+                    Token = tokenFallback,
+                    UserId = user.Id,
+                    Username = user.Username,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    RoleName = user.Role.Name,
+                    RoleId = user.RoleId,
+                    ExpiresAt = expiresAtFallback,
+                    RequiresVerification = false
+                });
+            }
+
+            // 6. Generar código de verificación 2FA
+            var code = _verificationCodeService.GenerateCode();
+            _verificationCodeService.SaveCode(user.Id, code);
+
+            _logger.LogInformation("🔑 Código 2FA generado: {Code} (UserId: {UserId})", code, user.Id);
+
+            // 7. Enviar código por email
+            var emailSent = await _emailService.SendVerificationCodeAsync(user.Email, code);
+
+            if (!emailSent)
+            {
+                _logger.LogError("❌ Error al enviar email - Login sin 2FA (fallback)");
+
+                // Si falla el email, permitir login sin 2FA
+                var tokenFallback = _jwtService.GenerateToken(user);
+                var expiresAtFallback = _jwtService.GetTokenExpirationTime();
+
+                user.LastAccess = DateTime.Now;
+                user.FailedLoginAttempts = 0;
+                await _context.SaveChangesAsync();
+
+                return Ok(new LoginResponse
+                {
+                    Token = tokenFallback,
+                    UserId = user.Id,
+                    Username = user.Username,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    RoleName = user.Role.Name,
+                    RoleId = user.RoleId,
+                    ExpiresAt = expiresAtFallback,
+                    RequiresVerification = false
+                });
+            }
+
+            _logger.LogInformation("✅ Código 2FA enviado a: {Email}", user.Email);
+
+            // 8. Retornar respuesta indicando que se requiere verificación
+            var maskedEmail = _emailService.MaskEmail(user.Email);
+
+            return Ok(new LoginResponse
+            {
+                Token = null,
+                UserId = user.Id,
+                Username = user.Username,
+                FullName = null,
+                RoleName = null,
+                RoleId = null,
+                ExpiresAt = null,
+                RequiresVerification = true,
+                MaskedEmail = maskedEmail
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ ERROR GENERAL en login");
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+        }
+    }
+    /// <summary>
+    /// Endpoint para verificar código 2FA
+    /// </summary>
+    [HttpPost("verify-code")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LoginResponse>> VerifyCode([FromBody] VerifyCodeRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("===== VERIFICANDO CÓDIGO 2FA =====");
+            _logger.LogInformation("UserId: {UserId}, Código: {Code}", request.UserId, request.Code);
+
+            // 1. Validar el código
+            var (isValid, message) = _verificationCodeService.ValidateCode(request.UserId, request.Code);
+
+            if (!isValid)
+            {
+                _logger.LogWarning("❌ Código inválido: {Message}", message);
+                return Unauthorized(new { message });
+            }
+
+            _logger.LogInformation("✅ Código válido - Generando token...");
+
+            // 2. Buscar usuario con su rol
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == request.UserId);
+
+            if (user == null)
+            {
+                _logger.LogError("❌ Usuario no encontrado: {UserId}", request.UserId);
+                return Unauthorized(new { message = "Usuario no encontrado" });
+            }
+
+            // 3. Generar token JWT
             var token = _jwtService.GenerateToken(user);
             var expiresAt = _jwtService.GetTokenExpirationTime();
 
-            // 6. Actualizar información del usuario
+            // 4. Actualizar información del usuario
             user.LastAccess = DateTime.Now;
             user.FailedLoginAttempts = 0;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("✅ LOGIN EXITOSO");
+            _logger.LogInformation("✅ LOGIN 2FA EXITOSO - Usuario: {Username}", user.Username);
 
-            // 7. Retornar respuesta
+            // 5. Retornar respuesta completa con token
             var response = new LoginResponse
             {
                 Token = token,
@@ -134,18 +245,19 @@ public class AuthController : ControllerBase
                 FullName = $"{user.FirstName} {user.LastName}",
                 RoleName = user.Role.Name,
                 RoleId = user.RoleId,
-                ExpiresAt = expiresAt
+                ExpiresAt = expiresAt,
+                RequiresVerification = false
             };
 
             return Ok(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "❌ ERROR GENERAL en login");
+            _logger.LogError(ex, "❌ ERROR en verify-code");
             return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
         }
     }
-    
+
 
     /// <summary>
     /// Endpoint de prueba para verificar autenticación
