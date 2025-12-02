@@ -80,7 +80,8 @@
                                  FontSize="14"
                                  Padding="12,10"
                                  BorderThickness="0"
-                                 Background="Transparent"/>
+                                 Background="Transparent"
+                                 KeyDown="TxtUsername_KeyDown"/>
                     </Border>
 
                     <!-- Password -->
@@ -93,13 +94,39 @@
                             BorderThickness="2" 
                             CornerRadius="8"
                             Margin="0,0,0,20">
-                        <PasswordBox x:Name="TxtPassword" 
+                        <Grid>
+                            <PasswordBox x:Name="TxtPassword" 
+                                         Height="40"
+                                         FontSize="14"
+                                         Padding="12,10,45,10"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         KeyDown="TxtPassword_KeyDown"
+                                         Visibility="Visible"/>
+                            <TextBox x:Name="TxtPasswordVisible"
                                      Height="40"
                                      FontSize="14"
-                                     Padding="12,10"
+                                     Padding="12,10,45,10"
                                      BorderThickness="0"
                                      Background="Transparent"
-                                     KeyDown="TxtPassword_KeyDown"/>
+                                     KeyDown="TxtPasswordVisible_KeyDown"
+                                     Visibility="Collapsed"/>
+                            <Button x:Name="BtnTogglePassword"
+                                    Width="30"
+                                    Height="30"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,5,0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    Click="BtnTogglePassword_Click">
+                                <TextBlock x:Name="TxtPasswordIcon" 
+                                           Text="👁" 
+                                           FontSize="18"
+                                           Foreground="#666"/>
+                            </Button>
+                        </Grid>
                     </Border>
 
                     <!-- Error Message -->
@@ -289,7 +316,7 @@
                             Height="45"
                             FontSize="15"
                             FontWeight="Bold"
-                            Background="#4CAF50"
+                            Background="#800020"
                             Foreground="White"
                             BorderThickness="0"
                             Cursor="Hand"
@@ -297,7 +324,7 @@
                             Click="BtnVerify_Click">
                         <Button.Style>
                             <Style TargetType="Button">
-                                <Setter Property="Background" Value="#4CAF50"/>
+                                <Setter Property="Background" Value="#800020"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">

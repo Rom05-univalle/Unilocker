@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private DispatcherTimer? _durationTimer;
     private DateTime _sessionStartTime;
     private bool _isClosingBySystem = false;
+    private bool _isLoggingOut = false;
 
     public MainWindow(AuthService authService, ApiService apiService, ConfigService configService)
     {
@@ -179,6 +180,7 @@ public partial class MainWindow : Window
 
         if (result == MessageBoxResult.Yes)
         {
+            _isLoggingOut = true;
             ShowReportWindowAndEndSession("Normal");
         }
     }
@@ -189,7 +191,11 @@ public partial class MainWindow : Window
         if (_isClosingBySystem)
             return;
 
-        // Si el usuario intenta cerrar la ventana con X
+        // Si se está cerrando sesión correctamente desde el botón, permitir
+        if (_isLoggingOut)
+            return;
+
+        // Si el usuario intenta cerrar la ventana con X o Alt+F4
         e.Cancel = true;
 
         var result = MessageBox.Show(
@@ -201,6 +207,7 @@ public partial class MainWindow : Window
 
         if (result == MessageBoxResult.Yes)
         {
+            _isLoggingOut = true;
             e.Cancel = false;
             ShowReportWindowAndEndSession("Normal");
         }

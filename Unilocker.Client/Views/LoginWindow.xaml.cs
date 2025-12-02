@@ -57,6 +57,15 @@ public partial class LoginWindow : Window
         await PerformLoginAsync();
     }
 
+    private void TxtUsername_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            // Pasar al campo de contraseña
+            TxtPassword.Focus();
+        }
+    }
+
     private async void TxtPassword_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
@@ -65,11 +74,44 @@ public partial class LoginWindow : Window
         }
     }
 
+    private async void TxtPasswordVisible_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            await PerformLoginAsync();
+        }
+    }
+
+    private void BtnTogglePassword_Click(object sender, RoutedEventArgs e)
+    {
+        if (TxtPassword.Visibility == Visibility.Visible)
+        {
+            // Mostrar contraseña
+            TxtPasswordVisible.Text = TxtPassword.Password;
+            TxtPassword.Visibility = Visibility.Collapsed;
+            TxtPasswordVisible.Visibility = Visibility.Visible;
+            TxtPasswordIcon.Text = "👁‍🗨"; // Ojo cerrado
+            TxtPasswordVisible.Focus();
+            TxtPasswordVisible.CaretIndex = TxtPasswordVisible.Text.Length;
+        }
+        else
+        {
+            // Ocultar contraseña
+            TxtPassword.Password = TxtPasswordVisible.Text;
+            TxtPasswordVisible.Visibility = Visibility.Collapsed;
+            TxtPassword.Visibility = Visibility.Visible;
+            TxtPasswordIcon.Text = "👁"; // Ojo abierto
+            TxtPassword.Focus();
+        }
+    }
+
     private async System.Threading.Tasks.Task PerformLoginAsync()
     {
         // Validar campos
         string username = TxtUsername.Text.Trim();
-        string password = TxtPassword.Password;
+        string password = TxtPassword.Visibility == Visibility.Visible 
+            ? TxtPassword.Password 
+            : TxtPasswordVisible.Text;
 
         if (string.IsNullOrEmpty(username))
         {

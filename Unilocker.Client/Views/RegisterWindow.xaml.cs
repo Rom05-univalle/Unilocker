@@ -16,6 +16,7 @@ public partial class RegisterWindow : Window
     private Guid _machineUuid;
     private HardwareInfo _hardwareInfo;
     private List<ClassroomInfo> _classrooms;
+    private bool _registrationCompleted = false;
 
     public RegisterWindow()
     {
@@ -200,6 +201,8 @@ public partial class RegisterWindow : Window
                   $"Nombre: {response.Name}\n" +
                   $"Aula: {response.ClassroomInfo?.Name}\n\n" +
                   $"No es necesario volver a registrarlo.";
+
+            _registrationCompleted = true;
 
             MessageBox.Show(message, "Registro Completado",
                 MessageBoxButton.OK, MessageBoxImage.Information);
