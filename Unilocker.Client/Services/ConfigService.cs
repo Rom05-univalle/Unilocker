@@ -104,6 +104,7 @@ public class ConfigService
 
     private readonly string _tokenFile = "auth_token.dat";
     private readonly string _computerIdFile = "computer.id";
+    private readonly string _roleFile = "user_role.dat";
 
     /// <summary>
     /// Guarda el token JWT de forma cifrada
@@ -182,5 +183,70 @@ public class ConfigService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Desregistra la computadora eliminando los archivos de configuración
+    /// </summary>
+    public bool UnregisterComputer()
+    {
+        try
+        {
+            string registeredFlagPath = Path.Combine(_dataDirectory, _registeredFlagFile);
+            string computerIdPath = Path.Combine(_dataDirectory, _computerIdFile);
+            string tokenPath = Path.Combine(_dataDirectory, _tokenFile);
+            string machineIdPath = Path.Combine(_dataDirectory, _machineIdFile);
+
+            // Eliminar archivos
+            if (File.Exists(registeredFlagPath))
+                File.Delete(registeredFlagPath);
+
+            if (File.Exists(computerIdPath))
+                File.Delete(computerIdPath);
+
+            if (File.Exists(tokenPath))
+                File.Delete(tokenPath);
+
+            if (File.Exists(machineIdPath))
+                File.Delete(machineIdPath);
+
+            string rolePath = Path.Combine(_dataDirectory, _roleFile);
+            if (File.Exists(rolePath))
+                File.Delete(rolePath);
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Guarda el rol del usuario
+    /// </summary>
+    public void SaveUserRole(string roleName)
+    {
+        string filePath = Path.Combine(_dataDirectory, _roleFile);
+        File.WriteAllText(filePath, roleName);
+    }
+
+    /// <summary>
+    /// Obtiene el rol del usuario guardado
+    /// </summary>
+    public string? GetStoredUserRole()
+    {
+        string filePath = Path.Combine(_dataDirectory, _roleFile);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            return File.ReadAllText(filePath);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

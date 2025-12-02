@@ -147,15 +147,61 @@
         <!-- Footer -->
         <Border Grid.Row="2" Background="White" Padding="20" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
             <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Bot\u00f3n de desregistro (solo administradores) -->
+                <Button x:Name="BtnUnregister" 
+                        Grid.Column="0"
+                        Content="🔧 Desregistrar"
+                        Height="35"
+                        Width="130"
+                        FontSize="11"
+                        FontWeight="SemiBold"
+                        Background="#FF9800"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="BtnUnregister_Click"
+                        Visibility="Collapsed">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#FF9800"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="5"
+                                                Padding="10,5">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#F57C00"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
                 <TextBlock x:Name="TxtLastHeartbeat" 
+                           Grid.Column="1"
                            Text="Última señal: Hace un momento" 
                            FontSize="11" 
                            Foreground="#999"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"/>
 
                 <Button x:Name="BtnLogout" 
+                        Grid.Column="2"
                         Content="Cerrar Sesión"
-                        HorizontalAlignment="Right"
                         Height="35"
                         Width="130"
                         FontSize="12"

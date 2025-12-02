@@ -45,6 +45,12 @@ public class AuthService
         {
             _currentUser = response;
             _configService.SaveToken(response.Token);
+            
+            // Guardar rol del usuario
+            if (!string.IsNullOrEmpty(response.RoleName))
+            {
+                _configService.SaveUserRole(response.RoleName);
+            }
         }
 
         return response;
@@ -70,6 +76,12 @@ public class AuthService
         if (!string.IsNullOrEmpty(response.Token))
         {
             _configService.SaveToken(response.Token);
+        }
+
+        // Guardar rol del usuario
+        if (!string.IsNullOrEmpty(response.RoleName))
+        {
+            _configService.SaveUserRole(response.RoleName);
         }
 
         return response;

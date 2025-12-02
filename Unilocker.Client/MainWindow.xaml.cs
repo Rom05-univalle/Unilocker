@@ -33,6 +33,9 @@ public partial class MainWindow : Window
         // Iniciar sesión cuando se cargue la ventana
         Loaded += MainWindow_Loaded;
 
+        // Verificar rol y mostrar botón de desregistro si es administrador
+        CheckAdminRole();
+
         // Suscribirse al evento de cierre de Windows
         SystemEvents.SessionEnding += OnSystemSessionEnding;
     }
@@ -258,5 +261,82 @@ public partial class MainWindow : Window
         _durationTimer?.Stop();
         SystemEvents.SessionEnding -= OnSystemSessionEnding;
         base.OnClosed(e);
+    }
+
+    /// <summary>
+    /// Verifica si el usuario actual es administrador y muestra el botón de desregistro
+    /// </summary>
+    private void CheckAdminRole()
+    {
+        string? userRole = _configService.GetStoredUserRole();
+        
+        // Mostrar botón solo si el rol es "Administrador" (case-insensitive)
+        if (!string.IsNullOrEmpty(userRole) && 
+            userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            BtnUnregister.Visibility = Visibility.Visible;
+        }
+    }
+
+    /// <summary>
+    /// Maneja el click del botón de desregistro
+    /// </summary>
+    private void BtnUnregister_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "⚠️ ADVERTENCIA: DESREGISTRO DE COMPUTADORA ⚠️\n\n" +
+            "Esta acción eliminará permanentemente:\n" +
+            "• El registro de esta computadora en el sistema\n" +
+            "• Todos los archivos de configuración local\n" +
+            "• Los tokens de autenticación guardados\n\n" +
+            "Deberá volver a registrar esta computadora desde cero.\n\n" +
+            "¿Está completamente seguro que desea continuar?",
+            "Confirmar Desregistro de Computadora",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            // Confirmar nuevamente
+            var confirmResult = MessageBox.Show(
+                "Esta es su última oportunidad para cancelar.\n\n" +
+                "¿Realmente desea desregistrar esta computadora?",
+                "Confirmación Final",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Stop);
+
+            if (confirmResult == MessageBoxResult.Yes)
+            {
+                if (_configService.UnregisterComputer())
+                {
+                    MessageBox.Show(
+                        "✓ Computadora desregistrada exitosamente.\n\n" +
+                        "Todos los archivos de configuración han sido eliminados.\n\n" +
+                        "La aplicación se cerrará ahora.\n\n" +
+                        "Deberá ejecutar el proceso de registro nuevamente.",
+                        "Desregistro Exitoso",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    // Detener timers
+                    _durationTimer?.Stop();
+                    _sessionService.StopHeartbeatTimer();
+
+                    // Cerrar sin mostrar reportes ni finalizar sesión
+                    _isClosingBySystem = true;
+                    Application.Current.Shutdown();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "❌ Error al desregistrar la computadora.\n\n" +
+                        "No se pudieron eliminar algunos archivos de configuración.\n\n" +
+                        "Por favor, contacte al administrador del sistema.",
+                        "Error de Desregistro",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            }
+        }
     }
 }
