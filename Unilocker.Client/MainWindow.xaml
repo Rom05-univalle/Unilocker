@@ -5,10 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Unilocker - Sesión Activa" 
-        Height="500" 
-        Width="700"
+        WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanMinimize"
+        ResizeMode="NoResize"
         Background="#F5F5F5"
         Closing="Window_Closing">
 
