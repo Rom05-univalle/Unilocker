@@ -140,20 +140,28 @@ public partial class LoginWindow : Window
     {
         TxtError.Text = message;
         TxtError.Foreground = System.Windows.Media.Brushes.Red;
-        TxtError.Visibility = Visibility.Visible;
+        ErrorBorder.Visibility = Visibility.Visible; // ← CAMBIO AQUÍ
     }
 
     private void HideError()
     {
         TxtError.Text = "";
-        TxtError.Visibility = Visibility.Collapsed;
+        ErrorBorder.Visibility = Visibility.Collapsed; // ← CAMBIO AQUÍ
     }
 
     private void ShowSuccess(string message)
     {
         TxtError.Text = message;
-        TxtError.Foreground = System.Windows.Media.Brushes.Green;
-        TxtError.Visibility = Visibility.Visible;
+        TxtError.Foreground = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromRgb(76, 175, 80)); // Verde
+
+        ErrorBorder.Background = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromRgb(232, 245, 233)); // Verde claro
+
+        ErrorBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromRgb(76, 175, 80)); // Borde verde
+
+        ErrorBorder.Visibility = Visibility.Visible; // ← CAMBIO AQUÍ
     }
 
     // ========== PANEL 2: VERIFICACIÓN 2FA ==========
@@ -300,20 +308,28 @@ public partial class LoginWindow : Window
     {
         TxtErrorVerification.Text = message;
         TxtErrorVerification.Foreground = System.Windows.Media.Brushes.Red;
-        TxtErrorVerification.Visibility = Visibility.Visible;
+        ErrorBorderVerification.Visibility = Visibility.Visible; // ← CAMBIO AQUÍ
     }
 
     private void HideErrorVerification()
     {
         TxtErrorVerification.Text = "";
-        TxtErrorVerification.Visibility = Visibility.Collapsed;
+        ErrorBorderVerification.Visibility = Visibility.Collapsed; // ← CAMBIO AQUÍ
     }
 
     private void ShowSuccessVerification(string message)
     {
         TxtErrorVerification.Text = message;
-        TxtErrorVerification.Foreground = System.Windows.Media.Brushes.Green;
-        TxtErrorVerification.Visibility = Visibility.Visible;
+        TxtErrorVerification.Foreground = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromRgb(76, 175, 80)); // Verde
+
+        ErrorBorderVerification.Background = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromRgb(232, 245, 233)); // Verde claro
+
+        ErrorBorderVerification.BorderBrush = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromRgb(76, 175, 80)); // Borde verde
+
+        ErrorBorderVerification.Visibility = Visibility.Visible; // ← CAMBIO AQUÍ
     }
 
     private void BtnBack_Click(object sender, RoutedEventArgs e)

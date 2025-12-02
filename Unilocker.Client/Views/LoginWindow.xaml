@@ -18,19 +18,28 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#2196F3" Padding="20">
+        <!-- Header UNIVALLE -->
+        <Border Grid.Row="0" Background="#800020" Padding="20">
             <StackPanel>
-                <TextBlock Text="🔒 UNILOCKER" 
-                           FontSize="28" 
+                <TextBlock Text="🎓 UNILOCKER" 
+                           FontSize="32" 
                            FontWeight="Bold" 
                            Foreground="White"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0"/>
+                <TextBlock Text="UNIVERSIDAD PRIVADA DEL VALLE" 
+                           FontSize="11" 
+                           Foreground="White"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0"
+                           Opacity="0.9"/>
                 <TextBlock Text="Sistema de Control de Laboratorios" 
                            FontSize="12" 
                            Foreground="White"
                            HorizontalAlignment="Center"
-                           Margin="0,5,0,0"/>
+                           Margin="0,3,0,0"
+                           Opacity="0.85"/>
             </StackPanel>
         </Border>
 
@@ -38,83 +47,105 @@
         <Border Grid.Row="1" 
                 Margin="40,30,40,34" 
                 Background="White"
-                CornerRadius="10"
-                Padding="30">
+                CornerRadius="15"
+                Padding="35">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="15" 
-                                  ShadowDepth="3" 
-                                  Opacity="0.3"/>
+                <DropShadowEffect BlurRadius="20" 
+                                  ShadowDepth="5" 
+                                  Opacity="0.25"
+                                  Color="#424242"/>
             </Border.Effect>
 
             <Grid>
                 <!-- PANEL 1: Login con usuario y contraseña -->
                 <StackPanel x:Name="PanelLogin" Visibility="Visible">
                     <TextBlock Text="Iniciar Sesión" 
-                               FontSize="20" 
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,20"
+                               FontSize="22" 
+                               FontWeight="Bold"
+                               Foreground="#424242"
+                               Margin="0,0,0,25"
                                HorizontalAlignment="Center"/>
 
                     <!-- Username -->
-                    <TextBlock Text="Usuario:" 
+                    <TextBlock Text="👤 Usuario" 
                                FontWeight="SemiBold"
-                               Margin="0,0,0,5"/>
-                    <TextBox x:Name="TxtUsername" 
-                             Height="35"
-                             FontSize="14"
-                             Padding="8"
-                             Margin="0,0,0,15"
-                             BorderBrush="#CCCCCC"
-                             BorderThickness="1"/>
+                               Foreground="#424242"
+                               FontSize="13"
+                               Margin="0,0,0,8"/>
+                    <Border BorderBrush="#800020" 
+                            BorderThickness="2" 
+                            CornerRadius="8"
+                            Margin="0,0,0,18">
+                        <TextBox x:Name="TxtUsername" 
+                                 Height="40"
+                                 FontSize="14"
+                                 Padding="12,10"
+                                 BorderThickness="0"
+                                 Background="Transparent"/>
+                    </Border>
 
                     <!-- Password -->
-                    <TextBlock Text="Contraseña:" 
+                    <TextBlock Text="🔒 Contraseña" 
                                FontWeight="SemiBold"
-                               Margin="0,0,0,5"/>
-                    <PasswordBox x:Name="TxtPassword" 
-                                 Height="35"
-                                 FontSize="14"
-                                 Padding="8"
-                                 Margin="0,0,0,20"
-                                 BorderBrush="#CCCCCC"
-                                 BorderThickness="1"
-                                 KeyDown="TxtPassword_KeyDown"/>
+                               Foreground="#424242"
+                               FontSize="13"
+                               Margin="0,0,0,8"/>
+                    <Border BorderBrush="#800020" 
+                            BorderThickness="2" 
+                            CornerRadius="8"
+                            Margin="0,0,0,20">
+                        <PasswordBox x:Name="TxtPassword" 
+                                     Height="40"
+                                     FontSize="14"
+                                     Padding="12,10"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     KeyDown="TxtPassword_KeyDown"/>
+                    </Border>
 
                     <!-- Error Message -->
-                    <TextBlock x:Name="TxtError" 
-                               Text="" 
-                               Foreground="Red"
-                               FontSize="12"
-                               TextWrapping="Wrap"
-                               Margin="0,0,0,10"
-                               Visibility="Collapsed"/>
+                    <Border x:Name="ErrorBorder"
+                            Background="#FFEBEE"
+                            BorderBrush="#F44336"
+                            BorderThickness="1"
+                            CornerRadius="5"
+                            Padding="10"
+                            Margin="0,0,0,15"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="TxtError" 
+                                   Text="" 
+                                   Foreground="#C62828"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"/>
+                    </Border>
 
                     <!-- Progress Bar -->
                     <ProgressBar x:Name="ProgressBar" 
-                                 Height="4"
+                                 Height="5"
                                  IsIndeterminate="True"
                                  Margin="0,0,0,15"
+                                 Foreground="#800020"
                                  Visibility="Collapsed"/>
 
                     <!-- Login Button -->
                     <Button x:Name="BtnLogin" 
                             Content="INICIAR SESIÓN"
-                            Height="40"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Background="#2196F3"
+                            Height="45"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Background="#800020"
                             Foreground="White"
                             BorderThickness="0"
                             Cursor="Hand"
                             Click="BtnLogin_Click">
                         <Button.Style>
                             <Style TargetType="Button">
-                                <Setter Property="Background" Value="#2196F3"/>
+                                <Setter Property="Background" Value="#800020"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="{TemplateBinding Background}"
-                                                    CornerRadius="5"
+                                                    CornerRadius="8"
                                                     Padding="10">
                                                 <ContentPresenter HorizontalAlignment="Center"
                                                                 VerticalAlignment="Center"/>
@@ -124,11 +155,11 @@
                                 </Setter>
                                 <Style.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#1976D2"/>
+                                        <Setter Property="Background" Value="#600018"/>
                                     </Trigger>
                                     <Trigger Property="IsEnabled" Value="False">
-                                        <Setter Property="Background" Value="#CCCCCC"/>
-                                        <Setter Property="Foreground" Value="#666666"/>
+                                        <Setter Property="Background" Value="#BDBDBD"/>
+                                        <Setter Property="Foreground" Value="#757575"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
@@ -136,102 +167,134 @@
                     </Button>
 
                     <!-- Computer Info -->
-                    <TextBlock x:Name="TxtComputerInfo" 
-                               Text="" 
-                               FontSize="10"
-                               Foreground="#666666"
-                               HorizontalAlignment="Center"
-                               Margin="0,15,0,0"/>
+                    <Border Background="#F5F5F5"
+                            CornerRadius="5"
+                            Padding="10"
+                            Margin="0,20,0,0">
+                        <TextBlock x:Name="TxtComputerInfo" 
+                                   Text="" 
+                                   FontSize="10"
+                                   Foreground="#757575"
+                                   HorizontalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"/>
+                    </Border>
                 </StackPanel>
 
                 <!-- PANEL 2: Verificación de código 2FA -->
                 <StackPanel x:Name="PanelVerification" Visibility="Collapsed">
-                    <TextBlock Text="Verificación de Seguridad" 
-                               FontSize="20" 
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,10"
+                    <TextBlock Text="🔐 Verificación de Seguridad" 
+                               FontSize="22" 
+                               FontWeight="Bold"
+                               Foreground="#424242"
+                               Margin="0,0,0,15"
                                HorizontalAlignment="Center"/>
 
                     <!-- Email info -->
-                    <Border Background="#E3F2FD" 
-                            Padding="12"
-                            CornerRadius="5"
-                            Margin="0,0,0,20">
+                    <Border Background="#FFF3E0" 
+                            BorderBrush="#FF9800"
+                            BorderThickness="2"
+                            Padding="15"
+                            CornerRadius="8"
+                            Margin="0,0,0,25">
                         <StackPanel>
-                            <TextBlock Text="📧 Se envió un código de verificación a:" 
+                            <TextBlock Text="📧 Código enviado a:" 
                                        FontSize="12"
-                                       Foreground="#1976D2"
+                                       Foreground="#E65100"
+                                       FontWeight="SemiBold"
                                        TextWrapping="Wrap"
                                        HorizontalAlignment="Center"/>
                             <TextBlock x:Name="TxtMaskedEmail" 
                                        Text="a***@gmail.com"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="#0D47A1"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Foreground="#BF360C"
                                        HorizontalAlignment="Center"
                                        Margin="0,5,0,0"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Código -->
-                    <TextBlock Text="Código de verificación:" 
+                    <TextBlock Text="Código de verificación" 
                                FontWeight="SemiBold"
-                               Margin="0,0,0,5"/>
-                    <TextBox x:Name="TxtVerificationCode" 
-                             Height="45"
-                             FontSize="24"
-                             FontWeight="Bold"
-                             Padding="8"
-                             Margin="0,0,0,10"
-                             BorderBrush="#CCCCCC"
-                             BorderThickness="2"
-                             MaxLength="6"
-                             HorizontalContentAlignment="Center"
-                             KeyDown="TxtVerificationCode_KeyDown"
-                             PreviewTextInput="TxtVerificationCode_PreviewTextInput"/>
+                               Foreground="#424242"
+                               FontSize="13"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,10"/>
+                    <Border BorderBrush="#800020" 
+                            BorderThickness="3" 
+                            CornerRadius="10"
+                            Margin="0,0,0,10">
+                        <TextBox x:Name="TxtVerificationCode" 
+                                 Height="55"
+                                 FontSize="28"
+                                 FontWeight="Bold"
+                                 Padding="10"
+                                 BorderThickness="0"
+                                 MaxLength="6"
+                                 HorizontalContentAlignment="Center"
+                                 VerticalContentAlignment="Center"
+                                 Background="Transparent"
+                                 Foreground="#800020"
+                                 KeyDown="TxtVerificationCode_KeyDown"
+                                 PreviewTextInput="TxtVerificationCode_PreviewTextInput"/>
+                    </Border>
 
                     <TextBlock Text="Ingresa el código de 6 dígitos" 
                                FontSize="11"
-                               Foreground="#666666"
+                               Foreground="#757575"
                                HorizontalAlignment="Center"
-                               Margin="0,0,0,15"/>
+                               Margin="0,0,0,20"/>
 
                     <!-- Timer -->
-                    <TextBlock x:Name="TxtTimer" 
-                               Text="⏱️ Código válido por 10:00" 
-                               FontSize="12"
-                               Foreground="#FF6B00"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,15"/>
+                    <Border Background="#FFEBEE"
+                            CornerRadius="5"
+                            Padding="8"
+                            Margin="0,0,0,20">
+                        <TextBlock x:Name="TxtTimer" 
+                                   Text="⏱️ Código válido por 10:00" 
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="#D32F2F"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
 
                     <!-- Error Message Verification -->
-                    <TextBlock x:Name="TxtErrorVerification" 
-                               Text="" 
-                               Foreground="Red"
-                               FontSize="12"
-                               TextWrapping="Wrap"
-                               Margin="0,0,0,10"
-                               HorizontalAlignment="Center"
-                               Visibility="Collapsed"/>
+                    <Border x:Name="ErrorBorderVerification"
+                            Background="#FFEBEE"
+                            BorderBrush="#F44336"
+                            BorderThickness="1"
+                            CornerRadius="5"
+                            Padding="10"
+                            Margin="0,0,0,15"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="TxtErrorVerification" 
+                                   Text="" 
+                                   Foreground="#C62828"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
 
                     <!-- Progress Bar Verification -->
                     <ProgressBar x:Name="ProgressBarVerification" 
-                                 Height="4"
+                                 Height="5"
                                  IsIndeterminate="True"
                                  Margin="0,0,0,15"
+                                 Foreground="#800020"
                                  Visibility="Collapsed"/>
 
                     <!-- Verify Button -->
                     <Button x:Name="BtnVerify" 
-                            Content="VERIFICAR CÓDIGO"
-                            Height="40"
-                            FontSize="14"
-                            FontWeight="SemiBold"
+                            Content="✓ VERIFICAR CÓDIGO"
+                            Height="45"
+                            FontSize="15"
+                            FontWeight="Bold"
                             Background="#4CAF50"
                             Foreground="White"
                             BorderThickness="0"
                             Cursor="Hand"
-                            Margin="0,0,0,10"
+                            Margin="0,0,0,12"
                             Click="BtnVerify_Click">
                         <Button.Style>
                             <Style TargetType="Button">
@@ -240,7 +303,7 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="{TemplateBinding Background}"
-                                                    CornerRadius="5"
+                                                    CornerRadius="8"
                                                     Padding="10">
                                                 <ContentPresenter HorizontalAlignment="Center"
                                                                 VerticalAlignment="Center"/>
@@ -253,8 +316,8 @@
                                         <Setter Property="Background" Value="#388E3C"/>
                                     </Trigger>
                                     <Trigger Property="IsEnabled" Value="False">
-                                        <Setter Property="Background" Value="#CCCCCC"/>
-                                        <Setter Property="Foreground" Value="#666666"/>
+                                        <Setter Property="Background" Value="#BDBDBD"/>
+                                        <Setter Property="Foreground" Value="#757575"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
@@ -264,11 +327,12 @@
                     <!-- Back Button -->
                     <Button x:Name="BtnBack" 
                             Content="← Volver al Login"
-                            Height="35"
+                            Height="38"
                             FontSize="12"
                             Background="Transparent"
-                            Foreground="#666666"
-                            BorderThickness="0"
+                            Foreground="#757575"
+                            BorderThickness="1"
+                            BorderBrush="#E0E0E0"
                             Cursor="Hand"
                             Click="BtnBack_Click">
                         <Button.Style>
@@ -277,6 +341,9 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="8"
                                                     Padding="10">
                                                 <ContentPresenter HorizontalAlignment="Center"
                                                                 VerticalAlignment="Center"/>
@@ -286,7 +353,9 @@
                                 </Setter>
                                 <Style.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Foreground" Value="#2196F3"/>
+                                        <Setter Property="Background" Value="#F5F5F5"/>
+                                        <Setter Property="Foreground" Value="#800020"/>
+                                        <Setter Property="BorderBrush" Value="#800020"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>

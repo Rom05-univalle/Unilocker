@@ -17,37 +17,48 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Encabezado -->
-        <StackPanel Grid.Row="0" Background="#2196F3" Margin="-20,-20,-20,0">
-            <TextBlock Text="🔒 UNILOCKER" 
-                       FontSize="24" 
+        <!-- Encabezado UNIVALLE -->
+        <StackPanel Grid.Row="0" Background="#800020" Margin="-20,-20,-20,0">
+            <TextBlock Text="🎓 UNILOCKER" 
+                       FontSize="28" 
                        FontWeight="Bold" 
                        Foreground="White"
                        HorizontalAlignment="Center"
-                       Margin="0,20,0,0"/>
-            <TextBlock Text="Sistema de Registro de Computadoras" 
-                       FontSize="12" 
+                       Margin="0,25,0,0"/>
+            <TextBlock Text="UNIVERSIDAD PRIVADA DEL VALLE" 
+                       FontSize="11" 
+                       Foreground="White"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       Margin="0,8,0,0"
+                       Opacity="0.9"/>
+            <TextBlock Text="Registro de Equipos de Laboratorio" 
+                       FontSize="13" 
                        Foreground="White"
                        HorizontalAlignment="Center"
-                       Margin="0,5,0,20"/>
+                       Margin="0,5,0,25"/>
         </StackPanel>
 
         <!-- Información del sistema -->
         <Border Grid.Row="1" 
                 Background="White" 
-                BorderBrush="#E0E0E0" 
-                BorderThickness="1" 
-                CornerRadius="5" 
-                Margin="0,20,0,0">
-            <StackPanel Margin="15">
-                <TextBlock Text="Información del Equipo" 
-                           FontSize="14" 
+                BorderBrush="#800020" 
+                BorderThickness="2" 
+                CornerRadius="10" 
+                Margin="0,25,0,0">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" ShadowDepth="3" Opacity="0.15" Color="#424242"/>
+            </Border.Effect>
+            <StackPanel Margin="20">
+                <TextBlock Text="💻 Información del Equipo" 
+                           FontSize="15" 
                            FontWeight="Bold" 
-                           Margin="0,0,0,10"/>
+                           Foreground="#800020"
+                           Margin="0,0,0,15"/>
 
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
@@ -58,38 +69,40 @@
                     </Grid.RowDefinitions>
 
                     <!-- UUID -->
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="UUID:" Margin="0,5"/>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="🔑 UUID:" FontWeight="SemiBold" Foreground="#424242" Margin="0,8"/>
                     <TextBlock Grid.Row="0" Grid.Column="1" 
                                x:Name="TxtUuid" 
                                Text="Generando..." 
-                               Margin="0,5"
-                               Foreground="#666"
-                               FontFamily="Consolas"/>
+                               Margin="0,8"
+                               Foreground="#757575"
+                               FontFamily="Consolas"
+                               FontSize="11"/>
 
                     <!-- Marca -->
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Marca:" Margin="0,5"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="🏭 Marca:" FontWeight="SemiBold" Foreground="#424242" Margin="0,8"/>
                     <TextBlock Grid.Row="1" Grid.Column="1" 
                                x:Name="TxtManufacturer" 
                                Text="Detectando..." 
-                               Margin="0,5"
-                               Foreground="#666"/>
+                               Margin="0,8"
+                               Foreground="#757575"/>
 
                     <!-- Modelo -->
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Modelo:" Margin="0,5"/>
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="📦 Modelo:" FontWeight="SemiBold" Foreground="#424242" Margin="0,8"/>
                     <TextBlock Grid.Row="2" Grid.Column="1" 
                                x:Name="TxtModel" 
                                Text="Detectando..." 
-                               Margin="0,5"
-                               Foreground="#666"/>
+                               Margin="0,8"
+                               Foreground="#757575"/>
 
                     <!-- Serial -->
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="N° Serie:" Margin="0,5"/>
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="🔢 N° Serie:" FontWeight="SemiBold" Foreground="#424242" Margin="0,8"/>
                     <TextBlock Grid.Row="3" Grid.Column="1" 
                                x:Name="TxtSerial" 
                                Text="Detectando..." 
-                               Margin="0,5"
-                               Foreground="#666"
-                               FontFamily="Consolas"/>
+                               Margin="0,8"
+                               Foreground="#757575"
+                               FontFamily="Consolas"
+                               FontSize="11"/>
                 </Grid>
             </StackPanel>
         </Border>
@@ -97,70 +110,84 @@
         <!-- Formulario de registro -->
         <Border Grid.Row="2" 
                 Background="White" 
-                BorderBrush="#E0E0E0" 
-                BorderThickness="1" 
-                CornerRadius="5" 
-                Margin="0,15,0,0">
+                BorderBrush="#424242" 
+                BorderThickness="2" 
+                CornerRadius="10" 
+                Margin="0,20,0,0">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" ShadowDepth="3" Opacity="0.15" Color="#424242"/>
+            </Border.Effect>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="15">
-                    <TextBlock Text="Datos de Registro" 
-                               FontSize="14" 
+                <StackPanel Margin="20">
+                    <TextBlock Text="📝 Datos de Registro" 
+                               FontSize="15" 
                                FontWeight="Bold" 
-                               Margin="0,0,0,15"/>
+                               Foreground="#424242"
+                               Margin="0,0,0,18"/>
 
                     <!-- Nombre del equipo -->
-                    <TextBlock Text="Nombre del Equipo *" Margin="0,0,0,5"/>
-                    <TextBox x:Name="TxtComputerName" 
-                             Height="35" 
-                             FontSize="14"
-                             BorderBrush="#BDBDBD"
-                             Margin="0,0,0,15">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="TextBox">
-                                            <Border Background="{TemplateBinding Background}" 
-                                                    BorderBrush="{TemplateBinding BorderBrush}" 
-                                                    BorderThickness="1">
-                                                <ScrollViewer x:Name="PART_ContentHost" Margin="10,8"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
+                    <TextBlock Text="💻 Nombre del Equipo *" 
+                               FontWeight="SemiBold"
+                               Foreground="#424242"
+                               Margin="0,0,0,8"/>
+                    <Border BorderBrush="#800020" 
+                            BorderThickness="2" 
+                            CornerRadius="8"
+                            Margin="0,0,0,18">
+                        <TextBox x:Name="TxtComputerName" 
+                                 Height="40" 
+                                 FontSize="14"
+                                 Padding="12,10"
+                                 BorderThickness="0"
+                                 Background="Transparent"/>
+                    </Border>
 
                     <!-- Selección de aula -->
-                    <TextBlock Text="Aula / Laboratorio *" Margin="0,0,0,5"/>
-                    <ComboBox x:Name="CmbClassroom" 
-                              Height="35" 
-                              FontSize="14"
-                              BorderBrush="#BDBDBD"
-                              SelectedValuePath="Id"
-                              Margin="0,0,0,10">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding DisplayName}" Margin="5,3"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
+                    <TextBlock Text="🏫 Aula / Laboratorio *" 
+                               FontWeight="SemiBold"
+                               Foreground="#424242"
+                               Margin="0,0,0,8"/>
+                    <Border BorderBrush="#800020" 
+                            BorderThickness="2" 
+                            CornerRadius="8"
+                            Margin="0,0,0,15">
+                        <ComboBox x:Name="CmbClassroom" 
+                                  Height="40" 
+                                  FontSize="14"
+                                  Padding="12,10"
+                                  BorderThickness="0"
+                                  Background="Transparent"
+                                  SelectedValuePath="Id">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}" Margin="5,5"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Border>
 
                     <!-- Mensaje de estado -->
-                    <TextBlock x:Name="TxtStatus" 
-                               Text="" 
-                               Foreground="#FF5722"
-                               FontSize="12"
-                               TextWrapping="Wrap"
-                               Margin="0,10,0,0"
-                               Visibility="Collapsed"/>
+                    <Border x:Name="StatusBorder"
+                            Background="#FFEBEE"
+                            BorderBrush="#F44336"
+                            BorderThickness="1"
+                            CornerRadius="5"
+                            Padding="12"
+                            Margin="0,5,0,10"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="TxtStatus" 
+                                   Text="" 
+                                   Foreground="#C62828"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"/>
+                    </Border>
 
                     <!-- Barra de progreso -->
                     <ProgressBar x:Name="ProgressBar" 
                                  Height="5" 
                                  IsIndeterminate="True"
-                                 Margin="0,10,0,0"
+                                 Foreground="#800020"
+                                 Margin="0,5,0,0"
                                  Visibility="Collapsed"/>
                 </StackPanel>
             </ScrollViewer>
@@ -169,23 +196,27 @@
         <!-- Botón de registro -->
         <Button Grid.Row="3" 
                 x:Name="BtnRegister" 
-                Content="Registrar Equipo" 
-                Height="45" 
+                Content="✓ REGISTRAR EQUIPO" 
+                Height="50" 
                 FontSize="16" 
                 FontWeight="Bold"
-                Background="#4CAF50" 
+                Background="#800020" 
                 Foreground="White" 
                 BorderThickness="0"
                 Cursor="Hand"
-                Margin="0,15,0,0"
+                Margin="0,20,0,0"
                 Click="BtnRegister_Click">
             <Button.Style>
                 <Style TargetType="Button">
+                    <Setter Property="Background" Value="#800020"/>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="Button">
                                 <Border Background="{TemplateBinding Background}" 
-                                        CornerRadius="5">
+                                        CornerRadius="10">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="10" ShadowDepth="3" Opacity="0.3" Color="#800020"/>
+                                    </Border.Effect>
                                     <ContentPresenter HorizontalAlignment="Center" 
                                                       VerticalAlignment="Center"
                                                       Margin="10"/>
@@ -195,7 +226,7 @@
                     </Setter>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#45A049"/>
+                            <Setter Property="Background" Value="#600018"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Background" Value="#BDBDBD"/>
@@ -207,10 +238,18 @@
         </Button>
 
         <!-- Nota al pie -->
-        <TextBlock Grid.Row="4" 
-                   Text="* Campos obligatorios" 
-                   FontSize="11" 
-                   Foreground="#999"
-                   Margin="0,10,0,0"/>
+        <Border Grid.Row="4"
+                Background="#FFF9C4"
+                CornerRadius="5"
+                Padding="10"
+                Margin="0,15,0,0">
+            <TextBlock Text="⚠️ * Campos obligatorios - Asegúrate de seleccionar el aula correcta" 
+                       FontSize="11" 
+                       Foreground="#F57F17"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+        </Border>
     </Grid>
 </Window>

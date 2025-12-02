@@ -19,64 +19,77 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#4CAF50" Padding="20">
+        <!-- Header UNIVALLE -->
+        <Border Grid.Row="0" Background="#800020" Padding="25">
             <Grid>
                 <StackPanel>
-                    <TextBlock Text="🔓 SESIÓN ACTIVA" 
-                               FontSize="24" 
+                    <TextBlock Text="🎓 SESIÓN ACTIVA" 
+                               FontSize="28" 
                                FontWeight="Bold" 
                                Foreground="White"
                                HorizontalAlignment="Center"/>
                     <TextBlock x:Name="TxtWelcome"
                                Text="Bienvenido" 
-                               FontSize="13" 
+                               FontSize="14" 
                                Foreground="White"
                                HorizontalAlignment="Center"
-                               Margin="0,5,0,0"/>
+                               Margin="0,8,0,0"
+                               Opacity="0.95"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Main Content -->
-        <Border Grid.Row="1" Margin="30" Background="White" CornerRadius="10" Padding="30">
+        <Border Grid.Row="1" Margin="30" Background="White" CornerRadius="15" Padding="35">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.25" Color="#424242"/>
             </Border.Effect>
 
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <!-- Status Icon -->
-                    <TextBlock Text="✓" 
-                               FontSize="60" 
-                               Foreground="#4CAF50"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,20"/>
+                    <Border Background="#E8F5E9"
+                            CornerRadius="50"
+                            Width="90"
+                            Height="90"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,20">
+                        <TextBlock Text="✓" 
+                                   FontSize="55" 
+                                   Foreground="#4CAF50"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
 
                     <TextBlock Text="Tu sesión está activa" 
-                               FontSize="20" 
-                               FontWeight="SemiBold"
+                               FontSize="22" 
+                               FontWeight="Bold"
+                               Foreground="#424242"
                                HorizontalAlignment="Center"
-                               Margin="0,0,0,10"/>
+                               Margin="0,0,0,8"/>
 
                     <TextBlock Text="El sistema está monitoreando tu uso de esta computadora" 
                                FontSize="13" 
-                               Foreground="#666"
+                               Foreground="#757575"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center"
                                Margin="0,0,0,30"/>
 
                     <!-- Session Info -->
-                    <Border Background="#F9F9F9" 
-                            CornerRadius="8" 
-                            Padding="20"
+                    <Border Background="#FAFAFA" 
+                            BorderBrush="#800020"
+                            BorderThickness="2"
+                            CornerRadius="10" 
+                            Padding="25"
                             Margin="0,0,0,20">
                         <StackPanel>
-                            <TextBlock Text="Información de la Sesión" 
-                                       FontSize="15" 
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,15"/>
+                            <TextBlock Text="📋 Información de la Sesión" 
+                                       FontSize="16" 
+                                       FontWeight="Bold"
+                                       Foreground="#800020"
+                                       Margin="0,0,0,18"/>
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -92,47 +105,47 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Usuario:" FontWeight="SemiBold" Margin="0,0,10,8"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtUserName" Text="-" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="👤 Usuario:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,15,12"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtUserName" Text="-" Foreground="#424242" Margin="0,0,0,12"/>
 
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Computadora:" FontWeight="SemiBold" Margin="0,0,10,8"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtComputerName" Text="-" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="💻 Computadora:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,15,12"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtComputerName" Text="-" Foreground="#424242" Margin="0,0,0,12"/>
 
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Aula:" FontWeight="SemiBold" Margin="0,0,10,8"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TxtClassroom" Text="-" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="🏫 Aula:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,15,12"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TxtClassroom" Text="-" Foreground="#424242" Margin="0,0,0,12"/>
 
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Inicio de Sesión:" FontWeight="SemiBold" Margin="0,0,10,8"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStartTime" Text="-" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="🕐 Inicio:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,15,12"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStartTime" Text="-" Foreground="#424242" Margin="0,0,0,12"/>
 
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Duración:" FontWeight="SemiBold" Margin="0,0,10,8"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TxtDuration" Text="-" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="⏱️ Duración:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,15,12"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TxtDuration" Text="-" Foreground="#424242" Margin="0,0,0,12"/>
 
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Estado:" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="📶 Estado:" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,15,0"/>
                                 <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
                                     <Ellipse x:Name="StatusIndicator" 
-                                             Width="10" 
-                                             Height="10" 
+                                             Width="12" 
+                                             Height="12" 
                                              Fill="#4CAF50"
-                                             Margin="0,0,8,0"/>
-                                    <TextBlock x:Name="TxtStatus" Text="Activa" Foreground="#4CAF50"/>
+                                             Margin="0,0,10,0"/>
+                                    <TextBlock x:Name="TxtStatus" Text="Activa" Foreground="#4CAF50" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Border>
 
                     <!-- Instructions -->
-                    <Border Background="#E3F2FD" 
-                            CornerRadius="8" 
-                            Padding="15"
-                            BorderBrush="#2196F3"
-                            BorderThickness="1">
+                    <Border Background="#FFF9C4" 
+                            BorderBrush="#FBC02D"
+                            BorderThickness="2"
+                            CornerRadius="10" 
+                            Padding="18">
                         <StackPanel>
-                            <TextBlock Text="ℹ️ Instrucciones" 
-                                       FontSize="13" 
-                                       FontWeight="SemiBold"
-                                       Foreground="#1976D2"
-                                       Margin="0,0,0,10"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#555">
+                            <TextBlock Text="ℹ️ Instrucciones Importantes" 
+                                       FontSize="14" 
+                                       FontWeight="Bold"
+                                       Foreground="#F57F17"
+                                       Margin="0,0,0,12"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#424242" LineHeight="20">
                                 • Puedes minimizar esta ventana y seguir trabajando normalmente<LineBreak/>
                                 • El sistema enviará señales automáticas cada 30 segundos<LineBreak/>
                                 • Al cerrar sesión o apagar el equipo, podrás reportar problemas<LineBreak/>
@@ -145,7 +158,7 @@
         </Border>
 
         <!-- Footer -->
-        <Border Grid.Row="2" Background="White" Padding="20" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Background="White" Padding="20" BorderBrush="#E0E0E0" BorderThickness="0,2,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -153,12 +166,12 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Bot\u00f3n de desregistro (solo administradores) -->
+                <!-- Botón de desregistro (solo administradores) -->
                 <Button x:Name="BtnUnregister" 
                         Grid.Column="0"
-                        Content="🔧 Desregistrar"
-                        Height="35"
-                        Width="130"
+                        Content="🔧 Desregistrar Equipo"
+                        Height="38"
+                        Width="160"
                         FontSize="11"
                         FontWeight="SemiBold"
                         Background="#FF9800"
@@ -174,8 +187,8 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}"
-                                                CornerRadius="5"
-                                                Padding="10,5">
+                                                CornerRadius="8"
+                                                Padding="12,8">
                                             <ContentPresenter HorizontalAlignment="Center"
                                                             VerticalAlignment="Center"/>
                                         </Border>
@@ -193,33 +206,33 @@
 
                 <TextBlock x:Name="TxtLastHeartbeat" 
                            Grid.Column="1"
-                           Text="Última señal: Hace un momento" 
+                           Text="💓 Última señal: Hace un momento" 
                            FontSize="11" 
-                           Foreground="#999"
+                           Foreground="#757575"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"/>
 
                 <Button x:Name="BtnLogout" 
                         Grid.Column="2"
-                        Content="Cerrar Sesión"
-                        Height="35"
-                        Width="130"
+                        Content="🚪 Cerrar Sesión"
+                        Height="38"
+                        Width="140"
                         FontSize="12"
                         FontWeight="SemiBold"
-                        Background="#F44336"
+                        Background="#800020"
                         Foreground="White"
                         BorderThickness="0"
                         Cursor="Hand"
                         Click="BtnLogout_Click">
                     <Button.Style>
                         <Style TargetType="Button">
-                            <Setter Property="Background" Value="#F44336"/>
+                            <Setter Property="Background" Value="#800020"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}"
-                                                CornerRadius="5"
-                                                Padding="10,5">
+                                                CornerRadius="8"
+                                                Padding="12,8">
                                             <ContentPresenter HorizontalAlignment="Center"
                                                             VerticalAlignment="Center"/>
                                         </Border>
@@ -228,7 +241,7 @@
                             </Setter>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#D32F2F"/>
+                                    <Setter Property="Background" Value="#600018"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>

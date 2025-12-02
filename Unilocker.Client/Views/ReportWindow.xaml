@@ -20,16 +20,23 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#FF9800" Padding="20">
+        <!-- Header UNIVALLE -->
+        <Border Grid.Row="0" Background="#FF9800" Padding="25">
             <StackPanel>
-                <TextBlock Text="⚠️ Reportar Problema" 
-                           FontSize="22" 
+                <TextBlock Text="⚠️ REPORTAR PROBLEMA" 
+                           FontSize="24" 
                            FontWeight="Bold" 
                            Foreground="White"
                            HorizontalAlignment="Center"/>
+                <TextBlock Text="Universidad Privada del Valle" 
+                           FontSize="11" 
+                           Foreground="White"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0"
+                           Opacity="0.9"/>
                 <TextBlock Text="¿Experimentaste algún problema con el equipo?" 
-                           FontSize="12" 
+                           FontSize="13" 
                            Foreground="White"
                            HorizontalAlignment="Center"
                            Margin="0,5,0,0"/>
@@ -38,64 +45,94 @@
 
         <!-- Form -->
         <Border Grid.Row="1" 
-                Margin="20" 
+                Margin="25" 
                 Background="White"
-                CornerRadius="8"
-                Padding="20">
+                CornerRadius="12"
+                Padding="25">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="10" 
-                                  ShadowDepth="2" 
-                                  Opacity="0.2"/>
+                <DropShadowEffect BlurRadius="15" 
+                                  ShadowDepth="4" 
+                                  Opacity="0.25"
+                                  Color="#424242"/>
             </Border.Effect>
 
             <StackPanel>
-                <TextBlock Text="Si tuviste algún problema técnico con esta computadora, por favor repórtalo:" 
-                           TextWrapping="Wrap"
-                           FontSize="13"
-                           Foreground="#555"
-                           Margin="0,0,0,20"/>
+                <Border Background="#FFF3E0"
+                        BorderBrush="#FF9800"
+                        BorderThickness="2"
+                        CornerRadius="8"
+                        Padding="15"
+                        Margin="0,0,0,25">
+                    <TextBlock Text="Si tuviste algún problema técnico con esta computadora, por favor ayúdanos reportándolo para mejorar el servicio." 
+                               TextWrapping="Wrap"
+                               FontSize="13"
+                               Foreground="#E65100"
+                               TextAlignment="Center"/>
+                </Border>
 
                 <!-- Tipo de Problema -->
-                <TextBlock Text="Tipo de Problema:" 
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,5"/>
-                <ComboBox x:Name="CmbProblemType" 
-                          Height="35"
-                          FontSize="13"
-                          Margin="0,0,0,15"
-                          DisplayMemberPath="Name"
-                          SelectedValuePath="Id"/>
-
+                <TextBlock Text="🔧 Tipo de Problema" 
+                           FontWeight="Bold"
+                           Foreground="#424242"
+                           FontSize="14"
+                           Margin="0,0,0,10"/>
+                <Border BorderBrush="#800020" 
+                        BorderThickness="2" 
+                        CornerRadius="8"
+                        Margin="0,0,0,20">
+                    <ComboBox x:Name="CmbProblemType" 
+                              Height="40"
+                              FontSize="13"
+                              Padding="12,10"
+                              BorderThickness="0"
+                              Background="Transparent"
+                              DisplayMemberPath="Name"
+                              SelectedValuePath="Id"/>
+                </Border>
 
                 <!-- Descripción -->
-                <TextBlock Text="Descripción (opcional):" 
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,5"/>
-                <TextBox x:Name="TxtDescription" 
-                         Height="100"
-                         FontSize="13"
-                         TextWrapping="Wrap"
-                         AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"
-                         Padding="8"
-                         Margin="0,0,0,15"
-                         BorderBrush="#CCCCCC"
-                         BorderThickness="1"/>
+                <TextBlock Text="📝 Descripción (opcional)" 
+                           FontWeight="Bold"
+                           Foreground="#424242"
+                           FontSize="14"
+                           Margin="0,0,0,10"/>
+                <Border BorderBrush="#424242" 
+                        BorderThickness="2" 
+                        CornerRadius="8"
+                        Margin="0,0,0,20">
+                    <TextBox x:Name="TxtDescription" 
+                             Height="100"
+                             FontSize="13"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Padding="12,10"
+                             BorderThickness="0"
+                             Background="Transparent"/>
+                </Border>
 
                 <!-- Status Message -->
-                <TextBlock x:Name="TxtStatus" 
-                           Text="" 
-                           Foreground="Red"
-                           FontSize="12"
-                           TextWrapping="Wrap"
-                           Margin="0,0,0,10"
-                           Visibility="Collapsed"/>
+                <Border x:Name="StatusMessageBorder"
+                        Background="#FFEBEE"
+                        BorderBrush="#F44336"
+                        BorderThickness="1"
+                        CornerRadius="5"
+                        Padding="12"
+                        Margin="0,0,0,15"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="TxtStatus" 
+                               Text="" 
+                               Foreground="#C62828"
+                               FontSize="12"
+                               TextWrapping="Wrap"/>
+                </Border>
 
                 <!-- Progress Bar -->
                 <ProgressBar x:Name="ProgressBar" 
-                             Height="4"
+                             Height="5"
                              IsIndeterminate="True"
-                             Margin="0,0,0,10"
+                             Foreground="#FF9800"
+                             Margin="0,0,0,15"
                              Visibility="Collapsed"/>
             </StackPanel>
         </Border>
@@ -103,37 +140,37 @@
         <!-- Buttons -->
         <Border Grid.Row="2" 
                 Background="White" 
-                Padding="20"
+                Padding="25"
                 BorderBrush="#E0E0E0"
-                BorderThickness="0,1,0,0">
+                BorderThickness="0,2,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="15"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Botón Cerrar Sin Reportar -->
                 <Button x:Name="BtnSkip" 
                         Grid.Column="0"
-                        Content="Cerrar Sin Reportar"
-                        Height="40"
+                        Content="← Cerrar Sin Reportar"
+                        Height="45"
                         FontSize="13"
                         FontWeight="SemiBold"
-                        Background="#9E9E9E"
+                        Background="#757575"
                         Foreground="White"
                         BorderThickness="0"
                         Cursor="Hand"
                         Click="BtnSkip_Click">
                     <Button.Style>
                         <Style TargetType="Button">
-                            <Setter Property="Background" Value="#9E9E9E"/>
+                            <Setter Property="Background" Value="#757575"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}"
-                                                CornerRadius="5"
-                                                Padding="10">
+                                                CornerRadius="8"
+                                                Padding="12">
                                             <ContentPresenter HorizontalAlignment="Center"
                                                             VerticalAlignment="Center"/>
                                         </Border>
@@ -142,11 +179,11 @@
                             </Setter>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#757575"/>
+                                    <Setter Property="Background" Value="#616161"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter Property="Background" Value="#E0E0E0"/>
-                                    <Setter Property="Foreground" Value="#999999"/>
+                                    <Setter Property="Foreground" Value="#9E9E9E"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -156,10 +193,10 @@
                 <!-- Botón Enviar Reporte -->
                 <Button x:Name="BtnSubmit" 
                         Grid.Column="2"
-                        Content="Enviar Reporte"
-                        Height="40"
+                        Content="✓ Enviar Reporte"
+                        Height="45"
                         FontSize="13"
-                        FontWeight="SemiBold"
+                        FontWeight="Bold"
                         Background="#FF9800"
                         Foreground="White"
                         BorderThickness="0"
@@ -172,8 +209,11 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}"
-                                                CornerRadius="5"
-                                                Padding="10">
+                                                CornerRadius="8"
+                                                Padding="12">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="#FF9800"/>
+                                            </Border.Effect>
                                             <ContentPresenter HorizontalAlignment="Center"
                                                             VerticalAlignment="Center"/>
                                         </Border>
@@ -186,7 +226,7 @@
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter Property="Background" Value="#E0E0E0"/>
-                                    <Setter Property="Foreground" Value="#999999"/>
+                                    <Setter Property="Foreground" Value="#9E9E9E"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
