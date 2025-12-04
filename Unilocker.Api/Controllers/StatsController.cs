@@ -200,4 +200,125 @@ public class StatsController : ControllerBase
             return StatusCode(500, new { message = "Error interno al obtener reportes por estado", error = ex.Message });
         }
     }
+
+    // GET: api/stats/sessions-by-day
+    [HttpGet("sessions-by-day")]
+    public async Task<ActionResult<object>> GetSessionsByDay([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    {
+        try
+        {
+            var start = startDate ?? DateTime.Today.AddDays(-30);
+            var end = endDate ?? DateTime.Today;
+
+            var sessionsByDay = await _context.Sessions
+                .Where(s => s.StartDateTime >= start && s.StartDateTime <= end.AddDays(1))
+                .GroupBy(s => s.StartDateTime.Date)
+                .Select(g => new
+                {
+                    date = g.Key.ToString("yyyy-MM-dd"),
+                    count = g.Count()
+                })
+                .OrderBy(x => x.date)
+                .ToListAsync();
+
+            return Ok(sessionsByDay);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener sesiones por día");
+            return StatusCode(500, new { message = "Error al obtener sesiones por día", error = ex.Message });
+        }
+    }
+
+    // GET: api/stats/reports-by-problem
+    [HttpGet("reports-by-problem")]
+    public async Task<ActionResult<object>> GetReportsByProblem([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    {
+        try
+        {
+            var start = startDate ?? DateTime.Today.AddDays(-30);
+            var end = endDate ?? DateTime.Today;
+
+            var reportsByProblem = await _context.Reports
+                .Include(r => r.ProblemType)
+                .Where(r => r.CreatedAt >= start && r.CreatedAt <= end.AddDays(1))
+                .GroupBy(r => r.ProblemType!.Name)
+                .Select(g => new
+                {
+                    problemType = g.Key,
+                    count = g.Count()
+                })
+                .OrderByDescending(x => x.count)
+                .ToListAsync();
+
+            return Ok(reportsByProblem);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener reportes por tipo de problema");
+            return StatusCode(500, new { message = "Error al obtener reportes por problema", error = ex.Message });
+        }
+    }
+
+    // GET: api/stats/top-computers
+    [HttpGet("top-computers")]
+    public async Task<ActionResult<object>> GetTopComputers([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    {
+        try
+        {
+            var start = startDate ?? DateTime.Today.AddDays(-30);
+            var end = endDate ?? DateTime.Today;
+
+            var topComputers = await _context.Sessions
+                .Include(s => s.Computer)
+                .Where(s => s.StartDateTime >= start && s.StartDateTime <= end.AddDays(1))
+                .GroupBy(s => s.Computer!.Name)
+                .Select(g => new
+                {
+                    computerName = g.Key,
+                    sessionCount = g.Count()
+                })
+                .OrderByDescending(x => x.sessionCount)
+                .Take(10)
+                .ToListAsync();
+
+            return Ok(topComputers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener computadoras más usadas");
+            return StatusCode(500, new { message = "Error al obtener computadoras", error = ex.Message });
+        }
+    }
+
+    // GET: api/stats/top-users
+    [HttpGet("top-users")]
+    public async Task<ActionResult<object>> GetTopUsers([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    {
+        try
+        {
+            var start = startDate ?? DateTime.Today.AddDays(-30);
+            var end = endDate ?? DateTime.Today;
+
+            var topUsers = await _context.Sessions
+                .Include(s => s.User)
+                .Where(s => s.StartDateTime >= start && s.StartDateTime <= end.AddDays(1))
+                .GroupBy(s => s.User!.Username)
+                .Select(g => new
+                {
+                    username = g.Key,
+                    sessionCount = g.Count()
+                })
+                .OrderByDescending(x => x.sessionCount)
+                .Take(10)
+                .ToListAsync();
+
+            return Ok(topUsers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener usuarios más activos");
+            return StatusCode(500, new { message = "Error al obtener usuarios", error = ex.Message });
+        }
+    }
 }

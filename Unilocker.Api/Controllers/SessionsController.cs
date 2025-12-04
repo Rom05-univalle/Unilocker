@@ -94,6 +94,7 @@ public class SessionsController : ControllerBase
     /// Finalizar una sesión
     /// </summary>
     [HttpPut("{id}/end")]
+    [HttpPut("{id}/close")] // Alias para compatibilidad con web
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
