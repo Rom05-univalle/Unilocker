@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Unilocker.Api.Data;
+using Unilocker.Api.Models;
 using Unilocker.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,11 +13,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// DbContext
 builder.Services.AddDbContext<UnilockerDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ===== CONFIGURACIÓN JWT =====
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
 var jwtAudience = builder.Configuration["Jwt:Audience"]!;
@@ -34,19 +34,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
+// Registrar servicios
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
 
 // Registrar servicio JWT
 builder.Services.AddScoped<JwtService>();
 
+// Registrar PasswordHasher<object> (igual que usas en AuthController)
+builder.Services.AddScoped<IPasswordHasher<object>, PasswordHasher<object>>();
+// Si en algún momento vuelves a IPasswordHasher<User>, cambia la línea anterior por:
+// builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
 // ===== FIN CONFIGURACIÓN JWT =====
 
-// CORS para permitir Unilocker.Web (durante desarrollo puedes abrir todo)
+// CORS para permitir Unilocker.Web
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowWeb", policy =>
     {
         policy
-            .WithOrigins("http://localhost:8080", "http://127.0.0.1:8080") // donde sirves Unilocker.Web
+            .WithOrigins("http://localhost:8080", "http://127.0.0.1:8080")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

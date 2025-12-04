@@ -1,47 +1,65 @@
 import { getToken, logout } from './auth.js';
 
-const API_BASE_URL = "https://localhost:7198";
+export const API_BASE_URL = "http://localhost:7198";
 
-export async function apiCall(relativeEndpoint, method = "GET", body = null) {
+export async function authFetch(relativeEndpoint, options = {}) {
   const endpoint = `${API_BASE_URL}${relativeEndpoint}`;
 
-  const opts = {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + getToken()
-    }
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
   };
-  if (body) opts.body = JSON.stringify(body);
 
-  const resp = await fetch(endpoint, opts);
+  const token = getToken();
+  if (token) {
+    headers["Authorization"] = "Bearer " + token;
+  }
 
-  if (resp.status === 401) {
-    showToast("Sesión vencida. Inicia sesión nuevamente.", "danger");
+  const resp = await fetch(endpoint, {
+    method: options.method || "GET",
+    headers,
+    body: options.body
+      ? (typeof options.body === "string" ? options.body : JSON.stringify(options.body))
+      : undefined,
+  });
+
+  // 1) Si NO hay token y el backend responde 401 → sesión vencida, redirigir al login.
+  if (resp.status === 401 && !token) {
+    window.showToast("Sesión vencida. Inicia sesión nuevamente.", "error");
     setTimeout(logout, 1500);
     throw new Error("No autenticado");
   }
 
-  if (!resp.ok) {
-    const errMsg = `Error API (${resp.status})`;
-    showToast(errMsg, "danger");
-    throw new Error(errMsg);
+  // 2) Si HAY token y el backend responde 401 → no rompemos sesión, solo devolvemos resp.
+  if (resp.status === 401 && token) {
+    window.showToast("No autorizado para esta operación.", "error");
+    return resp;
   }
 
-  return await resp.json();
+  // 3) Otros errores
+  if (!resp.ok) {
+    const msg = `Error API (${resp.status})`;
+    window.showToast(msg, "error");
+    throw new Error(msg);
+  }
+
+  return resp;
 }
 
-window.showToast = function(msg, type = "info") {
+// Función de ayuda para toasts simples (fallback)
+window.showToast = function (msg, type = "info") {
   let toast = document.createElement("div");
   toast.className = `toast align-items-center text-bg-${type} position-fixed bottom-0 end-0 m-3`;
   toast.role = "alert";
   toast.innerHTML = `
-      <div class="d-flex"><div class="toast-body">${msg}</div>
-      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
-      </div>
+    <div class="d-flex">
+      <div class="toast-body">${msg}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast" aria-label="Cerrar"></button>
+    </div>
   `;
   document.body.appendChild(toast);
-  let bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+  const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
   bsToast.show();
-  toast.addEventListener('hidden.bs.toast', () => { toast.remove(); });
+  bsToast._element.addEventListener("hidden.bs.toast", () => toast.remove());
 };

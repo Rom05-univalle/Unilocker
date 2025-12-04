@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 using Unilocker.Api.Data;
 using Unilocker.Api.DTOs;
 using Unilocker.Api.Models;
+
+using System.Security.Claims;
 
 namespace Unilocker.Api.Controllers;
 
@@ -106,7 +109,6 @@ public class SessionsController : ControllerBase
 
             // 1. Buscar sesión
             var session = await _context.Sessions.FindAsync(id);
-
             if (session == null)
             {
                 return NotFound(new { message = "Sesión no encontrada" });
@@ -130,7 +132,6 @@ public class SessionsController : ControllerBase
 
             // 4. Retornar sesión actualizada
             var sessionResponse = await GetSessionResponseById(id);
-
             return Ok(sessionResponse);
         }
         catch (Exception ex)
@@ -147,7 +148,7 @@ public class SessionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Heartbeat(int id)
+    public async Task<ActionResult> Heartbeat(int id)
     {
         try
         {
@@ -180,7 +181,9 @@ public class SessionsController : ControllerBase
         }
     }
 
-
+    /// <summary>
+    /// Obtener una sesión por id
+    /// </summary>
     [HttpGet("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -189,7 +192,6 @@ public class SessionsController : ControllerBase
         try
         {
             var sessionResponse = await GetSessionResponseById(id);
-
             if (sessionResponse == null)
             {
                 return NotFound(new { message = "Sesión no encontrada" });
@@ -204,7 +206,9 @@ public class SessionsController : ControllerBase
         }
     }
 
- 
+    /// <summary>
+    /// Obtener todas las sesiones activas
+    /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<SessionResponse>>> GetActiveSessions()
@@ -216,13 +220,12 @@ public class SessionsController : ControllerBase
                 .Include(s => s.User)
                 .Include(s => s.Computer)
                     .ThenInclude(c => c.Classroom)
-                        .ThenInclude(cl => cl.Block)
-                            .ThenInclude(b => b.Branch)
+                    .ThenInclude(cl => cl.Block)
+                    .ThenInclude(b => b.Branch)
                 .OrderByDescending(s => s.StartDateTime)
                 .ToListAsync();
 
             var response = sessions.Select(s => MapToSessionResponse(s)).ToList();
-
             return Ok(response);
         }
         catch (Exception ex)
@@ -232,10 +235,14 @@ public class SessionsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Obtener sesiones (paginadas, filtradas).
+    /// Ahora soporta userId=me para el usuario autenticado.
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<SessionResponse>>> GetSessions(
-        [FromQuery] int? userId = null,
+        [FromQuery] string? userId = null,
         [FromQuery] int? computerId = null,
         [FromQuery] bool? isActive = null,
         [FromQuery] int page = 1,
@@ -247,20 +254,43 @@ public class SessionsController : ControllerBase
                 .Include(s => s.User)
                 .Include(s => s.Computer)
                     .ThenInclude(c => c.Classroom)
-                        .ThenInclude(cl => cl.Block)
-                            .ThenInclude(b => b.Branch)
+                    .ThenInclude(cl => cl.Block)
+                    .ThenInclude(b => b.Branch)
                 .AsQueryable();
 
+            // Soporte userId=me (para perfil)
+            int? effectiveUserId = null;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                if (string.Equals(userId, "me", StringComparison.OrdinalIgnoreCase))
+                {
+                    var claimId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out var parsedId))
+                    {
+                        return Unauthorized();
+                    }
+                    effectiveUserId = parsedId;
+                }
+                else if (int.TryParse(userId, out var parsedUserId))
+                {
+                    effectiveUserId = parsedUserId;
+                }
+            }
 
-            if (userId.HasValue)
-                query = query.Where(s => s.UserId == userId.Value);
+            if (effectiveUserId.HasValue)
+            {
+                query = query.Where(s => s.UserId == effectiveUserId.Value);
+            }
 
             if (computerId.HasValue)
+            {
                 query = query.Where(s => s.ComputerId == computerId.Value);
+            }
 
             if (isActive.HasValue)
+            {
                 query = query.Where(s => s.IsActive == isActive.Value);
-
+            }
 
             var sessions = await query
                 .OrderByDescending(s => s.StartDateTime)
@@ -269,7 +299,6 @@ public class SessionsController : ControllerBase
                 .ToListAsync();
 
             var response = sessions.Select(s => MapToSessionResponse(s)).ToList();
-
             return Ok(response);
         }
         catch (Exception ex)
@@ -279,7 +308,9 @@ public class SessionsController : ControllerBase
         }
     }
 
-
+    // =========================
+    // Métodos privados de ayuda
+    // =========================
 
     private async Task<SessionResponse?> GetSessionResponseById(int id)
     {
@@ -287,8 +318,8 @@ public class SessionsController : ControllerBase
             .Include(s => s.User)
             .Include(s => s.Computer)
                 .ThenInclude(c => c.Classroom)
-                    .ThenInclude(cl => cl.Block)
-                        .ThenInclude(b => b.Branch)
+                .ThenInclude(cl => cl.Block)
+                .ThenInclude(b => b.Branch)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         return session != null ? MapToSessionResponse(session) : null;

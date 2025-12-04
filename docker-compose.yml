@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: unilocker-sql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+    ports:
+      - "14333:1433"
+    volumes:
+      - unilocker_sql_data:/var/opt/mssql
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./Unilocker.Api
+      dockerfile: Dockerfile
+    container_name: unilocker-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Cadena de conexión para EF Core DENTRO de Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=UnilockerDBV1;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True
+      # Configuración JWT
+      - Jwt__Key=CLAVE_SUPER_SECRETA_LARGA_1234567890
+      - Jwt__Issuer=Unilocker
+      - Jwt__Audience=UnilockerWeb
+      - Jwt__ExpirationMinutes=60
+    depends_on:
+      - sqlserver
+    ports:
+      - "7198:8080"   # API accesible en http://localhost:7198
+    restart: unless-stopped
+
+volumes:
+  unilocker_sql_data:

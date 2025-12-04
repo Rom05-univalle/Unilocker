@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.DTOs;
@@ -7,201 +8,234 @@ using Unilocker.Api.Models;
 namespace Unilocker.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]")] // api/computers
+[Authorize]
 public class ComputersController : ControllerBase
 {
     private readonly UnilockerDbContext _context;
-    private readonly ILogger<ComputersController> _logger;
 
-    public ComputersController(UnilockerDbContext context, ILogger<ComputersController> logger)
+    public ComputersController(UnilockerDbContext context)
     {
         _context = context;
-        _logger = logger;
     }
 
-   
-    [HttpPost("register")]
-    [ProducesResponseType(typeof(ComputerResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ComputerResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ComputerResponse>> RegisterComputer([FromBody] RegisterComputerRequest request)
+    // GET: /api/computers
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ComputerDto>>> GetAll()
     {
-        try
-        {
-            _logger.LogInformation("Intentando registrar computadora con UUID: {Uuid}", request.Uuid);
-
-            // 1. Buscar si la computadora ya existe por UUID
-            var existingComputer = await _context.Computers
-                .Include(c => c.Classroom)
-                    .ThenInclude(cl => cl.Block)
-                        .ThenInclude(b => b.Branch)
-                .FirstOrDefaultAsync(c => c.Uuid == request.Uuid);
-
-            // 2. Si existe, retornar la información existente
-            if (existingComputer != null)
+        var items = await _context.Computers
+            .Include(c => c.Classroom)
+            .ThenInclude(cl => cl.Block)
+            .ThenInclude(b => b.Branch)
+            .OrderBy(c => c.Name)
+            .Select(c => new ComputerDto
             {
-                _logger.LogInformation("Computadora ya registrada con ID: {Id}", existingComputer.Id);
+                Id = c.Id,
+                Name = c.Name,
+                Uuid = c.Uuid,
+                Status = c.Status,
+                // Campos de ubicación
+                ClassroomId = c.ClassroomId,
+                ClassroomName = c.Classroom.Name,
+                BlockId = c.Classroom.BlockId,
+                BlockName = c.Classroom.Block.Name,
+                BranchId = c.Classroom.Block.BranchId,
+                BranchName = c.Classroom.Block.Branch.Name
+                // Brand/Model/SerialNumber NO se usan porque no existen en la entidad
+            })
+            .ToListAsync();
 
-                var existingResponse = new ComputerResponse
-                {
-                    Id = existingComputer.Id,
-                    Name = existingComputer.Name,
-                    Uuid = existingComputer.Uuid,
-                    Model = existingComputer.Model,
-                    SerialNumber = existingComputer.SerialNumber,
-                    IsNewRegistration = false,
-                    CreatedAt = existingComputer.CreatedAt,
-                    ClassroomInfo = existingComputer.Classroom != null ? new ClassroomInfo
-                    {
-                        Id = existingComputer.Classroom.Id,
-                        Name = existingComputer.Classroom.Name,
-                        BlockName = existingComputer.Classroom.Block?.Name ?? "N/A",
-                        BranchName = existingComputer.Classroom.Block?.Branch?.Name ?? "N/A",
-                        Capacity = existingComputer.Classroom.Capacity
-                    } : null
-                };
-
-                return Ok(existingResponse);
-            }
-
-            // 3. Validar que el aula existe y está activa
-            var classroom = await _context.Classrooms
-                .Include(c => c.Block)
-                    .ThenInclude(b => b.Branch)
-                .FirstOrDefaultAsync(c => c.Id == request.ClassroomId && c.Status == true);
-
-            if (classroom == null)
-            {
-                _logger.LogWarning("Aula no encontrada o inactiva: {ClassroomId}", request.ClassroomId);
-                return BadRequest(new { error = "El aula especificada no existe o está inactiva" });
-            }
-
-            // 4. Crear nueva computadora
-            var newComputer = new Computer
-            {
-                Name = request.Name,
-                Uuid = request.Uuid,
-                SerialNumber = request.SerialNumber,
-                Model = request.Model,
-                ClassroomId = request.ClassroomId,
-                Status = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Computers.Add(newComputer);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Nueva computadora registrada con ID: {Id}", newComputer.Id);
-
-            // 5. Retornar respuesta de éxito
-            var response = new ComputerResponse
-            {
-                Id = newComputer.Id,
-                Name = newComputer.Name,
-                Uuid = newComputer.Uuid,
-                Model = newComputer.Model,
-                SerialNumber = newComputer.SerialNumber,
-                IsNewRegistration = true,
-                CreatedAt = newComputer.CreatedAt,
-                ClassroomInfo = new ClassroomInfo
-                {
-                    Id = classroom.Id,
-                    Name = classroom.Name,
-                    BlockName = classroom.Block?.Name ?? "N/A",
-                    BranchName = classroom.Block?.Branch?.Name ?? "N/A",
-                    Capacity = classroom.Capacity
-                }
-            };
-
-            return CreatedAtAction(nameof(GetComputerById), new { id = newComputer.Id }, response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al registrar computadora");
-            return StatusCode(500, new { error = "Error interno al registrar la computadora", details = ex.Message });
-        }
+        return Ok(items);
     }
 
-   
-    [HttpGet("classrooms")]
-    [ProducesResponseType(typeof(IEnumerable<ClassroomInfo>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<ClassroomInfo>>> GetClassrooms()
+    // GET: /api/computers/5
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<ComputerDto>> GetById(int id)
     {
-        try
-        {
-            var classrooms = await _context.Classrooms
-                .Include(c => c.Block)
-                    .ThenInclude(b => b.Branch)
-                .Where(c => c.Status == true)
-                .OrderBy(c => c.Block.Branch.Name)
-                .ThenBy(c => c.Block.Name)
-                .ThenBy(c => c.Name)
-                .Select(c => new ClassroomInfo
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    BlockName = c.Block.Name,
-                    BranchName = c.Block.Branch.Name,
-                    Capacity = c.Capacity
-                })
-                .ToListAsync();
+        var item = await _context.Computers
+            .Where(c => c.Id == id)
+            .Include(c => c.Classroom)
+            .ThenInclude(cl => cl.Block)
+            .ThenInclude(b => b.Branch)
+            .Select(c => new ComputerDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Uuid = c.Uuid,
+                Status = c.Status,
+                ClassroomId = c.ClassroomId,
+                ClassroomName = c.Classroom.Name,
+                BlockId = c.Classroom.BlockId,
+                BlockName = c.Classroom.Block.Name,
+                BranchId = c.Classroom.Block.BranchId,
+                BranchName = c.Classroom.Block.Branch.Name
+            })
+            .FirstOrDefaultAsync();
 
-            _logger.LogInformation("Se obtuvieron {Count} aulas", classrooms.Count);
-            return Ok(classrooms);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al obtener aulas");
-            return StatusCode(500, new { error = "Error al obtener la lista de aulas" });
-        }
+        if (item == null)
+            return NotFound();
+
+        return Ok(item);
     }
 
-   
-    [HttpGet("{id}")]
-    [ProducesResponseType(typeof(ComputerResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ComputerResponse>> GetComputerById(int id)
+    // POST: /api/computers
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ComputerDto>> Create([FromBody] ComputerCreateUpdateDto dto)
     {
-        try
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest("El nombre es obligatorio.");
+
+        if (dto.Uuid == Guid.Empty)
+            return BadRequest("El UUID es obligatorio.");
+
+        var uuidExists = await _context.Computers.AnyAsync(c => c.Uuid == dto.Uuid);
+        if (uuidExists)
+            return BadRequest("Ya existe una computadora con ese UUID.");
+
+        // validar aula
+        var classroomExists = await _context.Classrooms
+            .AnyAsync(c => c.Id == dto.ClassroomId && c.Status);
+        if (!classroomExists)
+            return BadRequest("El aula especificada no existe o está inactiva.");
+
+        var entity = new Computer
         {
-            var computer = await _context.Computers
-                .Include(c => c.Classroom)
-                    .ThenInclude(cl => cl.Block)
-                        .ThenInclude(b => b.Branch)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            Name = dto.Name,
+            Uuid = dto.Uuid,
+            Status = dto.Status,
+            ClassroomId = dto.ClassroomId
+            // Brand/Model/SerialNumber no existen en Computer, por eso no se asignan
+        };
 
-            if (computer == null)
-            {
-                _logger.LogWarning("Computadora no encontrada: {Id}", id);
-                return NotFound(new { error = "Computadora no encontrada" });
-            }
+        _context.Computers.Add(entity);
 
-            var response = new ComputerResponse
-            {
-                Id = computer.Id,
-                Name = computer.Name,
-                Uuid = computer.Uuid,
-                Model = computer.Model,
-                SerialNumber = computer.SerialNumber,
-                IsNewRegistration = false,
-                CreatedAt = computer.CreatedAt,
-                ClassroomInfo = computer.Classroom != null ? new ClassroomInfo
-                {
-                    Id = computer.Classroom.Id,
-                    Name = computer.Classroom.Name,
-                    BlockName = computer.Classroom.Block?.Name ?? "N/A",
-                    BranchName = computer.Classroom.Block?.Branch?.Name ?? "N/A",
-                    Capacity = computer.Classroom.Capacity
-                } : null
-            };
-
-            return Ok(response);
-        }
-        catch (Exception ex)
+        // ==== Auditoría ====
+        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
         {
-            _logger.LogError(ex, "Error al obtener computadora {Id}", id);
-            return StatusCode(500, new { error = "Error al obtener la computadora" });
+            _context.CurrentUserId = uid;
         }
+        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        // ====================
+
+        await _context.SaveChangesAsync();
+
+        entity = await _context.Computers
+            .Include(c => c.Classroom)
+            .ThenInclude(cl => cl.Block)
+            .ThenInclude(b => b.Branch)
+            .FirstAsync(c => c.Id == entity.Id);
+
+        var result = new ComputerDto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Uuid = entity.Uuid,
+            Status = entity.Status,
+            ClassroomId = entity.ClassroomId,
+            ClassroomName = entity.Classroom.Name,
+            BlockId = entity.Classroom.BlockId,
+            BlockName = entity.Classroom.Block.Name,
+            BranchId = entity.Classroom.Block.BranchId,
+            BranchName = entity.Classroom.Block.Branch.Name
+        };
+
+        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, result);
+    }
+
+    // PUT: /api/computers/5
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ComputerDto>> Update(int id, [FromBody] ComputerCreateUpdateDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var entity = await _context.Computers.FindAsync(id);
+        if (entity == null)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest("El nombre es obligatorio.");
+
+        if (dto.Uuid == Guid.Empty)
+            return BadRequest("El UUID es obligatorio.");
+
+        var uuidExists = await _context.Computers
+            .AnyAsync(c => c.Uuid == dto.Uuid && c.Id != id);
+        if (uuidExists)
+            return BadRequest("Ya existe otra computadora con ese UUID.");
+
+        var classroomExists = await _context.Classrooms
+            .AnyAsync(c => c.Id == dto.ClassroomId && c.Status);
+        if (!classroomExists)
+            return BadRequest("El aula especificada no existe o está inactiva.");
+
+        entity.Name = dto.Name;
+        entity.Uuid = dto.Uuid;
+        entity.Status = dto.Status;
+        entity.ClassroomId = dto.ClassroomId;
+
+        // ==== Auditoría ====
+        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        {
+            _context.CurrentUserId = uid;
+        }
+        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        // ====================
+
+        await _context.SaveChangesAsync();
+
+        entity = await _context.Computers
+            .Include(c => c.Classroom)
+            .ThenInclude(cl => cl.Block)
+            .ThenInclude(b => b.Branch)
+            .FirstAsync(c => c.Id == entity.Id);
+
+        var result = new ComputerDto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Uuid = entity.Uuid,
+            Status = entity.Status,
+            ClassroomId = entity.ClassroomId,
+            ClassroomName = entity.Classroom.Name,
+            BlockId = entity.Classroom.BlockId,
+            BlockName = entity.Classroom.Block.Name,
+            BranchId = entity.Classroom.Block.BranchId,
+            BranchName = entity.Classroom.Block.Branch.Name
+        };
+
+        return Ok(result);
+    }
+
+    // DELETE: /api/computers/5
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var entity = await _context.Computers.FindAsync(id);
+        if (entity == null)
+            return NotFound();
+
+        _context.Computers.Remove(entity); // borrado físico
+
+        // ==== Auditoría ====
+        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        {
+            _context.CurrentUserId = uid;
+        }
+        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        // ====================
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }
