@@ -1,5 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Unilocker.Api.Data;
+using Unilocker.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +16,44 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<UnilockerDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// ===== CONFIGURACIÓN JWT =====
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+// Registrar servicio JWT
+builder.Services.AddScoped<JwtService>();
+// ===== FIN CONFIGURACIÓN JWT =====
+// Registrar servicio Email
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddSingleton<VerificationCodeService>();
+
+// Configurar CORS (para frontend web)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -23,7 +65,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// ===== ORDEN IMPORTANTE =====
+app.UseCors("AllowAll");
+app.UseAuthentication();  // <-- Antes de UseAuthorization
 app.UseAuthorization();
+// ===== FIN ORDEN =====
 
 app.MapControllers();
 
