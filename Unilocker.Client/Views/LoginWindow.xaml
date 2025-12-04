@@ -7,8 +7,12 @@
         Title="Unilocker - Inicio de Sesión" 
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        Background="#F5F5F5">
+        ResizeMode="CanMinimize"
+        WindowStyle="None"
+        Topmost="True"
+        ShowInTaskbar="True"
+        Background="#F5F5F5"
+        Closing="Window_Closing">
 
     <Grid Margin="0,0,0,27">
         <Grid.RowDefinitions>

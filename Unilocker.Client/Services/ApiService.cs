@@ -154,6 +154,22 @@ public class ApiService
     }
 
     /// <summary>
+    /// Forzar cierre de todas las sesiones activas de un usuario
+    /// </summary>
+    public async Task<bool> ForceCloseUserSessionsAsync(int userId)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsync($"/api/sessions/user/{userId}/force-close", null);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Obtiene la lista de tipos de problema
     /// </summary>
     public async Task<List<ProblemType>> GetProblemTypesAsync()

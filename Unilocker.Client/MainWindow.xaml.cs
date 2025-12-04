@@ -72,13 +72,50 @@ public partial class MainWindow : Window
                 var result = MessageBox.Show(
                     "Ya tienes una sesión activa en el sistema.\n\n" +
                     "Esto puede ocurrir si cerraste la aplicación sin cerrar sesión correctamente.\n\n" +
-                    "¿Deseas que el administrador cierre tu sesión anterior?",
+                    "¿Deseas cerrar tu sesión anterior y abrir una nueva?",
                     "Sesión Activa Detectada",
-                    MessageBoxButton.OK,
+                    MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
-                Application.Current.Shutdown();
-                return;
+                if (result == MessageBoxResult.Yes)
+                {
+                    // Forzar cierre de sesiones activas del usuario
+                    bool closed = await _apiService.ForceCloseUserSessionsAsync(userId);
+                    
+                    if (closed)
+                    {
+                        // Intentar iniciar sesión nuevamente
+                        try
+                        {
+                            session = await _sessionService.StartSessionAsync(userId, computerId);
+                        }
+                        catch (Exception retryEx)
+                        {
+                            MessageBox.Show(
+                                $"Error al iniciar nueva sesión:\n\n{retryEx.Message}\n\nLa aplicación se cerrará.",
+                                "Error",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                            Application.Current.Shutdown();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            "No se pudo cerrar la sesión anterior.\n\nContacta al administrador del sistema.",
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        Application.Current.Shutdown();
+                        return;
+                    }
+                }
+                else
+                {
+                    Application.Current.Shutdown();
+                    return;
+                }
             }
 
             // Guardar tiempo de inicio
@@ -195,22 +232,17 @@ public partial class MainWindow : Window
         if (_isLoggingOut)
             return;
 
-        // Si el usuario intenta cerrar la ventana con X o Alt+F4
+        // MODO KIOSCO: NO permitir cerrar la ventana de ninguna forma
+        // Solo se puede cerrar mediante el botón "Cerrar Sesión"
         e.Cancel = true;
 
-        var result = MessageBox.Show(
-            "No debes cerrar esta ventana directamente.\n\n" +
-            "¿Deseas cerrar tu sesión correctamente?",
-            "Advertencia",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (result == MessageBoxResult.Yes)
-        {
-            _isLoggingOut = true;
-            e.Cancel = false;
-            ShowReportWindowAndEndSession("Normal");
-        }
+        MessageBox.Show(
+            "⛔ NO PUEDES CERRAR ESTA VENTANA\n\n" +
+            "Esta computadora está en modo de laboratorio.\n\n" +
+            "Para cerrar tu sesión, usa el botón 'Cerrar Sesión' en la parte inferior.",
+            "Acceso Restringido",
+            MessageBoxButton.OK,
+            MessageBoxImage.Stop);
     }
 
     private async void ShowReportWindowAndEndSession(string endMethod)
@@ -267,6 +299,24 @@ public partial class MainWindow : Window
         // Limpiar recursos
         _durationTimer?.Stop();
         SystemEvents.SessionEnding -= OnSystemSessionEnding;
+
+        // CRÍTICO: Si hay una sesión activa y no estamos cerrando por logout normal,
+        // intentar cerrar la sesión en la base de datos (para casos de forzar cierre)
+        if (!_isLoggingOut && _sessionService.CurrentSessionId.HasValue)
+        {
+            try
+            {
+                // Intentar cerrar la sesión de manera síncrona antes de que la app termine
+                var task = _sessionService.EndSessionAsync("Forced");
+                task.Wait(TimeSpan.FromSeconds(2)); // Esperar máximo 2 segundos
+            }
+            catch (Exception ex)
+            {
+                // Registrar error pero no bloquear el cierre
+                System.Diagnostics.Debug.WriteLine($"Error al cerrar sesión forzadamente: {ex.Message}");
+            }
+        }
+
         base.OnClosed(e);
     }
 

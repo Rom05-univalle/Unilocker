@@ -8,6 +8,9 @@
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanMinimize"
+        WindowStyle="None"
+        Topmost="True"
+        ShowInTaskbar="True"
         Background="#F5F5F5"
         Closing="Window_Closing">
 

@@ -41,21 +41,111 @@ public class EmailService
             message.Body = new TextPart("html")
             {
                 Text = $@"
+                    <!DOCTYPE html>
                     <html>
-                    <body style='font-family: Arial, sans-serif;'>
-                        <div style='max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;'>
-                            <div style='background-color: white; padding: 30px; border-radius: 10px;'>
-                                <h2 style='color: #333;'>Código de Verificación</h2>
-                                <p>Has iniciado sesión en Unilocker. Por favor, ingresa el siguiente código de verificación:</p>
-                                <div style='background-color: #007bff; color: white; font-size: 32px; font-weight: bold; text-align: center; padding: 20px; border-radius: 5px; margin: 20px 0;'>
-                                    {code}
-                                </div>
-                                <p style='color: #666;'>Este código expira en 10 minutos.</p>
-                                <p style='color: #666;'>Si no solicitaste este código, por favor ignora este correo.</p>
-                                <hr style='border: 1px solid #eee; margin: 20px 0;'>
-                                <p style='color: #999; font-size: 12px;'>Este es un correo automático, por favor no respondas.</p>
-                            </div>
-                        </div>
+                    <head>
+                        <meta charset='UTF-8'>
+                        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                    </head>
+                    <body style='margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;'>
+                        <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #f4f4f4; padding: 20px 0;'>
+                            <tr>
+                                <td align='center'>
+                                    <!-- Contenedor principal -->
+                                    <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;'>
+                                        <!-- Header con colores Univalle -->
+                                        <tr>
+                                            <td style='background: linear-gradient(135deg, #800020 0%, #a0002a 100%); padding: 40px 30px; text-align: center;'>
+                                                <h1 style='margin: 0; color: #ffffff; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);'>
+                                                    🔐 UNILOCKER
+                                                </h1>
+                                                <p style='margin: 10px 0 0 0; color: #f0f0f0; font-size: 14px; letter-spacing: 1px;'>
+                                                    Universidad Privada del Valle
+                                                </p>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Contenido -->
+                                        <tr>
+                                            <td style='padding: 40px 30px;'>
+                                                <h2 style='margin: 0 0 20px 0; color: #800020; font-size: 24px; font-weight: bold;'>
+                                                    Código de Verificación de Seguridad
+                                                </h2>
+                                                
+                                                <p style='margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;'>
+                                                    Hola,
+                                                </p>
+                                                
+                                                <p style='margin: 0 0 30px 0; color: #555555; font-size: 15px; line-height: 1.6;'>
+                                                    Has iniciado sesión en el sistema <strong>Unilocker</strong> de control de laboratorios. 
+                                                    Por favor, utiliza el siguiente código de verificación para completar tu autenticación:
+                                                </p>
+                                                
+                                                <!-- Código de verificación -->
+                                                <table width='100%' cellpadding='0' cellspacing='0' style='margin: 30px 0;'>
+                                                    <tr>
+                                                        <td align='center'>
+                                                            <div style='background: linear-gradient(135deg, #800020 0%, #a0002a 100%); 
+                                                                        color: #ffffff; 
+                                                                        font-size: 42px; 
+                                                                        font-weight: bold; 
+                                                                        letter-spacing: 8px; 
+                                                                        padding: 25px 40px; 
+                                                                        border-radius: 12px; 
+                                                                        box-shadow: 0 4px 15px rgba(128, 0, 32, 0.3);
+                                                                        display: inline-block;
+                                                                        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);'>
+                                                                {code}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Advertencias -->
+                                                <div style='background-color: #fff3cd; 
+                                                            border-left: 4px solid #ffc107; 
+                                                            padding: 15px 20px; 
+                                                            margin: 25px 0; 
+                                                            border-radius: 5px;'>
+                                                    <p style='margin: 0; color: #856404; font-size: 14px; line-height: 1.5;'>
+                                                        ⏱️ <strong>Importante:</strong> Este código expira en <strong>10 minutos</strong>.
+                                                    </p>
+                                                </div>
+                                                
+                                                <div style='background-color: #f8d7da; 
+                                                            border-left: 4px solid #dc3545; 
+                                                            padding: 15px 20px; 
+                                                            margin: 25px 0; 
+                                                            border-radius: 5px;'>
+                                                    <p style='margin: 0; color: #721c24; font-size: 14px; line-height: 1.5;'>
+                                                        🔒 <strong>Seguridad:</strong> Si no solicitaste este código, ignora este correo y 
+                                                        contacta inmediatamente al administrador del sistema.
+                                                    </p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Footer -->
+                                        <tr>
+                                            <td style='background-color: #f8f9fa; padding: 25px 30px; border-top: 3px solid #800020;'>
+                                                <p style='margin: 0 0 10px 0; color: #666666; font-size: 13px; line-height: 1.5;'>
+                                                    <strong>Unilocker</strong> - Sistema de Control de Acceso a Laboratorios
+                                                </p>
+                                                <p style='margin: 0; color: #999999; font-size: 12px; line-height: 1.5;'>
+                                                    Universidad Privada del Valle (Univalle)<br>
+                                                    Este es un correo automático, por favor no respondas a este mensaje.
+                                                </p>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Barra inferior Univalle -->
+                                        <tr>
+                                            <td style='background-color: #800020; padding: 5px;'></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
                     </body>
                     </html>
                 "

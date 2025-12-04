@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -17,6 +18,9 @@ public partial class LoginWindow : Window
     private int _currentUserId;
     private DispatcherTimer? _countdownTimer;
     private int _remainingSeconds = 600; // 10 minutos
+    
+    // Variable para permitir cierre solo cuando se completa login
+    private bool _allowClose = false;
 
     public LoginWindow()
     {
@@ -396,9 +400,30 @@ public partial class LoginWindow : Window
 
     private void OpenMainWindow()
     {
+        // Permitir cerrar esta ventana ya que el login fue exitoso
+        _allowClose = true;
+        
         var mainWindow = new MainWindow(_authService, _apiService, _configService);
         mainWindow.Show();
         this.Close();
+    }
+
+    /// <summary>
+    /// Prevenir cierre de la ventana excepto cuando el login es exitoso
+    /// </summary>
+    private void Window_Closing(object sender, CancelEventArgs e)
+    {
+        // Solo permitir cerrar si se completó el login exitosamente
+        if (!_allowClose)
+        {
+            e.Cancel = true;
+            MessageBox.Show(
+                "⚠️ No puedes cerrar esta ventana.\n\n" +
+                "Debes iniciar sesión para usar esta computadora.",
+                "Acceso Restringido",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 
     protected override void OnClosed(EventArgs e)

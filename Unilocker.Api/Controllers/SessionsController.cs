@@ -181,6 +181,56 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
+    /// Forzar cierre de todas las sesiones activas de un usuario
+    /// </summary>
+    [HttpPost("user/{userId}/force-close")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ForceCloseUserSessions(int userId)
+    {
+        try
+        {
+            _logger.LogInformation("Forzando cierre de sesiones activas para UserId: {UserId}", userId);
+
+            // Buscar todas las sesiones activas del usuario
+            var activeSessions = await _context.Sessions
+                .Where(s => s.UserId == userId && s.IsActive)
+                .ToListAsync();
+
+            if (!activeSessions.Any())
+            {
+                return Ok(new { message = "No hay sesiones activas para cerrar", closedCount = 0 });
+            }
+
+            // Cerrar todas las sesiones activas
+            foreach (var session in activeSessions)
+            {
+                session.EndDateTime = DateTime.Now;
+                session.IsActive = false;
+                session.EndMethod = "Forced";
+                session.UpdatedAt = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Se cerraron {Count} sesiones activas del usuario {UserId}", 
+                activeSessions.Count, userId);
+
+            return Ok(new
+            {
+                message = "Sesiones cerradas exitosamente",
+                closedCount = activeSessions.Count,
+                sessionIds = activeSessions.Select(s => s.Id).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al forzar cierre de sesiones para UserId: {UserId}", userId);
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Obtener sesión por ID
     /// </summary>
     [HttpGet("{id}")]
