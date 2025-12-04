@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>UniLocker - Auditoría</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="css/styles.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Contenido principal -->
+    <div class="flex-grow-1 d-flex flex-column min-vh-100">
+        <header class="border-bottom bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm d-md-none" id="sidebarToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 small">
+                        <li class="breadcrumb-item"><a href="dashboard.html">Inicio</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Auditoría</li>
+                    </ol>
+                </nav>
+            </div>
+            <div>
+                <span class="small text-muted d-none d-sm-inline">UniLocker Auditoría</span>
+            </div>
+        </header>
+
+        <main class="flex-grow-1 p-3" id="pageContent">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3><i class="fa-solid fa-shield-halved me-2"></i>Auditoría</h3>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <form id="auditFilterForm" class="row g-2">
+                        <div class="col-md-3">
+                            <label for="filterUser" class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="filterUser" placeholder="Nombre de usuario">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterAction" class="form-label">Acción</label>
+                            <input type="text" class="form-control" id="filterAction" placeholder="Create, Update, Delete...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterTable" class="form-label">Tabla afectada</label>
+                            <input type="text" class="form-control" id="filterTable" placeholder="Ej: Users, Reports...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterFrom" class="form-label">Desde</label>
+                            <input type="date" class="form-control" id="filterFrom">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterTo" class="form-label">Hasta</label>
+                            <input type="date" class="form-control" id="filterTo">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnAuditClear">
+                                Limpiar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Tabla</th>
+                                    <th>Id registro</th>
+                                    <th>IP</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+                        <div id="auditSummary" class="small text-muted">
+                            Mostrando 0 registros
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="auditPagination">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-dark text-center text-light py-2 small mt-auto">
+            <span>2025 UniLocker - Univalle para toda la vida</span>
+        </footer>
+    </div>
+</div>
+
+<!-- Toast global -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="mainToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="mainToastBody">Mensaje.</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal confirmación global -->
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-labelledby="globalConfirmTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="globalConfirmTitle">Confirmar acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p id="globalConfirmMessage">¿Seguro que deseas continuar?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="globalConfirmCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="globalConfirmOk">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loader global -->
+<div id="globalLoader" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background-color: rgba(0,0,0,0.35); z-index: 2000;">
+    <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-light mb-2" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <div class="loader-message">Cargando...</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+  import { initUI } from './js/ui.js';
+  import './js/auth.js';
+  import './js/audit.js';
+
+  const CURRENT_PAGE = 'audit';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const placeholder = document.getElementById('sidebar-placeholder');
+    if (!placeholder) return; // si esto se dispara, el id no coincide
+
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        placeholder.outerHTML = html;
+
+        const link = document.querySelector(`#sidebar a[data-page="${CURRENT_PAGE}"]`);
+        if (link) {
+          link.classList.add('active', 'bg-primary');
+        }
+
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+          document.getElementById('sidebar')?.classList.toggle('d-none');
+        });
+
+        initUI('Gestión', 'Roles');
+      })
+      .catch(console.error);
+  });
+</script>
+
+</body>
+</html>
