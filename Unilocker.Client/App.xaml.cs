@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using Unilocker.Client.Helpers;
 using Unilocker.Client.Services;
 using Unilocker.Client.Views;
 
@@ -21,12 +22,11 @@ public partial class App : Application
 
             // Después del registro, cerrar la aplicación
             // El usuario debe ejecutar nuevamente para hacer login
-            MessageBox.Show(
+            ModernDialog.Show(
                 "Equipo registrado exitosamente.\n\n" +
                 "Por favor, ejecuta la aplicación nuevamente para iniciar sesión.",
                 "Registro Completado",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                ModernDialog.DialogType.Success);
 
             Shutdown();
             return;

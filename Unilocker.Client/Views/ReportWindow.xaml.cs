@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using Unilocker.Client.Helpers;
 using Unilocker.Client.Services;
 
 namespace Unilocker.Client.Views;
@@ -29,13 +30,12 @@ public partial class ReportWindow : Window
             if (!_reportSubmitted && !_skipPressed)
             {
                 e.Cancel = true;
-                MessageBox.Show(
+                ModernDialog.Show(
                     "Por favor, elige una opción:\n\n" +
                     "- Enviar Reporte si tuviste problemas\n" +
                     "- Cerrar Sin Reportar si todo funcionó bien",
                     "Acción Requerida",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    ModernDialog.DialogType.Information);
             }
         };
     }
@@ -104,11 +104,10 @@ public partial class ReportWindow : Window
             if (success)
             {
                 _reportSubmitted = true;
-                MessageBox.Show(
+                ModernDialog.Show(
                     "✓ Reporte enviado exitosamente.\n\nGracias por reportar el problema. El equipo técnico lo revisará pronto.",
                     "Reporte Enviado",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    ModernDialog.DialogType.Success);
                 this.Close();
             }
             else
@@ -128,14 +127,13 @@ public partial class ReportWindow : Window
 
     private void BtnSkip_Click(object sender, RoutedEventArgs e)
     {
-        var result = MessageBox.Show(
+        var result = ModernDialog.ShowConfirm(
             "¿Estás seguro de que deseas cerrar sin reportar?\n\n" +
             "Si tuviste algún problema técnico, es importante reportarlo para mejorar el servicio.",
             "Confirmar",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
+            ModernDialog.DialogType.Question);
 
-        if (result == MessageBoxResult.Yes)
+        if (result)
         {
             _skipPressed = true;
             _reportSubmitted = false;

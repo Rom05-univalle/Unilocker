@@ -2,6 +2,7 @@
 using System;
 using System.Windows;
 using System.Windows.Threading;
+using Unilocker.Client.Helpers;
 using Unilocker.Client.Models;
 using Unilocker.Client.Services;
 using Unilocker.Client.Views;
@@ -49,8 +50,10 @@ public partial class MainWindow : Window
             string? token = _configService.GetStoredToken();
             if (string.IsNullOrEmpty(token))
             {
-                MessageBox.Show("No se encontró token de autenticación. Por favor, inicia sesión nuevamente.",
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernDialog.Show(
+                    "No se encontró token de autenticación. Por favor, inicia sesión nuevamente.",
+                    "Error",
+                    ModernDialog.DialogType.Error);
                 Application.Current.Shutdown();
                 return;
             }
@@ -69,15 +72,14 @@ public partial class MainWindow : Window
             }
             catch (Exception ex) when (ex.Message.Contains("409") || ex.Message.Contains("Conflict"))
             {
-                var result = MessageBox.Show(
+                var result = ModernDialog.ShowConfirm(
                     "Ya tienes una sesión activa en el sistema.\n\n" +
                     "Esto puede ocurrir si cerraste la aplicación sin cerrar sesión correctamente.\n\n" +
                     "¿Deseas cerrar tu sesión anterior y abrir una nueva?",
                     "Sesión Activa Detectada",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
+                    ModernDialog.DialogType.Warning);
 
-                if (result == MessageBoxResult.Yes)
+                if (result)
                 {
                     // Forzar cierre de sesiones activas del usuario
                     bool closed = await _apiService.ForceCloseUserSessionsAsync(userId);
@@ -91,22 +93,20 @@ public partial class MainWindow : Window
                         }
                         catch (Exception retryEx)
                         {
-                            MessageBox.Show(
+                            ModernDialog.Show(
                                 $"Error al iniciar nueva sesión:\n\n{retryEx.Message}\n\nLa aplicación se cerrará.",
                                 "Error",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
+                                ModernDialog.DialogType.Error);
                             Application.Current.Shutdown();
                             return;
                         }
                     }
                     else
                     {
-                        MessageBox.Show(
+                        ModernDialog.Show(
                             "No se pudo cerrar la sesión anterior.\n\nContacta al administrador del sistema.",
                             "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
+                            ModernDialog.DialogType.Error);
                         Application.Current.Shutdown();
                         return;
                     }
@@ -134,24 +134,22 @@ public partial class MainWindow : Window
             // Actualizar último heartbeat
             UpdateLastHeartbeatDisplay();
 
-            MessageBox.Show(
+            ModernDialog.Show(
                 $"✓ Sesión iniciada correctamente\n\n" +
                 $"Usuario: {session.UserFullName}\n" +
                 $"Computadora: {session.ComputerName}\n" +
                 $"Aula: {session.ClassroomName}\n\n" +
                 $"El sistema está monitoreando tu sesión.",
                 "Sesión Iniciada",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                ModernDialog.DialogType.Success);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            ModernDialog.Show(
                 $"Error al iniciar sesión:\n\n{ex.Message}\n\n" +
                 "La aplicación se cerrará.",
                 "Error Crítico",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                ModernDialog.DialogType.Error);
             Application.Current.Shutdown();
         }
     }
@@ -209,13 +207,12 @@ public partial class MainWindow : Window
 
     private async void BtnLogout_Click(object sender, RoutedEventArgs e)
     {
-        var result = MessageBox.Show(
+        var result = ModernDialog.ShowConfirm(
             "¿Estás seguro de que deseas cerrar tu sesión?",
             "Confirmar Cierre de Sesión",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
+            ModernDialog.DialogType.Question);
 
-        if (result == MessageBoxResult.Yes)
+        if (result)
         {
             _isLoggingOut = true;
             ShowReportWindowAndEndSession("Normal");
@@ -236,13 +233,12 @@ public partial class MainWindow : Window
         // Solo se puede cerrar mediante el botón "Cerrar Sesión"
         e.Cancel = true;
 
-        MessageBox.Show(
+        ModernDialog.Show(
             "⛔ NO PUEDES CERRAR ESTA VENTANA\n\n" +
             "Esta computadora está en modo de laboratorio.\n\n" +
             "Para cerrar tu sesión, usa el botón 'Cerrar Sesión' en la parte inferior.",
             "Acceso Restringido",
-            MessageBoxButton.OK,
-            MessageBoxImage.Stop);
+            ModernDialog.DialogType.Warning);
     }
 
     private async void ShowReportWindowAndEndSession(string endMethod)
@@ -262,11 +258,10 @@ public partial class MainWindow : Window
                 // Finalizar sesión
                 await _sessionService.EndSessionAsync(endMethod);
 
-                MessageBox.Show(
+                ModernDialog.Show(
                     "✓ Sesión finalizada correctamente.\n\nGracias por usar Unilocker.",
                     "Sesión Finalizada",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    ModernDialog.DialogType.Success);
             }
 
             // IMPORTANTE: Limpiar token para que el siguiente usuario tenga que hacer login
@@ -280,12 +275,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            ModernDialog.Show(
                 $"Error al finalizar sesión:\n\n{ex.Message}\n\n" +
                 "La sesión se cerrará de todas formas.",
                 "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                ModernDialog.DialogType.Error);
 
             // Limpiar token incluso si hay error
             _configService.ClearToken();
@@ -340,7 +334,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void BtnUnregister_Click(object sender, RoutedEventArgs e)
     {
-        var result = MessageBox.Show(
+        var result = ModernDialog.ShowConfirm(
             "⚠️ ADVERTENCIA: DESREGISTRO DE COMPUTADORA ⚠️\n\n" +
             "Esta acción eliminará permanentemente:\n" +
             "• El registro de esta computadora en el sistema\n" +
@@ -349,31 +343,28 @@ public partial class MainWindow : Window
             "Deberá volver a registrar esta computadora desde cero.\n\n" +
             "¿Está completamente seguro que desea continuar?",
             "Confirmar Desregistro de Computadora",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
+            ModernDialog.DialogType.Warning);
 
-        if (result == MessageBoxResult.Yes)
+        if (result)
         {
             // Confirmar nuevamente
-            var confirmResult = MessageBox.Show(
+            var confirmResult = ModernDialog.ShowConfirm(
                 "Esta es su última oportunidad para cancelar.\n\n" +
                 "¿Realmente desea desregistrar esta computadora?",
                 "Confirmación Final",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Stop);
+                ModernDialog.DialogType.Error);
 
-            if (confirmResult == MessageBoxResult.Yes)
+            if (confirmResult)
             {
                 if (_configService.UnregisterComputer())
                 {
-                    MessageBox.Show(
+                    ModernDialog.Show(
                         "✓ Computadora desregistrada exitosamente.\n\n" +
                         "Todos los archivos de configuración han sido eliminados.\n\n" +
                         "La aplicación se cerrará ahora.\n\n" +
                         "Deberá ejecutar el proceso de registro nuevamente.",
                         "Desregistro Exitoso",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                        ModernDialog.DialogType.Success);
 
                     // Detener timers
                     _durationTimer?.Stop();
@@ -385,13 +376,12 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    MessageBox.Show(
+                    ModernDialog.Show(
                         "❌ Error al desregistrar la computadora.\n\n" +
                         "No se pudieron eliminar algunos archivos de configuración.\n\n" +
                         "Por favor, contacte al administrador del sistema.",
                         "Error de Desregistro",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                        ModernDialog.DialogType.Error);
                 }
             }
         }
