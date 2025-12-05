@@ -168,10 +168,42 @@ public class UsersController : ControllerBase
         {
             _logger.LogInformation("UpdateUser - ID: {Id}, Payload: {Payload}", id, dto.ToString());
 
-            var existingUser = await _context.Users.FindAsync(id);
+            var existingUser = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (existingUser == null)
             {
                 return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            // Obtener el usuario autenticado
+            var currentUserIdClaim = User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(currentUserIdClaim) || !int.TryParse(currentUserIdClaim, out int currentUserId))
+            {
+                return Unauthorized(new { message = "No se pudo identificar al usuario actual" });
+            }
+
+            // Validación adicional: Si se intenta cambiar el rol de un Admin, validar
+            if (dto.TryGetProperty("roleId", out var roleEl))
+            {
+                var newRoleId = roleEl.GetInt32();
+                if (existingUser.Role != null && existingUser.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Verificar si el nuevo rol es diferente al actual
+                    if (newRoleId != existingUser.RoleId)
+                    {
+                        // Contar cuántos admins hay actualmente
+                        var adminCount = await _context.Users
+                            .Include(u => u.Role)
+                            .CountAsync(u => u.Role != null && u.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+
+                        if (adminCount <= 1)
+                        {
+                            return BadRequest(new { message = "No puedes cambiar el rol del único administrador del sistema" });
+                        }
+                    }
+                }
             }
 
             if (dto.TryGetProperty("username", out var usernameEl) && usernameEl.ValueKind == System.Text.Json.JsonValueKind.String)
@@ -190,9 +222,9 @@ public class UsersController : ControllerBase
             {
                 existingUser.LastName = lastNameEl.GetString() ?? existingUser.LastName;
             }
-            if (dto.TryGetProperty("roleId", out var roleEl))
+            if (dto.TryGetProperty("roleId", out var roleIdEl))
             {
-                existingUser.RoleId = roleEl.GetInt32();
+                existingUser.RoleId = roleIdEl.GetInt32();
             }
             if (dto.TryGetProperty("status", out var statusEl))
             {
@@ -211,7 +243,7 @@ public class UsersController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Usuario actualizado exitosamente: {UserId}", id);
+            _logger.LogInformation("Usuario actualizado exitosamente: {UserId} por usuario {CurrentUserId}", id, currentUserId);
             return Ok(new
             {
                 existingUser.Id,
@@ -236,15 +268,47 @@ public class UsersController : ControllerBase
     {
         try
         {
-            var user = await _context.Users.FindAsync(id);
+            // Obtener el usuario autenticado
+            var currentUserIdClaim = User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(currentUserIdClaim) || !int.TryParse(currentUserIdClaim, out int currentUserId))
+            {
+                return Unauthorized(new { message = "No se pudo identificar al usuario actual" });
+            }
+
+            // Validación 1: No permitir eliminar el propio usuario
+            if (currentUserId == id)
+            {
+                return BadRequest(new { message = "No puedes eliminar tu propia cuenta" });
+            }
+
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (user == null)
             {
                 return NotFound(new { message = "Usuario no encontrado" });
             }
 
+            // Validación 2: Verificar si el usuario tiene sesión activa
+            var hasActiveSession = await _context.Sessions
+                .AnyAsync(s => s.UserId == id && s.IsActive == true);
+
+            if (hasActiveSession)
+            {
+                return BadRequest(new { message = "No puedes eliminar un usuario con sesión activa. Debe cerrar sesión primero" });
+            }
+
+            // Validación 3: No permitir eliminar administradores
+            if (user.Role != null && user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "No puedes eliminar usuarios con rol de Administrador" });
+            }
+
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Usuario eliminado: {UserId} por usuario {CurrentUserId}", id, currentUserId);
             return Ok(new { message = "Usuario eliminado correctamente" });
         }
         catch (Exception ex)

@@ -12,7 +12,6 @@ function renderBranches(rows) {
     rows.forEach(branch => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${branch.id}</td>
             <td>${branch.name}</td>
             <td>${branch.code ?? ''}</td>
             <td>${branch.address ?? ''}</td>
@@ -167,7 +166,7 @@ async function saveBranch(e) {
 }
 
 async function deleteBranch(id) {
-    const ok = await showConfirm('¿Seguro que deseas eliminar esta sucursal?');
+    const ok = await showConfirm('¿Seguro que deseas eliminar esta sucursal? (Se eliminaran todos los registros relacionados)');
     if (!ok) return;
 
     showLoading('Eliminando sucursal...');

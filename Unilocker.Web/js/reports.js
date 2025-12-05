@@ -3,6 +3,13 @@ import { showLoading, hideLoading, showToast, showError } from './ui.js';
 
 let reportsCache = [];
 
+function formatDateTime(isoString) {
+    if (!isoString) return '-';
+    const d = new Date(isoString);
+    if (isNaN(d)) return '-';
+    return d.toLocaleString();
+}
+
 function renderReports(items) {
     const tbody = document.getElementById('reportsTableBody');
     if (!tbody) return;
@@ -11,8 +18,7 @@ function renderReports(items) {
     items.forEach(r => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${r.id}</td>
-            <td>${r.date ?? '-'}</td>
+            <td>${formatDateTime(r.date)}</td>
             <td>${r.userName ?? '-'}</td>
             <td>${r.computerName ?? '-'}</td>
             <td>${r.problemTypeName ?? '-'}</td>

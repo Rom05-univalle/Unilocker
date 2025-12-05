@@ -15,7 +15,6 @@ function renderProblemTypes(items) {
         const statusBadge = p.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${p.id}</td>
             <td>${p.name}</td>
             <td>
                 <span class="badge ${p.status ? 'bg-success' : 'bg-secondary'}">

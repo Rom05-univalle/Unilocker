@@ -34,14 +34,31 @@
         </header>
 
         <main class="flex-grow-1 p-3" id="pageContent">
-            <!-- Aquí va tu tabla/listado de sesiones existente -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3><i class="fa-solid fa-clock me-2"></i>Sesiones</h3>
+            </div>
+
+            <!-- Filtro por usuario -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-4">
+                            <label for="filterUser" class="form-label">Filtrar por usuario</label>
+                            <select id="filterUser" class="form-select">
+                                <option value="">Todos los usuarios</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de sesiones -->
             <div class="card shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover mb-0">
                             <thead class="table-light">
                             <tr>
-                                <th>ID</th>
                                 <th>Usuario</th>
                                 <th>Computadora</th>
                                 <th>Inicio</th>

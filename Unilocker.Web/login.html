@@ -45,10 +45,7 @@ if (isAuthenticated()) window.location.href = "dashboard.html";
                            inputmode="numeric" pattern="\d{6}" required />
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small id="timerText" class="text-muted">
-                        El código expira en <span id="timerValue">60</span>s
-                    </small>
+                <div class="d-flex justify-content-end align-items-center mb-2">
                     <button type="button" class="btn btn-link p-0" id="btnResend" disabled>
                         Reenviar código
                     </button>

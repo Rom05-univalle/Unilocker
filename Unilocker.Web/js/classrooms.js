@@ -14,7 +14,6 @@ function renderClassrooms(items) {
     items.forEach(c => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${c.id}</td>
             <td>${c.name}</td>
             <td>${c.blockName ?? ''}</td>
             <td>${c.branchName ?? ''}</td>
@@ -209,6 +208,12 @@ async function saveClassroom(e) {
 
     if (!name) {
         showError('El nombre del aula es obligatorio.');
+        return;
+    }
+
+    // Validar capacidad máxima
+    if (capacity !== null && capacity > 100) {
+        showError('La capacidad no puede ser mayor a 100.');
         return;
     }
 

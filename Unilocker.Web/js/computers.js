@@ -14,7 +14,6 @@ function renderComputers(items) {
         const statusBadge = pc.status ? 'Activa' : 'Inactiva';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${pc.id}</td>
             <td>${pc.branchName ?? ''}</td>
             <td>${pc.blockName ?? ''}</td>
             <td>${pc.classroomName ?? ''}</td>
@@ -49,14 +48,26 @@ function applyFilter() {
 async function loadComputers() {
     showLoading('Cargando computadoras...');
     try {
+        // Cargar computadoras
         const resp = await authFetch('/api/computers');
         const data = await resp.json();
+
+        // Cargar sesiones activas
+        const respSessions = await authFetch('/api/sessions');
+        const dataSessions = await respSessions.json();
+
+        // Crear un Set con los IDs de computadoras que tienen sesiones activas
+        const activeComputerIds = new Set(
+            dataSessions
+                .filter(s => s.isActive === true)
+                .map(s => s.computerId)
+        );
 
         computersCache = data.map(c => ({
             id: c.id,
             name: c.name,
             uuid: c.uuid,
-            status: c.status === true || c.status === 1,
+            status: activeComputerIds.has(c.id), // Estado basado en si tiene sesión activa
             classroomId: c.classroomId,
             classroomName: c.classroomName,
             blockId: c.blockId,

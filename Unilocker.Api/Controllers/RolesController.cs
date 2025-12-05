@@ -118,6 +118,13 @@ public class RolesController : ControllerBase
                 return NotFound(new { message = "Rol no encontrado" });
             }
 
+            // Validación: No permitir cambiar el nombre del rol Admin
+            if (existingRole.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase) && 
+                !role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "No puedes cambiar el nombre del rol Administrador" });
+            }
+
             existingRole.Name = role.Name;
             existingRole.Description = role.Description;
             existingRole.Status = role.Status;
@@ -125,6 +132,7 @@ public class RolesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Rol actualizado: {RoleId}", id);
             return Ok(existingRole);
         }
         catch (Exception ex)
@@ -146,10 +154,26 @@ public class RolesController : ControllerBase
                 return NotFound(new { message = "Rol no encontrado" });
             }
 
+            // Validación 1: No permitir eliminar el rol Admin
+            if (role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "No puedes eliminar el rol de Administrador" });
+            }
+
+            // Eliminar todos los usuarios con este rol (eliminación en cascada)
+            var usersWithRole = await _context.Users.Where(u => u.RoleId == id).ToListAsync();
+            if (usersWithRole.Any())
+            {
+                _logger.LogInformation("Eliminando {Count} usuarios asociados al rol {RoleId}", usersWithRole.Count, id);
+                _context.Users.RemoveRange(usersWithRole);
+            }
+
+            // Eliminar el rol
             _context.Roles.Remove(role);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Rol eliminado correctamente" });
+            _logger.LogInformation("Rol eliminado: {RoleId}, Usuarios eliminados: {UserCount}", id, usersWithRole.Count);
+            return Ok(new { message = "Rol eliminado correctamente", usersDeleted = usersWithRole.Count });
         }
         catch (Exception ex)
         {

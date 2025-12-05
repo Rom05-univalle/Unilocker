@@ -18,6 +18,34 @@ export function logout() {
 }
 
 /**
+ * Decodifica el JWT y retorna los datos del usuario actual
+ * @returns {object|null} { userId, roleId, roleName, username, fullName } o null si no hay token
+ */
+export function getCurrentUser() {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    // Decodificar la parte del payload (parte 2 del JWT)
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const payload = JSON.parse(atob(parts[1]));
+    
+    return {
+      userId: parseInt(payload.userId || 0, 10),
+      roleId: parseInt(payload.roleId || 0, 10),
+      roleName: payload.roleName || '',
+      username: payload.sub || '',
+      fullName: payload.fullName || ''
+    };
+  } catch (err) {
+    console.error('Error decodificando JWT:', err);
+    return null;
+  }
+}
+
+/**
  * Paso 1: intenta login con usuario/contraseña.
  * Si la API responde { requiresVerification: true, userId } no se guarda token todavía.
  * Si responde { token, ... } se guarda token y se redirige.
@@ -30,7 +58,17 @@ export async function startLogin(username, password) {
   });
 
   if (!resp.ok) {
-    throw new Error("Usuario o contraseña incorrectos");
+    // Intentar leer el mensaje específico del backend
+    let errorMessage = "Usuario o contraseña incorrectos";
+    try {
+      const errorData = await resp.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (e) {
+      // Si no se puede parsear el JSON, usar el mensaje por defecto
+    }
+    throw new Error(errorMessage);
   }
 
   const data = await resp.json();

@@ -1,5 +1,6 @@
 import { authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError, showConfirm } from './ui.js';
+import { getCurrentUser } from './auth.js';
 
 let userModal;
 let usersCache = [];
@@ -16,7 +17,6 @@ function renderUsers(items) {
         const statusBadge = u.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${u.id}</td>
             <td>${u.username}</td>
             <td>${u.email}</td>
             <td>${u.roleName ?? ''}</td>
@@ -43,16 +43,28 @@ function renderUsers(items) {
 async function loadUsers() {
     showLoading('Cargando usuarios...');
     try {
-        const resp = await authFetch('/api/users');
-        const data = await resp.json();
+        // Cargar usuarios
+        const respUsers = await authFetch('/api/users');
+        const dataUsers = await respUsers.json();
 
-        usersCache = data.map(u => ({
+        // Cargar sesiones activas
+        const respSessions = await authFetch('/api/sessions');
+        const dataSessions = await respSessions.json();
+
+        // Crear un Set con los IDs de usuarios que tienen sesiones activas
+        const activeUserIds = new Set(
+            dataSessions
+                .filter(s => s.isActive === true)
+                .map(s => s.userId)
+        );
+
+        usersCache = dataUsers.map(u => ({
             id: u.id,
             username: u.username,
             firstName: u.firstName,
             lastName: u.lastName,
             email: u.email,
-            status: u.status === true || u.status === 1,
+            status: activeUserIds.has(u.id), // Estado basado en si tiene sesión activa
             roleId: u.roleId,
             roleName: u.roleName
         }));
@@ -244,6 +256,38 @@ async function saveUser(e) {
 // ELIMINAR (BORRADO DEFINITIVO)
 
 async function deleteUser(id) {
+    // Obtener información del usuario actual
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        showError('No se pudo obtener información del usuario actual.');
+        return;
+    }
+
+    // Validación 1: No permitir eliminar el propio usuario
+    if (currentUser.userId === id) {
+        showError('No puedes eliminar tu propia cuenta.');
+        return;
+    }
+
+    // Buscar el usuario a eliminar en la caché
+    const userToDelete = usersCache.find(u => u.id === id);
+    if (!userToDelete) {
+        showError('Usuario no encontrado.');
+        return;
+    }
+
+    // Validación 2: No permitir eliminar usuarios con sesión activa
+    if (userToDelete.status === true) {
+        showError('No puedes eliminar un usuario con sesión activa. Debe cerrar sesión primero.');
+        return;
+    }
+
+    // Validación 3: No permitir eliminar administradores (rol Admin)
+    if (userToDelete.roleName && userToDelete.roleName.toLowerCase() === 'admin') {
+        showError('No puedes eliminar usuarios con rol de Administrador.');
+        return;
+    }
+
     const ok = await showConfirm('¿Seguro que quieres eliminar este usuario? Esta acción no se puede deshacer.');
     if (!ok) return;
 

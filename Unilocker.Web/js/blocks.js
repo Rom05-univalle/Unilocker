@@ -13,7 +13,6 @@ function renderBlocks(rows) {
     rows.forEach(block => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${block.id}</td>
             <td>${block.name}</td>
             <td>${block.branchName ?? ''}</td>
             <td>

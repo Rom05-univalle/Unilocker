@@ -113,6 +113,10 @@ public class ClassroomsController : ControllerBase
             {
                 return BadRequest(new { message = "El nombre es obligatorio" });
             }
+            if (capacity.HasValue && capacity.Value > 100)
+            {
+                return BadRequest(new { message = "La capacidad no puede ser mayor a 100" });
+            }
             if (blockId == 0)
             {
                 return BadRequest(new { message = "BlockId es obligatorio" });
@@ -160,7 +164,12 @@ public class ClassroomsController : ControllerBase
             }
             if (dto.TryGetProperty("capacity", out var capacityEl))
             {
-                existingClassroom.Capacity = capacityEl.ValueKind != System.Text.Json.JsonValueKind.Null ? capacityEl.GetInt32() : null;
+                var newCapacity = capacityEl.ValueKind != System.Text.Json.JsonValueKind.Null ? capacityEl.GetInt32() : (int?)null;
+                if (newCapacity.HasValue && newCapacity.Value > 100)
+                {
+                    return BadRequest(new { message = "La capacidad no puede ser mayor a 100" });
+                }
+                existingClassroom.Capacity = newCapacity;
             }
             if (dto.TryGetProperty("blockId", out var blockEl))
             {

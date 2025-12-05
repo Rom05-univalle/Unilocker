@@ -2,6 +2,14 @@
 import { showLoading, hideLoading, showToast, showError, showConfirm } from './ui.js';
 
 let sessionsCache = [];
+let usersOptions = [];
+
+function formatDateTime(isoString) {
+    if (!isoString) return '-';
+    const d = new Date(isoString);
+    if (isNaN(d)) return '-';
+    return d.toLocaleString();
+}
 
 function renderSessions(items) {
     const tbody = document.getElementById('sessionsTableBody');
@@ -15,14 +23,54 @@ function renderSessions(items) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${s.id}</td>
             <td>${s.userName ?? '-'}</td>
             <td>${s.computerName ?? '-'}</td>
-            <td>${s.startTime ?? '-'}</td>
-            <td>${s.endTime ?? '-'}</td>
+            <td>${formatDateTime(s.startTime)}</td>
+            <td>${formatDateTime(s.endTime)}</td>
             <td>${statusBadge}</td>
         `;
         tbody.appendChild(tr);
+    });
+}
+
+function applyFilter() {
+    const filterUser = document.getElementById('filterUser');
+    const userId = filterUser ? parseInt(filterUser.value || '0', 10) : 0;
+
+    let filtered = [...sessionsCache];
+    if (userId > 0) {
+        filtered = filtered.filter(s => s.userId === userId);
+    }
+    renderSessions(filtered);
+}
+
+async function loadUsers() {
+    try {
+        const resp = await authFetch('/api/users');
+        const data = await resp.json();
+
+        usersOptions = data.map(u => ({
+            id: u.id,
+            username: u.username,
+            fullName: `${u.firstName || ''} ${u.lastName || ''}`.trim()
+        }));
+
+        populateUserFilter();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function populateUserFilter() {
+    const filterUser = document.getElementById('filterUser');
+    if (!filterUser) return;
+
+    filterUser.innerHTML = '<option value="">Todos los usuarios</option>';
+    usersOptions.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = `${u.username} - ${u.fullName || u.username}`;
+        filterUser.appendChild(opt);
     });
 }
 
@@ -36,7 +84,7 @@ export async function loadRecords() {
         }
         const data = await res.json();
         sessionsCache = data;
-        renderSessions(data);
+        applyFilter();
     } catch (err) {
         console.error(err);
         showError(err);
@@ -73,6 +121,11 @@ function askCloseSession(id) {
 }
 
 function setupEvents() {
+    const filterUser = document.getElementById('filterUser');
+    if (filterUser) {
+        filterUser.addEventListener('change', applyFilter);
+    }
+
     const tbody = document.getElementById('sessionsTableBody');
     if (!tbody) return;
 
@@ -90,6 +143,7 @@ function setupEvents() {
 
 async function init() {
     setupEvents();
+    await loadUsers();
     await loadRecords();
 }
 

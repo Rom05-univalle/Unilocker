@@ -15,7 +15,6 @@ function renderRoles(items) {
         const statusBadge = r.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${r.id}</td>
             <td>${r.name}</td>
             <td>${r.description ?? ''}</td>
             <td>
@@ -160,7 +159,20 @@ async function saveRole(e) {
 // ELIMINAR (borrado lógico según backend)
 
 async function deleteRole(id) {
-    const ok = await showConfirm('¿Seguro que quieres eliminar este rol?');
+    // Buscar el rol a eliminar en la caché
+    const roleToDelete = rolesCache.find(r => r.id === id);
+    if (!roleToDelete) {
+        showError('Rol no encontrado.');
+        return;
+    }
+
+    // Validación: No permitir eliminar el rol Admin
+    if (roleToDelete.name && roleToDelete.name.toLowerCase() === 'admin') {
+        showError('No puedes eliminar el rol de Administrador.');
+        return;
+    }
+
+    const ok = await showConfirm('¿Seguro que quieres eliminar este rol? (También se eliminarán todos los usuarios con este rol)');
     if (!ok) return;
 
     showLoading('Eliminando rol...');

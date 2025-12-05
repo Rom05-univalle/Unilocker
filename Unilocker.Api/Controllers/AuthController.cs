@@ -57,6 +57,8 @@ public class AuthController : ControllerBase
             }
 
             _logger.LogInformation("✅ Usuario encontrado: {Username} (ID: {Id})", user.Username, user.Id);
+            _logger.LogInformation("📋 RoleId del usuario: {RoleId}", user.RoleId);
+            _logger.LogInformation("📋 Role cargado: {RoleLoaded}, Nombre: {RoleName}", user.Role != null, user.Role?.Name ?? "NULL");
 
             // 2. Verificar si el usuario está bloqueado
             if (user.IsBlocked == true)
@@ -106,7 +108,26 @@ public class AuthController : ControllerBase
 
             _logger.LogInformation("✅ Contraseña válida");
 
-            // 5. Verificar si tiene email configurado
+            // 5. Verificar si el usuario tiene rol de Administrador (solo Admin puede acceder a la web)
+            _logger.LogInformation("🔍 Verificando rol del usuario...");
+            _logger.LogInformation("📋 user.Role es null: {IsNull}", user.Role == null);
+            
+            if (user.Role != null)
+            {
+                _logger.LogInformation("📋 Nombre del rol: '{RoleName}'", user.Role.Name);
+                _logger.LogInformation("📋 Comparación con 'Admin': {IsAdmin}", user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (user.Role == null || !user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}, RoleId: {RoleId}", 
+                    user.Role?.Name ?? "Sin rol", user.RoleId);
+                return StatusCode(403, new { message = "Acceso denegado. Solo usuarios con rol de Administrador pueden acceder a la plataforma web." });
+            }
+
+            _logger.LogInformation("✅ Usuario tiene rol de Administrador");
+
+            // 6. Verificar si tiene email configurado
             if (string.IsNullOrEmpty(user.Email))
             {
                 _logger.LogWarning("⚠️ Usuario sin email - Login sin 2FA (fallback)");
@@ -132,13 +153,13 @@ public class AuthController : ControllerBase
                 });
             }
 
-            // 6. Generar código de verificación 2FA
+            // 7. Generar código de verificación 2FA
             var code = _verificationCodeService.GenerateCode();
             _verificationCodeService.SaveCode(user.Id, code);
 
             _logger.LogInformation("🔑 Código 2FA generado: {Code} (UserId: {UserId})", code, user.Id);
 
-            // 7. Enviar código por email
+            // 8. Enviar código por email
             var emailSent = await _emailService.SendVerificationCodeAsync(user.Email, code);
 
             if (!emailSent)
@@ -168,7 +189,7 @@ public class AuthController : ControllerBase
 
             _logger.LogInformation("✅ Código 2FA enviado a: {Email}", user.Email);
 
-            // 8. Retornar respuesta indicando que se requiere verificación
+            // 9. Retornar respuesta indicando que se requiere verificación
             var maskedEmail = _emailService.MaskEmail(user.Email);
 
             return Ok(new LoginResponse
@@ -225,18 +246,25 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Usuario no encontrado" });
             }
 
-            // 3. Generar token JWT
+            // 3. Verificar que el usuario tenga rol de Administrador
+            if (user.Role == null || !user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}", user.Role?.Name ?? "Sin rol");
+                return StatusCode(403, new { message = "Acceso denegado. Solo usuarios con rol de Administrador pueden acceder a la plataforma web." });
+            }
+
+            // 4. Generar token JWT
             var token = _jwtService.GenerateToken(user);
             var expiresAt = _jwtService.GetTokenExpirationTime();
 
-            // 4. Actualizar información del usuario
+            // 5. Actualizar información del usuario
             user.LastAccess = DateTime.Now;
             user.FailedLoginAttempts = 0;
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("✅ LOGIN 2FA EXITOSO - Usuario: {Username}", user.Username);
 
-            // 5. Retornar respuesta completa con token
+            // 6. Retornar respuesta completa con token
             var response = new LoginResponse
             {
                 Token = token,
