@@ -12,6 +12,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Registrar IHttpContextAccessor para auditoría
+builder.Services.AddHttpContextAccessor();
+
 // Configurar DbContext con SQL Server
 builder.Services.AddDbContext<UnilockerDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

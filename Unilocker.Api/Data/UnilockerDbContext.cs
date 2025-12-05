@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Models;
+using Unilocker.Api.Services;
 
 namespace Unilocker.Api.Data;
 
 public partial class UnilockerDbContext : DbContext
 {
+    private readonly IHttpContextAccessor? _httpContextAccessor;
+
     public UnilockerDbContext()
     {
     }
@@ -14,6 +17,14 @@ public partial class UnilockerDbContext : DbContext
     public UnilockerDbContext(DbContextOptions<UnilockerDbContext> options)
         : base(options)
     {
+    }
+
+    public UnilockerDbContext(
+        DbContextOptions<UnilockerDbContext> options,
+        IHttpContextAccessor httpContextAccessor)
+        : base(options)
+    {
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
@@ -35,6 +46,45 @@ public partial class UnilockerDbContext : DbContext
     public virtual DbSet<Session> Sessions { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    /// <summary>
+    /// Override de SaveChangesAsync para registrar automáticamente cambios en AuditLog
+    /// </summary>
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Obtener información del usuario y IP desde el contexto HTTP
+        int? userId = null;
+        string? ipAddress = null;
+
+        if (_httpContextAccessor?.HttpContext != null)
+        {
+            var userIdClaim = _httpContextAccessor.HttpContext.User?.FindFirst("sub")
+                ?? _httpContextAccessor.HttpContext.User?.FindFirst("userId")
+                ?? _httpContextAccessor.HttpContext.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+
+            ipAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress?.ToString();
+        }
+
+        // Crear registros de auditoría antes de guardar
+        var auditLogs = AuditService.CreateAuditLogs(this, userId, ipAddress);
+
+        // Guardar los cambios principales
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        // Si hay auditorías para registrar, guardarlas
+        if (auditLogs.Any())
+        {
+            await AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
+            await base.SaveChangesAsync(cancellationToken);
+        }
+
+        return result;
+    }
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.

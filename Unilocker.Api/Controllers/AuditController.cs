@@ -22,41 +22,61 @@ public class AuditController : ControllerBase
     // GET: api/audit
     [HttpGet]
     public async Task<IActionResult> GetAuditLogs(
-        [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate,
-        [FromQuery] string? action,
-        [FromQuery] int? userId)
+        [FromQuery] string? table,
+        [FromQuery] string? actionType,
+        [FromQuery] string? user,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
         try
         {
             var query = _context.AuditLogs.AsQueryable();
 
-            // Filtrar por fecha de inicio
-            if (startDate.HasValue)
+            // Filtrar por tabla afectada
+            if (!string.IsNullOrEmpty(table))
             {
-                query = query.Where(a => a.ActionDate >= startDate.Value);
+                query = query.Where(a => a.AffectedTable.Contains(table));
             }
 
-            // Filtrar por fecha fin
-            if (endDate.HasValue)
+            // Filtrar por tipo de acción
+            if (!string.IsNullOrEmpty(actionType))
             {
-                query = query.Where(a => a.ActionDate <= endDate.Value.AddDays(1));
+                query = query.Where(a => a.ActionType.Contains(actionType));
             }
 
-            // Filtrar por acción
-            if (!string.IsNullOrEmpty(action))
+            // Filtrar por nombre de usuario
+            if (!string.IsNullOrEmpty(user))
             {
-                query = query.Where(a => a.ActionType.Contains(action));
+                var userIds = await _context.Users
+                    .Where(u => (u.FirstName + " " + u.LastName).Contains(user) || u.Username.Contains(user))
+                    .Select(u => u.Id)
+                    .ToListAsync();
+                query = query.Where(a => a.ResponsibleUserId.HasValue && userIds.Contains(a.ResponsibleUserId.Value));
             }
 
-            // Filtrar por usuario
-            if (userId.HasValue)
+            // Filtrar por fecha desde
+            if (from.HasValue)
             {
-                query = query.Where(a => a.ResponsibleUserId == userId.Value);
+                query = query.Where(a => a.ActionDate >= from.Value);
             }
 
+            // Filtrar por fecha hasta
+            if (to.HasValue)
+            {
+                var toDate = to.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(a => a.ActionDate <= toDate);
+            }
+
+            // Contar total antes de paginar
+            var total = await query.CountAsync();
+
+            // Paginar
             var auditLogs = await query
                 .OrderByDescending(a => a.ActionDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(a => new
                 {
                     Id = a.Id,
@@ -73,7 +93,13 @@ public class AuditController : ControllerBase
                 })
                 .ToListAsync();
 
-            return Ok(auditLogs);
+            return Ok(new
+            {
+                items = auditLogs,
+                total,
+                page,
+                pageSize
+            });
         }
         catch (Exception ex)
         {
