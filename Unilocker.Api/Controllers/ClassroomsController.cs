@@ -34,12 +34,15 @@ public class ClassroomsController : ControllerBase
                     c.Name,
                     c.Capacity,
                     c.BlockId,
-                    BlockName = c.Block != null ? c.Block.Name : null,
-                    BranchName = c.Block != null && c.Block.Branch != null ? c.Block.Branch.Name : null,
+                    BlockName = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.Name).FirstOrDefault(),
+                    BranchId = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.BranchId).FirstOrDefault(),
+                    BranchName = _context.Blocks.Where(b => b.Id == c.BlockId)
+                        .Select(b => _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault())
+                        .FirstOrDefault(),
                     c.Status,
                     c.CreatedAt,
                     c.UpdatedAt,
-                    ComputerCount = c.Computers.Count
+                    ComputerCount = _context.Computers.Count(comp => comp.ClassroomId == c.Id)
                 })
                 .ToListAsync();
 
@@ -66,12 +69,15 @@ public class ClassroomsController : ControllerBase
                     c.Name,
                     c.Capacity,
                     c.BlockId,
-                    BlockName = c.Block != null ? c.Block.Name : null,
-                    BranchName = c.Block != null && c.Block.Branch != null ? c.Block.Branch.Name : null,
+                    BlockName = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.Name).FirstOrDefault(),
+                    BranchId = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.BranchId).FirstOrDefault(),
+                    BranchName = _context.Blocks.Where(b => b.Id == c.BlockId)
+                        .Select(b => _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault())
+                        .FirstOrDefault(),
                     c.Status,
                     c.CreatedAt,
                     c.UpdatedAt,
-                    Computers = c.Computers.Select(comp => new { comp.Id, comp.Name }).ToList()
+                    Computers = _context.Computers.Where(comp => comp.ClassroomId == c.Id).Select(comp => new { comp.Id, comp.Name }).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -91,55 +97,90 @@ public class ClassroomsController : ControllerBase
 
     // POST: api/classrooms
     [HttpPost]
-    public async Task<ActionResult<Classroom>> CreateClassroom(Classroom classroom)
+    public async Task<ActionResult<Classroom>> CreateClassroom([FromBody] System.Text.Json.JsonElement dto)
     {
         try
         {
-            classroom.CreatedAt = DateTime.Now;
-            classroom.Status = true;
+            _logger.LogInformation("CreateClassroom - Payload: {Payload}", dto.ToString());
+
+            var name = dto.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : string.Empty;
+            var capacity = dto.TryGetProperty("capacity", out var capacityEl) && capacityEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? capacityEl.GetInt32() : (int?)null;
+            var blockId = dto.TryGetProperty("blockId", out var blockEl) ? blockEl.GetInt32() : 0;
+            var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
+
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest(new { message = "El nombre es obligatorio" });
+            }
+            if (blockId == 0)
+            {
+                return BadRequest(new { message = "BlockId es obligatorio" });
+            }
+
+            var classroom = new Classroom
+            {
+                Name = name,
+                Capacity = capacity,
+                BlockId = blockId,
+                Status = status,
+                CreatedAt = DateTime.Now
+            };
+
             _context.Classrooms.Add(classroom);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Aula creada exitosamente: {ClassroomId}", classroom.Id);
             return CreatedAtAction(nameof(GetClassroom), new { id = classroom.Id }, classroom);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al crear aula");
-            return StatusCode(500, new { message = "Error al crear aula", error = ex.Message });
+            return StatusCode(500, new { message = "Error al crear aula", error = ex.Message, stackTrace = ex.StackTrace });
         }
     }
 
     // PUT: api/classrooms/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateClassroom(int id, Classroom classroom)
+    public async Task<IActionResult> UpdateClassroom(int id, [FromBody] System.Text.Json.JsonElement dto)
     {
-        if (id != classroom.Id)
-        {
-            return BadRequest(new { message = "ID no coincide" });
-        }
-
         try
         {
+            _logger.LogInformation("UpdateClassroom - ID: {Id}, Payload: {Payload}", id, dto.ToString());
+
             var existingClassroom = await _context.Classrooms.FindAsync(id);
             if (existingClassroom == null)
             {
                 return NotFound(new { message = "Aula no encontrada" });
             }
 
-            existingClassroom.Name = classroom.Name;
-            existingClassroom.Capacity = classroom.Capacity;
-            existingClassroom.BlockId = classroom.BlockId;
-            existingClassroom.Status = classroom.Status;
+            if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingClassroom.Name = nameEl.GetString() ?? existingClassroom.Name;
+            }
+            if (dto.TryGetProperty("capacity", out var capacityEl))
+            {
+                existingClassroom.Capacity = capacityEl.ValueKind != System.Text.Json.JsonValueKind.Null ? capacityEl.GetInt32() : null;
+            }
+            if (dto.TryGetProperty("blockId", out var blockEl))
+            {
+                existingClassroom.BlockId = blockEl.GetInt32();
+            }
+            if (dto.TryGetProperty("status", out var statusEl))
+            {
+                existingClassroom.Status = statusEl.GetBoolean();
+            }
             existingClassroom.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Aula actualizada exitosamente: {ClassroomId}", id);
             return Ok(existingClassroom);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al actualizar aula");
-            return StatusCode(500, new { message = "Error al actualizar aula", error = ex.Message });
+            return StatusCode(500, new { message = "Error al actualizar aula", error = ex.Message, stackTrace = ex.StackTrace });
         }
     }
 

@@ -46,6 +46,7 @@ async function loadProblemTypes() {
         problemTypesCache = data.map(p => ({
             id: p.id,
             name: p.name,
+            description: p.description,
             status: p.status === true || p.status === 1
         }));
 
@@ -69,6 +70,7 @@ function openCreateModal() {
 
     document.getElementById('problemTypeId').value = '';
     document.getElementById('txtProblemTypeName').value = '';
+    document.getElementById('txtDescription').value = '';
 
     const chk = document.getElementById('chkProblemTypeStatus');
     if (chk) chk.checked = true;
@@ -90,6 +92,7 @@ function openEditModal(id) {
 
     document.getElementById('problemTypeId').value = p.id;
     document.getElementById('txtProblemTypeName').value = p.name ?? '';
+    document.getElementById('txtDescription').value = p.description ?? '';
 
     const chk = document.getElementById('chkProblemTypeStatus');
     if (chk) chk.checked = !!p.status;
@@ -109,6 +112,7 @@ async function saveProblemType(e) {
     const id = form.dataset.id;
 
     const name = document.getElementById('txtProblemTypeName').value.trim();
+    const description = document.getElementById('txtDescription').value.trim();
     const chk = document.getElementById('chkProblemTypeStatus');
     if (!name) {
         showError('El nombre es obligatorio.');
@@ -116,8 +120,9 @@ async function saveProblemType(e) {
     }
 
     const payload = {
-    name,
-    status: chk ? chk.checked : true
+        name,
+        description: description || null,
+        status: chk ? chk.checked : true
     };
 
     const isNew = !id;

@@ -122,6 +122,7 @@ async function loadClassrooms() {
         classroomsCache = data.map(c => ({
             id: c.id,
             name: c.name,
+            capacity: c.capacity,
             blockId: c.blockId,
             blockName: c.blockName,
             branchId: c.branchId,
@@ -147,6 +148,7 @@ function openCreateModal() {
 
     document.getElementById('classroomId').value = '';
     document.getElementById('txtClassroomName').value = '';
+    document.getElementById('txtCapacity').value = '';
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
     if (ddlBranch) ddlBranch.value = '';
@@ -171,6 +173,7 @@ async function openEditModal(id) {
 
     document.getElementById('classroomId').value = classroom.id;
     document.getElementById('txtClassroomName').value = classroom.name ?? '';
+    document.getElementById('txtCapacity').value = classroom.capacity ?? '';
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
     const chk = document.getElementById('chkStatus');
@@ -198,6 +201,8 @@ async function saveClassroom(e) {
     const id = form.dataset.id;
 
     const name = document.getElementById('txtClassroomName').value.trim();
+    const capacityInput = document.getElementById('txtCapacity');
+    const capacity = capacityInput?.value ? parseInt(capacityInput.value, 10) : null;
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
     const chk = document.getElementById('chkStatus');
@@ -220,6 +225,7 @@ async function saveClassroom(e) {
 
     const payload = {
         name,
+        capacity,
         blockId: parseInt(blockIdValue, 10),
         status: chk ? chk.checked : true
     };

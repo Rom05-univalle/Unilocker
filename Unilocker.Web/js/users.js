@@ -49,6 +49,8 @@ async function loadUsers() {
         usersCache = data.map(u => ({
             id: u.id,
             username: u.username,
+            firstName: u.firstName,
+            lastName: u.lastName,
             email: u.email,
             status: u.status === true || u.status === 1,
             roleId: u.roleId,
@@ -113,6 +115,8 @@ function openCreateModal() {
 
     document.getElementById('userId').value = '';
     document.getElementById('txtUsername').value = '';
+    document.getElementById('txtFirstName').value = '';
+    document.getElementById('txtLastName').value = '';
     document.getElementById('txtEmail').value = '';
     document.getElementById('txtPassword').value = '';
 
@@ -138,6 +142,8 @@ function openEditModal(id) {
 
     document.getElementById('userId').value = u.id;
     document.getElementById('txtUsername').value = u.username ?? '';
+    document.getElementById('txtFirstName').value = u.firstName ?? u.username ?? '';
+    document.getElementById('txtLastName').value = u.lastName ?? u.username ?? '';
     document.getElementById('txtEmail').value = u.email ?? '';
     document.getElementById('txtPassword').value = ''; // vacío: solo cambia si escribe algo
 
@@ -161,6 +167,8 @@ async function saveUser(e) {
     const id = form.dataset.id;
 
     const username = document.getElementById('txtUsername').value.trim();
+    const firstName = document.getElementById('txtFirstName').value.trim();
+    const lastName = document.getElementById('txtLastName').value.trim();
     const email = document.getElementById('txtEmail').value.trim();
     const password = document.getElementById('txtPassword').value;
     const selRole = document.getElementById('selUserRole');
@@ -170,6 +178,14 @@ async function saveUser(e) {
 
     if (!username) {
         showError('El username es obligatorio.');
+        return;
+    }
+    if (!firstName) {
+        showError('El nombre es obligatorio.');
+        return;
+    }
+    if (!lastName) {
+        showError('El apellido es obligatorio.');
         return;
     }
     if (!email) {
@@ -187,9 +203,11 @@ async function saveUser(e) {
 
     const payload = {
         username,
-        email,
-        password: password || null,       // en update, si va null no cambia
-        status: chk ? chk.checked : true, // aunque el backend use solo Status internamente
+        email: email || null,
+        firstName,
+        lastName,
+        passwordHash: password || null,
+        status: chk ? chk.checked : true,
         roleId
     };
 

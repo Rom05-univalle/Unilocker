@@ -42,11 +42,11 @@ public class BlocksController : ControllerBase
                     b.Name,
                     b.Address,
                     b.BranchId,
-                    BranchName = b.Branch != null ? b.Branch.Name : null,
+                    BranchName = _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault(),
                     b.Status,
                     b.CreatedAt,
                     b.UpdatedAt,
-                    ClassroomCount = b.Classrooms.Count
+                    ClassroomCount = _context.Classrooms.Count(c => c.BlockId == b.Id)
                 })
                 .ToListAsync();
 
@@ -73,11 +73,11 @@ public class BlocksController : ControllerBase
                     b.Name,
                     b.Address,
                     b.BranchId,
-                    BranchName = b.Branch != null ? b.Branch.Name : null,
+                    BranchName = _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault(),
                     b.Status,
                     b.CreatedAt,
                     b.UpdatedAt,
-                    Classrooms = b.Classrooms.Select(c => new { c.Id, c.Name }).ToList()
+                    Classrooms = _context.Classrooms.Where(c => c.BlockId == b.Id).Select(c => new { c.Id, c.Name }).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -97,55 +97,90 @@ public class BlocksController : ControllerBase
 
     // POST: api/blocks
     [HttpPost]
-    public async Task<ActionResult<Block>> CreateBlock(Block block)
+    public async Task<ActionResult<Block>> CreateBlock([FromBody] System.Text.Json.JsonElement dto)
     {
         try
         {
-            block.CreatedAt = DateTime.Now;
-            block.Status = true;
+            _logger.LogInformation("CreateBlock - Payload recibido: {Payload}", dto.ToString());
+
+            var name = dto.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : string.Empty;
+            var address = dto.TryGetProperty("address", out var addressEl) && addressEl.ValueKind != System.Text.Json.JsonValueKind.Null 
+                ? addressEl.GetString() : null;
+            var branchId = dto.TryGetProperty("branchId", out var branchEl) ? branchEl.GetInt32() : 0;
+            var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
+
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest(new { message = "El nombre es obligatorio" });
+            }
+            if (branchId == 0)
+            {
+                return BadRequest(new { message = "BranchId es obligatorio" });
+            }
+
+            var block = new Block
+            {
+                Name = name,
+                Address = address,
+                BranchId = branchId,
+                Status = status,
+                CreatedAt = DateTime.Now
+            };
+
             _context.Blocks.Add(block);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Bloque creado exitosamente: {BlockId}", block.Id);
             return CreatedAtAction(nameof(GetBlock), new { id = block.Id }, block);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al crear bloque");
-            return StatusCode(500, new { message = "Error al crear bloque", error = ex.Message });
+            return StatusCode(500, new { message = "Error al crear bloque", error = ex.Message, stackTrace = ex.StackTrace });
         }
     }
 
     // PUT: api/blocks/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateBlock(int id, Block block)
+    public async Task<IActionResult> UpdateBlock(int id, [FromBody] System.Text.Json.JsonElement dto)
     {
-        if (id != block.Id)
-        {
-            return BadRequest(new { message = "ID no coincide" });
-        }
-
         try
         {
+            _logger.LogInformation("UpdateBlock - ID: {Id}, Payload: {Payload}", id, dto.ToString());
+
             var existingBlock = await _context.Blocks.FindAsync(id);
             if (existingBlock == null)
             {
                 return NotFound(new { message = "Bloque no encontrado" });
             }
 
-            existingBlock.Name = block.Name;
-            existingBlock.Address = block.Address;
-            existingBlock.BranchId = block.BranchId;
-            existingBlock.Status = block.Status;
+            if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingBlock.Name = nameEl.GetString() ?? existingBlock.Name;
+            }
+            if (dto.TryGetProperty("address", out var addressEl))
+            {
+                existingBlock.Address = addressEl.ValueKind != System.Text.Json.JsonValueKind.Null ? addressEl.GetString() : null;
+            }
+            if (dto.TryGetProperty("branchId", out var branchEl))
+            {
+                existingBlock.BranchId = branchEl.GetInt32();
+            }
+            if (dto.TryGetProperty("status", out var statusEl))
+            {
+                existingBlock.Status = statusEl.GetBoolean();
+            }
             existingBlock.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Bloque actualizado exitosamente: {BlockId}", id);
             return Ok(existingBlock);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al actualizar bloque");
-            return StatusCode(500, new { message = "Error al actualizar bloque", error = ex.Message });
+            return StatusCode(500, new { message = "Error al actualizar bloque", error = ex.Message, stackTrace = ex.StackTrace });
         }
     }
 

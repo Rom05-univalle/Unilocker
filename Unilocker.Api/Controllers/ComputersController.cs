@@ -137,6 +137,7 @@ public class ComputersController : ControllerBase
         try
         {
             var computers = await _context.Computers
+                .Where(c => c.Status == true) // Solo computadoras activas
                 .OrderBy(c => c.Name)
                 .Select(c => new
                 {
@@ -147,17 +148,17 @@ public class ComputersController : ControllerBase
                     c.SerialNumber,
                     c.Status,
                     c.ClassroomId,
-                    ClassroomName = c.Classroom != null ? c.Classroom.Name : null,
-                    BlockId = c.Classroom != null ? c.Classroom.BlockId : (int?)null,
-                    BlockName = c.Classroom != null && c.Classroom.Block != null ? c.Classroom.Block.Name : null,
-                    BranchId = c.Classroom != null && c.Classroom.Block != null ? c.Classroom.Block.BranchId : (int?)null,
-                    BranchName = c.Classroom != null && c.Classroom.Block != null && c.Classroom.Block.Branch != null ? c.Classroom.Block.Branch.Name : null,
+                    ClassroomName = _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.Name).FirstOrDefault(),
+                    BlockId = _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault(),
+                    BlockName = _context.Blocks.Where(b => b.Id == _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault()).Select(b => b.Name).FirstOrDefault(),
+                    BranchId = _context.Blocks.Where(b => b.Id == _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault()).Select(b => b.BranchId).FirstOrDefault(),
+                    BranchName = _context.Branches.Where(br => br.Id == _context.Blocks.Where(b => b.Id == _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault()).Select(b => b.BranchId).FirstOrDefault()).Select(br => br.Name).FirstOrDefault(),
                     c.CreatedAt,
                     c.UpdatedAt
                 })
                 .ToListAsync();
 
-            _logger.LogInformation("Se obtuvieron {Count} computadoras", computers.Count);
+            _logger.LogInformation("Se obtuvieron {Count} computadoras activas", computers.Count);
             return Ok(computers);
         }
         catch (Exception ex)

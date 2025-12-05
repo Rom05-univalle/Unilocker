@@ -26,11 +26,8 @@ function renderComputers(items) {
                 </span>
             </td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${pc.id}">
-                    Editar
-                </button>
-                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${pc.id}">
-                    Eliminar
+                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${pc.id}" title="Desregistrar">
+                    <i class="fa-solid fa-ban"></i> Desregistrar
                 </button>
             </td>
         `;
@@ -284,9 +281,7 @@ function attachEvents() {
             const id = parseInt(idAttr, 10);
             if (Number.isNaN(id)) return;
 
-            if (button.classList.contains('btn-edit')) {
-                openEditModal(id);
-            } else if (button.classList.contains('btn-delete')) {
+            if (button.classList.contains('btn-delete')) {
                 deleteComputer(id);
             }
         });

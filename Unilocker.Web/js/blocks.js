@@ -162,6 +162,7 @@ async function saveBlock(e) {
 
     const payload = {
         name,
+        address: null, // Campo opcional del modelo
         branchId,
         status: chk ? chk.checked : true
     };

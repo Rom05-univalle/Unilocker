@@ -132,4 +132,108 @@ public class ProblemTypesController : ControllerBase
             return StatusCode(500, new { message = "Error interno al obtener estadísticas", error = ex.Message });
         }
     }
+
+    // POST: api/problemtypes
+    [HttpPost]
+    public async Task<ActionResult> CreateProblemType([FromBody] System.Text.Json.JsonElement dto)
+    {
+        try
+        {
+            _logger.LogInformation("CreateProblemType - Payload: {Payload}", dto.ToString());
+
+            var name = dto.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : string.Empty;
+            var description = dto.TryGetProperty("description", out var descEl) && descEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? descEl.GetString() : null;
+            var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
+
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest(new { message = "El nombre es obligatorio" });
+            }
+
+            var problemType = new Models.ProblemType
+            {
+                Name = name,
+                Description = description,
+                Status = status,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.ProblemTypes.Add(problemType);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Tipo de problema creado exitosamente: {ProblemTypeId}", problemType.Id);
+            return CreatedAtAction(nameof(GetProblemTypeById), new { id = problemType.Id }, problemType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear tipo de problema");
+            return StatusCode(500, new { message = "Error al crear tipo de problema", error = ex.Message, stackTrace = ex.StackTrace });
+        }
+    }
+
+    // PUT: api/problemtypes/5
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProblemType(int id, [FromBody] System.Text.Json.JsonElement dto)
+    {
+        try
+        {
+            _logger.LogInformation("UpdateProblemType - ID: {Id}, Payload: {Payload}", id, dto.ToString());
+
+            var existingProblemType = await _context.ProblemTypes.FindAsync(id);
+            if (existingProblemType == null)
+            {
+                return NotFound(new { message = "Tipo de problema no encontrado" });
+            }
+
+            if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingProblemType.Name = nameEl.GetString() ?? existingProblemType.Name;
+            }
+            if (dto.TryGetProperty("description", out var descEl))
+            {
+                existingProblemType.Description = descEl.ValueKind != System.Text.Json.JsonValueKind.Null ? descEl.GetString() : null;
+            }
+            if (dto.TryGetProperty("status", out var statusEl))
+            {
+                existingProblemType.Status = statusEl.GetBoolean();
+            }
+            existingProblemType.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Tipo de problema actualizado exitosamente: {ProblemTypeId}", id);
+            return Ok(existingProblemType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar tipo de problema");
+            return StatusCode(500, new { message = "Error al actualizar tipo de problema", error = ex.Message, stackTrace = ex.StackTrace });
+        }
+    }
+
+    // DELETE: api/problemtypes/5
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProblemType(int id)
+    {
+        try
+        {
+            var problemType = await _context.ProblemTypes.FindAsync(id);
+            if (problemType == null)
+            {
+                return NotFound(new { message = "Tipo de problema no encontrado" });
+            }
+
+            _context.ProblemTypes.Remove(problemType);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Tipo de problema eliminado: {ProblemTypeId}", id);
+            return Ok(new { message = "Tipo de problema eliminado correctamente" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al eliminar tipo de problema");
+            return StatusCode(500, new { message = "Error al eliminar tipo de problema", error = ex.Message });
+        }
+    }
 }
