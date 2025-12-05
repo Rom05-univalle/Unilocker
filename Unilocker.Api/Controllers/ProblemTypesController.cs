@@ -47,13 +47,7 @@ public class ProblemTypesController : ControllerBase
 
             _logger.LogInformation("Se encontraron {Count} tipos de problema", problemTypes.Count);
 
-            return Ok(new
-            {
-                problemTypes,
-                count = problemTypes.Count,
-                activeOnly,
-                generatedAt = DateTime.Now
-            });
+            return Ok(problemTypes);
         }
         catch (Exception ex)
         {

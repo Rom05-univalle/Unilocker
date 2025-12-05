@@ -44,8 +44,8 @@ public class DashboardController : ControllerBase
                 .Where(s => s.StartDateTime >= today && s.StartDateTime < tomorrow)
                 .CountAsync();
 
-            // Sesiones activas
-            var activeSessions = await _context.Sessions
+            // Sesiones activas (computadoras con sesión activa)
+            var activeComputers = await _context.Sessions
                 .Where(s => s.IsActive)
                 .CountAsync();
 
@@ -61,15 +61,15 @@ public class DashboardController : ControllerBase
 
             var stats = new
             {
-                totalSessionsToday,
-                activeSessions,
-                pendingReports,
-                registeredComputers
+                totalUsers = await _context.Users.Where(u => u.Status).CountAsync(),
+                totalSessions = await _context.Sessions.CountAsync(),
+                totalReports = await _context.Reports.CountAsync(),
+                activeComputers
             };
 
             _logger.LogInformation(
-                "Dashboard stats: Sesiones hoy={Today}, Activas={Active}, Reportes={Reports}, PCs={Computers}",
-                totalSessionsToday, activeSessions, pendingReports, registeredComputers);
+                "Dashboard stats: Usuarios activos={Users}, Total sesiones={Sessions}, Total reportes={Reports}, PCs activas={Active}",
+                stats.totalUsers, stats.totalSessions, stats.totalReports, activeComputers);
 
             return Ok(stats);
         }

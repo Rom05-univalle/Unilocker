@@ -197,6 +197,11 @@ async function saveUser(e) {
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/users' : `/api/users/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando usuario...');
     try {
         const resp = await authFetch(url, { method, body: payload });

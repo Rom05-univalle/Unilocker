@@ -170,6 +170,11 @@ async function saveBlock(e) {
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/blocks' : `/api/blocks/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando bloque...');
     try {
         const resp = await authFetch(url, {

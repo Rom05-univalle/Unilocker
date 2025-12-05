@@ -29,9 +29,7 @@ public class AuditController : ControllerBase
     {
         try
         {
-            var query = _context.AuditLogs
-                .Include(a => a.ResponsibleUser)
-                .AsQueryable();
+            var query = _context.AuditLogs.AsQueryable();
 
             // Filtrar por fecha de inicio
             if (startDate.HasValue)
@@ -61,17 +59,17 @@ public class AuditController : ControllerBase
                 .OrderByDescending(a => a.ActionDate)
                 .Select(a => new
                 {
-                    a.Id,
-                    Action = a.ActionType,
-                    TableName = a.AffectedTable,
-                    a.RecordId,
-                    Details = a.ChangeDetails,
-                    a.ResponsibleUserId,
-                    ResponsibleUserName = a.ResponsibleUser != null 
-                        ? a.ResponsibleUser.FirstName + " " + a.ResponsibleUser.LastName
+                    Id = a.Id,
+                    ActionType = a.ActionType,
+                    AffectedTable = a.AffectedTable,
+                    RecordId = a.RecordId,
+                    ChangeDetails = a.ChangeDetails,
+                    ResponsibleUserId = a.ResponsibleUserId,
+                    ResponsibleUserName = a.ResponsibleUserId.HasValue 
+                        ? _context.Users.Where(u => u.Id == a.ResponsibleUserId.Value).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault()
                         : "Sistema",
-                    Timestamp = a.ActionDate,
-                    a.IpAddress
+                    ActionDate = a.ActionDate,
+                    IpAddress = a.IpAddress
                 })
                 .ToListAsync();
 

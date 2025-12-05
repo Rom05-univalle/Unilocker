@@ -109,16 +109,7 @@ public class ReportsController : ControllerBase
             _logger.LogInformation("Obteniendo reportes con filtros - Status: {Status}, ProblemTypeId: {ProblemTypeId}, StartDate: {StartDate}, EndDate: {EndDate}",
                 status, problemTypeId, startDate, endDate);
 
-            var query = _context.Reports
-                .Include(r => r.ProblemType)
-                .Include(r => r.Session)
-                    .ThenInclude(s => s.User)
-                .Include(r => r.Session)
-                    .ThenInclude(s => s.Computer)
-                        .ThenInclude(c => c.Classroom)
-                            .ThenInclude(cl => cl.Block)
-                                .ThenInclude(b => b.Branch)
-                .AsQueryable();
+            var query = _context.Reports.AsQueryable();
 
             // Aplicar filtros
             if (!string.IsNullOrEmpty(status))
@@ -142,17 +133,32 @@ public class ReportsController : ControllerBase
                 query = query.Where(r => r.ReportDate <= endOfDay);
             }
 
-            // Ordenar por fecha de reporte descendente
-            query = query.OrderByDescending(r => r.ReportDate);
-
             // Paginación
             var totalRecords = await query.CountAsync();
+            
             var reports = await query
+                .OrderByDescending(r => r.ReportDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(r => new
+                {
+                    Id = r.Id,
+                    SessionId = r.SessionId,
+                    ProblemTypeId = r.ProblemTypeId,
+                    ProblemTypeName = _context.ProblemTypes.Where(pt => pt.Id == r.ProblemTypeId).Select(pt => pt.Name).FirstOrDefault(),
+                    Summary = r.Description,
+                    Date = r.ReportDate,
+                    ReportStatus = r.ReportStatus,
+                    ResolutionDate = r.ResolutionDate,
+                    CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt,
+                    UserName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.User != null ? s.User.Username : null).FirstOrDefault(),
+                    ComputerName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.Computer != null ? s.Computer.Name : null).FirstOrDefault(),
+                    ClassroomName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.Computer != null && s.Computer.Classroom != null ? s.Computer.Classroom.Name : null).FirstOrDefault()
+                })
                 .ToListAsync();
 
-            var response = reports.Select(MapToReportResponse).ToList();
+            var response = reports;
 
             _logger.LogInformation("Se encontraron {Count} reportes de {Total} totales", response.Count, totalRecords);
 

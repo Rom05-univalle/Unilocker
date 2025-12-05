@@ -228,6 +228,11 @@ async function saveClassroom(e) {
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/classrooms' : `/api/classrooms/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando aula...');
     try {
         const resp = await authFetch(url, {

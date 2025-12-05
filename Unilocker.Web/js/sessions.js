@@ -1,4 +1,4 @@
-﻿import { API_BASE_URL, authFetch } from './api.js';
+﻿import { authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError, showConfirm } from './ui.js';
 
 let sessionsCache = [];
@@ -29,7 +29,7 @@ function renderSessions(items) {
 export async function loadRecords() {
     showLoading('Cargando sesiones...');
     try {
-        const res = await authFetch(`${API_BASE_URL}/api/sessions`);
+        const res = await authFetch('/api/sessions');
         if (!res.ok) {
             showError('Error cargando sesiones.');
             return;
@@ -47,7 +47,7 @@ export async function loadRecords() {
 
 // Ejemplo de acción sobre sesiones (si tienes endpoint para cerrar sesión desde el admin)
 export async function closeSession(id) {
-    return authFetch(`${API_BASE_URL}/api/sessions/${id}/close`, {
+    return authFetch(`/api/sessions/${id}/close`, {
         method: 'PUT'
     });
 }

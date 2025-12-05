@@ -124,6 +124,11 @@ async function saveProblemType(e) {
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/problemtypes' : `/api/problemtypes/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando tipo de problema...');
     try {
         const resp = await authFetch(url, { method, body: payload });

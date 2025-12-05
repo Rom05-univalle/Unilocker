@@ -1,4 +1,4 @@
-﻿import { API_BASE_URL, authFetch } from './api.js';
+﻿import { authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError } from './ui.js';
 
 let reportsCache = [];
@@ -38,8 +38,8 @@ export async function loadReports() {
     if (endDate) params.append('endDate', endDate);
 
     const url = params.toString()
-        ? `${API_BASE_URL}/api/reports?${params.toString()}`
-        : `${API_BASE_URL}/api/reports`;
+        ? `/api/reports?${params.toString()}`
+        : `/api/reports`;
 
     showLoading('Cargando reportes...');
     try {

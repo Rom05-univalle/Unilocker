@@ -128,6 +128,46 @@ public class ComputersController : ControllerBase
     }
 
     /// <summary>
+    /// Obtiene todas las computadoras con su información completa
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<object>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<object>>> GetAllComputers()
+    {
+        try
+        {
+            var computers = await _context.Computers
+                .OrderBy(c => c.Name)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Name,
+                    c.Uuid,
+                    c.Model,
+                    c.SerialNumber,
+                    c.Status,
+                    c.ClassroomId,
+                    ClassroomName = c.Classroom != null ? c.Classroom.Name : null,
+                    BlockId = c.Classroom != null ? c.Classroom.BlockId : (int?)null,
+                    BlockName = c.Classroom != null && c.Classroom.Block != null ? c.Classroom.Block.Name : null,
+                    BranchId = c.Classroom != null && c.Classroom.Block != null ? c.Classroom.Block.BranchId : (int?)null,
+                    BranchName = c.Classroom != null && c.Classroom.Block != null && c.Classroom.Block.Branch != null ? c.Classroom.Block.Branch.Name : null,
+                    c.CreatedAt,
+                    c.UpdatedAt
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("Se obtuvieron {Count} computadoras", computers.Count);
+            return Ok(computers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener computadoras");
+            return StatusCode(500, new { error = "Error al obtener la lista de computadoras", message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Obtiene la lista de aulas disponibles para registro
     /// </summary>
     /// <returns>Lista de aulas con información de ubicación</returns>
@@ -213,6 +253,37 @@ public class ComputersController : ControllerBase
         {
             _logger.LogError(ex, "Error al obtener computadora {Id}", id);
             return StatusCode(500, new { error = "Error al obtener la computadora" });
+        }
+    }
+
+    /// <summary>
+    /// Desregistra una computadora (borrado lógico - cambia Status a false)
+    /// </summary>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UnregisterComputer(int id)
+    {
+        try
+        {
+            var computer = await _context.Computers.FindAsync(id);
+            if (computer == null)
+            {
+                return NotFound(new { error = "Computadora no encontrada" });
+            }
+
+            // Borrado lógico: cambiar Status a false
+            computer.Status = false;
+            computer.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Computadora desregistrada (borrado lógico): {Id}", id);
+            return Ok(new { message = "Computadora desregistrada correctamente" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al desregistrar computadora {Id}", id);
+            return StatusCode(500, new { error = "Error al desregistrar la computadora" });
         }
     }
 }

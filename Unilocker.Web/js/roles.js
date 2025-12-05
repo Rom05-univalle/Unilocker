@@ -130,6 +130,11 @@ async function saveRole(e) {
     const isNew = !id;
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/roles' : `/api/roles/${id}`;
+    
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
 
     showLoading('Guardando rol...');
     try {

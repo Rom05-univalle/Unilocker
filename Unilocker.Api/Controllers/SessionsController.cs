@@ -262,23 +262,34 @@ public class SessionsController : ControllerBase
     /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<SessionResponse>>> GetActiveSessions()
+    public async Task<ActionResult<IEnumerable<object>>> GetActiveSessions()
     {
         try
         {
             var sessions = await _context.Sessions
                 .Where(s => s.IsActive)
-                .Include(s => s.User)
-                .Include(s => s.Computer)
-                    .ThenInclude(c => c.Classroom)
-                        .ThenInclude(cl => cl.Block)
-                            .ThenInclude(b => b.Branch)
                 .OrderByDescending(s => s.StartDateTime)
+                .Select(s => new
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.Username).FirstOrDefault(),
+                    UserFullName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                    ComputerId = s.ComputerId,
+                    ComputerName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Name).FirstOrDefault(),
+                    ClassroomName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Classroom != null ? c.Classroom.Name : null).FirstOrDefault(),
+                    BlockName = (string)null,
+                    BranchName = (string)null,
+                    StartTime = s.StartDateTime,
+                    EndTime = s.EndDateTime,
+                    IsActive = s.IsActive,
+                    EndMethod = s.EndMethod,
+                    LastHeartbeat = s.LastHeartbeat,
+                    DurationMinutes = (int)(DateTime.Now - s.StartDateTime).TotalMinutes
+                })
                 .ToListAsync();
 
-            var response = sessions.Select(s => MapToSessionResponse(s)).ToList();
-
-            return Ok(response);
+            return Ok(sessions);
         }
         catch (Exception ex)
         {
@@ -292,7 +303,7 @@ public class SessionsController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<SessionResponse>>> GetSessions(
+    public async Task<ActionResult<IEnumerable<object>>> GetSessions(
         [FromQuery] int? userId = null,
         [FromQuery] int? computerId = null,
         [FromQuery] bool? isActive = null,
@@ -301,13 +312,7 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var query = _context.Sessions
-                .Include(s => s.User)
-                .Include(s => s.Computer)
-                    .ThenInclude(c => c.Classroom)
-                        .ThenInclude(cl => cl.Block)
-                            .ThenInclude(b => b.Branch)
-                .AsQueryable();
+            var query = _context.Sessions.AsQueryable();
 
             // Aplicar filtros opcionales
             if (userId.HasValue)
@@ -319,16 +324,34 @@ public class SessionsController : ControllerBase
             if (isActive.HasValue)
                 query = query.Where(s => s.IsActive == isActive.Value);
 
-            // Paginación
+            // Paginación con proyección
             var sessions = await query
                 .OrderByDescending(s => s.StartDateTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(s => new
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.Username).FirstOrDefault(),
+                    UserFullName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                    ComputerId = s.ComputerId,
+                    ComputerName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Name).FirstOrDefault(),
+                    ClassroomName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Classroom != null ? c.Classroom.Name : null).FirstOrDefault(),
+                    BlockName = (string)null,
+                    BranchName = (string)null,
+                    StartTime = s.StartDateTime,
+                    EndTime = s.EndDateTime,
+                    IsActive = s.IsActive,
+                    EndMethod = s.EndMethod,
+                    LastHeartbeat = s.LastHeartbeat,
+                    DurationMinutes = s.EndDateTime.HasValue 
+                        ? (int)(s.EndDateTime.Value - s.StartDateTime).TotalMinutes
+                        : s.IsActive ? (int)(DateTime.Now - s.StartDateTime).TotalMinutes : (int?)null
+                })
                 .ToListAsync();
 
-            var response = sessions.Select(s => MapToSessionResponse(s)).ToList();
-
-            return Ok(response);
+            return Ok(sessions);
         }
         catch (Exception ex)
         {

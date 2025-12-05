@@ -20,7 +20,7 @@ function buildDateQuery() {
 async function loadDashboardStats() {
   try {
     const qs = buildDateQuery();
-    const res = await authFetch(`${API_BASE_URL}/api/dashboard/stats${qs}`);
+    const res = await authFetch(`/api/dashboard/stats${qs}`);
     const data = await res.json();
 
     document.getElementById('totalUsers')?.innerText = data.totalUsers ?? 0;
@@ -79,7 +79,7 @@ function getPieColors(count) {
 async function loadSessionsChart() {
   try {
     const qs = buildDateQuery();
-    const res = await authFetch(`${API_BASE_URL}/api/stats/sessions-by-day${qs}`);
+    const res = await authFetch(`/api/stats/sessions-by-day${qs}`);
     const data = await res.json(); // [{ date, count }, ...]
 
     const labels = data.map(x => x.date);
@@ -147,7 +147,7 @@ async function loadSessionsChart() {
 async function loadReportsChart() {
   try {
     const qs = buildDateQuery();
-    const res = await authFetch(`${API_BASE_URL}/api/stats/reports-by-problem${qs}`);
+    const res = await authFetch(`/api/stats/reports-by-problem${qs}`);
     const data = await res.json(); // [{ problemType, count }, ...]
 
     const labels = data.map(x => x.problemType);
@@ -202,7 +202,7 @@ async function loadReportsChart() {
 async function loadTopComputersChart() {
   try {
     const qs = buildDateQuery();
-    const res = await authFetch(`${API_BASE_URL}/api/stats/top-computers${qs}`);
+    const res = await authFetch(`/api/stats/top-computers${qs}`);
     const data = await res.json(); // [{ computerName, reportCount }, ...]
 
     const labels = data.map(x => x.computerName);
@@ -267,7 +267,7 @@ async function loadTopComputersChart() {
 async function loadTopUsersChart() {
   try {
     const qs = buildDateQuery();
-    const res = await authFetch(`${API_BASE_URL}/api/stats/top-users${qs}`);
+    const res = await authFetch(`/api/stats/top-users${qs}`);
     const data = await res.json(); // [{ username, fullName, totalMinutes }, ...]
 
     const labels = data.map(x => x.fullName || x.username);
@@ -339,10 +339,10 @@ async function exportToCSV() {
       topComputersRes,
       topUsersRes
     ] = await Promise.all([
-      authFetch(`${API_BASE_URL}/api/stats/sessions-by-day${qs}`),
-      authFetch(`${API_BASE_URL}/api/stats/reports-by-problem${qs}`),
-      authFetch(`${API_BASE_URL}/api/stats/top-computers${qs}`),
-      authFetch(`${API_BASE_URL}/api/stats/top-users${qs}`)
+      authFetch(`/api/stats/sessions-by-day${qs}`),
+      authFetch(`/api/stats/reports-by-problem${qs}`),
+      authFetch(`/api/stats/top-computers${qs}`),
+      authFetch(`/api/stats/top-users${qs}`)
     ]);
 
     const sessions = await sessionsRes.json();
