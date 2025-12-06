@@ -27,6 +27,7 @@ public class ClassroomsController : ControllerBase
         try
         {
             var classrooms = await _context.Classrooms
+                .Where(c => c.Status == true) // Solo aulas activas
                 .OrderBy(c => c.Name)
                 .Select(c => new
                 {
@@ -42,7 +43,7 @@ public class ClassroomsController : ControllerBase
                     c.Status,
                     c.CreatedAt,
                     c.UpdatedAt,
-                    ComputerCount = _context.Computers.Count(comp => comp.ClassroomId == c.Id)
+                    ComputerCount = _context.Computers.Count(comp => comp.ClassroomId == c.Id && comp.Status == true)
                 })
                 .ToListAsync();
 
@@ -193,7 +194,7 @@ public class ClassroomsController : ControllerBase
         }
     }
 
-    // DELETE: api/classrooms/5
+    // DELETE: api/classrooms/5 (Eliminación lógica)
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteClassroom(int id)
     {
@@ -205,9 +206,23 @@ public class ClassroomsController : ControllerBase
                 return NotFound(new { message = "Aula no encontrada" });
             }
 
-            _context.Classrooms.Remove(classroom);
+            // Verificar si hay computadoras activas en esta aula
+            var activeComputersCount = await _context.Computers
+                .CountAsync(c => c.ClassroomId == id && c.Status == true);
+
+            if (activeComputersCount > 0)
+            {
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el aula '{classroom.Name}' porque tiene {activeComputersCount} computadora(s) activa(s) registrada(s). Desregistre las computadoras primero." 
+                });
+            }
+
+            // Eliminación lógica
+            classroom.Status = false;
+            classroom.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Aula eliminada lógicamente: {Id}", id);
             return Ok(new { message = "Aula eliminada correctamente" });
         }
         catch (Exception ex)

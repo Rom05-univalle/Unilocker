@@ -24,12 +24,22 @@ function renderComputers(items) {
                     ${statusBadge}
                 </span>
             </td>
-            <td class="text-end">
-                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${pc.id}" title="Desregistrar">
-                    <i class="fa-solid fa-ban"></i> Desregistrar
+            <td>
+                <button class="btn btn-sm btn-danger" data-id="${pc.id}" data-name="${pc.name}" title="Desregistrar computadora">
+                    <i class="fa-solid fa-trash"></i>
                 </button>
             </td>
         `;
+        
+        const btnDelete = tr.querySelector('button[data-id]');
+        if (btnDelete) {
+            btnDelete.addEventListener('click', () => {
+                const id = parseInt(btnDelete.getAttribute('data-id'), 10);
+                const name = btnDelete.getAttribute('data-name');
+                confirmUnregister(id, name);
+            });
+        }
+        
         tbody.appendChild(tr);
     });
 }
@@ -243,26 +253,30 @@ async function saveComputer(e) {
     }
 }
 
-async function deleteComputer(id) {
-    const ok = await showConfirm('Seguro que quieres eliminar esta computadora? (borrado lógico).');
-    if (!ok) return;
+async function confirmUnregister(id, name) {
+    const confirmed = await showConfirm(
+        'ADVERTENCIA: Desregistrar Computadora',
+        `<div class="alert alert-warning mb-3">
+            <strong>Esta acción solo debe usarse en caso de daños o pérdida del equipo.</strong><br>
+            Si la computadora está funcionando, desregistre desde el cliente.
+        </div>
+        <p>¿Está seguro de desregistrar la computadora <strong>${name}</strong>?</p>
+        <p class="text-danger small mb-0">Esta acción establecerá el estado de la computadora como inactiva.</p>`
+    );
 
-    showLoading('Eliminando computadora...');
+    if (!confirmed) return;
+
+    showLoading('Desregistrando computadora...');
     try {
         const resp = await authFetch(`/api/computers/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando computadora', resp.status, text);
-            showError(text || 'No se pudo eliminar la computadora.');
-            return;
-        }
-
-        showToast('Computadora eliminada correctamente.');
+        showToast(data.message || 'Computadora desregistrada correctamente.');
         await loadComputers();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar la computadora.');
+        const errorMsg = err.message || 'No se pudo desregistrar la computadora.';
+        showError(errorMsg);
     } finally {
         hideLoading();
     }
@@ -277,26 +291,6 @@ function attachEvents() {
 
     const selFilter = document.getElementById('filterClassroom');
     if (selFilter) selFilter.addEventListener('change', applyFilter);
-
-    const tbody = document.getElementById('computersTableBody');
-    if (tbody) {
-        tbody.addEventListener('click', (e) => {
-            const target = e.target;
-            if (!(target instanceof HTMLElement)) return;
-
-            const button = target.closest('button');
-            if (!button) return;
-
-            const idAttr = button.dataset.id;
-            if (!idAttr) return;
-            const id = parseInt(idAttr, 10);
-            if (Number.isNaN(id)) return;
-
-            if (button.classList.contains('btn-delete')) {
-                deleteComputer(id);
-            }
-        });
-    }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

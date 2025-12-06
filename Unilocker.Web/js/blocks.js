@@ -184,7 +184,7 @@ async function saveBlock(e) {
         await loadBlocks();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el bloque.');
+        showError(err.message || 'No se pudo guardar el bloque.');
     } finally {
         hideLoading();
     }
@@ -196,22 +196,14 @@ async function deleteBlock(id) {
 
     showLoading('Eliminando bloque...');
     try {
-        const resp = await authFetch(`/api/blocks/${id}`, {
-            method: 'DELETE'
-        });
+        const resp = await authFetch(`/api/blocks/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando bloque', resp.status, text);
-            showError(text || 'No se pudo eliminar el bloque.');
-            return;
-        }
-
-        showToast('Bloque eliminado correctamente.', 'success');
+        showToast(data.message || 'Bloque eliminado correctamente.', 'success');
         await loadBlocks();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el bloque.');
+        showError(err.message || 'No se pudo eliminar el bloque.');
     } finally {
         hideLoading();
     }

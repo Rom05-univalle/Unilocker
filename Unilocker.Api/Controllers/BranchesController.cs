@@ -27,6 +27,7 @@ public class BranchesController : ControllerBase
         try
         {
             var branches = await _context.Branches
+                .Where(b => b.Status == true)
                 .OrderBy(b => b.Name)
                 .Select(b => new
                 {
@@ -37,7 +38,7 @@ public class BranchesController : ControllerBase
                     b.Status,
                     b.CreatedAt,
                     b.UpdatedAt,
-                    BlockCount = b.Blocks.Count
+                    BlockCount = b.Blocks.Count(bl => bl.Status == true)
                 })
                 .ToListAsync();
 
@@ -139,7 +140,7 @@ public class BranchesController : ControllerBase
         }
     }
 
-    // DELETE: api/branches/5
+    // DELETE: api/branches/5 (Eliminación lógica en cascada)
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBranch(int id)
     {
@@ -151,10 +152,62 @@ public class BranchesController : ControllerBase
                 return NotFound(new { message = "Sede no encontrada" });
             }
 
-            _context.Branches.Remove(branch);
+            // Obtener todos los bloques de esta sede (activos e inactivos)
+            var blocks = await _context.Blocks
+                .Where(b => b.BranchId == id)
+                .ToListAsync();
+
+            // Para cada bloque, verificar si tiene aulas con computadoras activas
+            foreach (var block in blocks)
+            {
+                var computersCount = await _context.Computers
+                    .Join(_context.Classrooms,
+                        comp => comp.ClassroomId,
+                        classroom => classroom.Id,
+                        (comp, classroom) => new { comp, classroom })
+                    .Where(x => x.classroom.BlockId == block.Id && x.comp.Status == true)
+                    .CountAsync();
+
+                if (computersCount > 0)
+                {
+                    return BadRequest(new { 
+                        message = $"No se puede eliminar la sede '{branch.Name}' porque el bloque '{block.Name}' tiene {computersCount} computadora(s) activa(s) registrada(s). Desregistre las computadoras primero." 
+                    });
+                }
+            }
+
+            // Si no hay computadoras activas, proceder con eliminación en cascada
+            // 1. Eliminar lógicamente todas las aulas de todos los bloques
+            var classrooms = await _context.Classrooms
+                .Where(c => blocks.Select(b => b.Id).Contains(c.BlockId))
+                .ToListAsync();
+
+            foreach (var classroom in classrooms)
+            {
+                classroom.Status = false;
+                classroom.UpdatedAt = DateTime.Now;
+            }
+
+            // 2. Eliminar lógicamente todos los bloques
+            foreach (var block in blocks)
+            {
+                block.Status = false;
+                block.UpdatedAt = DateTime.Now;
+            }
+
+            // 3. Eliminar lógicamente la sede
+            branch.Status = false;
+            branch.UpdatedAt = DateTime.Now;
+
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Sede eliminada correctamente" });
+            _logger.LogInformation("Sede eliminada lógicamente en cascada: {Id}, Bloques: {BlockCount}, Aulas: {ClassroomCount}", 
+                id, blocks.Count, classrooms.Count);
+            return Ok(new { 
+                message = "Sede eliminada correctamente", 
+                blocksDeleted = blocks.Count, 
+                classroomsDeleted = classrooms.Count 
+            });
         }
         catch (Exception ex)
         {

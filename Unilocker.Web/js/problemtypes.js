@@ -150,19 +150,13 @@ async function deleteProblemType(id) {
     showLoading('Eliminando tipo de problema...');
     try {
         const resp = await authFetch(`/api/problemtypes/${id}`, { method: 'DELETE' });
-        const text = await resp.text();
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            console.error('Error eliminando tipo de problema', resp.status, text);
-            showError(text || 'No se pudo eliminar el tipo de problema.');
-            return;
-        }
-
-        showToast('Tipo de problema eliminado correctamente.');
+        showToast(data.message || 'Tipo de problema eliminado correctamente.');
         await loadProblemTypes();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el tipo de problema.');
+        showError(err.message || 'No se pudo eliminar el tipo de problema.');
     } finally {
         hideLoading();
     }

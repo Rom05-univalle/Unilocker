@@ -59,7 +59,7 @@
                                     <th>Nombre</th>
                                     <th>UUID</th>
                                     <th>Estado</th>
-                                    <th class="text-end" style="width: 200px;">Acciones</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="computersTableBody">
@@ -127,14 +127,14 @@
 
 <!-- Modal confirmación global -->
 <div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-labelledby="globalConfirmTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="globalConfirmTitle">Confirmar acción</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <p id="globalConfirmMessage">¿Seguro que deseas continuar?</p>
+                <div id="globalConfirmMessage">¿Seguro que deseas continuar?</div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="globalConfirmCancel" data-bs-dismiss="modal">Cancelar</button>

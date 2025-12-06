@@ -27,6 +27,7 @@ public class RolesController : ControllerBase
         try
         {
             var roles = await _context.Roles
+                .Where(r => r.Status == true)
                 .OrderBy(r => r.Name)
                 .Select(r => new
                 {
@@ -142,7 +143,7 @@ public class RolesController : ControllerBase
         }
     }
 
-    // DELETE: api/roles/5
+    // DELETE: api/roles/5 (Eliminación en cascada)
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRole(int id)
     {
@@ -157,23 +158,47 @@ public class RolesController : ControllerBase
             // Validación 1: No permitir eliminar el rol Admin
             if (role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest(new { message = "No puedes eliminar el rol de Administrador" });
+                return BadRequest(new { message = $"No se puede eliminar el rol '{role.Name}' porque es un rol del sistema protegido." });
             }
 
-            // Eliminar todos los usuarios con este rol (eliminación en cascada)
-            var usersWithRole = await _context.Users.Where(u => u.RoleId == id).ToListAsync();
+            // Validación 2: Verificar si algún usuario con este rol tiene sesión activa
+            var usersWithRole = await _context.Users
+                .Where(u => u.RoleId == id)
+                .ToListAsync();
+
             if (usersWithRole.Any())
             {
-                _logger.LogInformation("Eliminando {Count} usuarios asociados al rol {RoleId}", usersWithRole.Count, id);
-                _context.Users.RemoveRange(usersWithRole);
+                // Verificar si hay sesiones activas de estos usuarios
+                var userIds = usersWithRole.Select(u => u.Id).ToList();
+                var activeSessionsCount = await _context.Sessions
+                    .CountAsync(s => userIds.Contains(s.UserId) && s.IsActive == true);
+
+                if (activeSessionsCount > 0)
+                {
+                    return BadRequest(new { 
+                        message = $"No se puede eliminar el rol '{role.Name}' porque hay {activeSessionsCount} usuario(s) con sesiones activas. Los usuarios deben cerrar sesión primero." 
+                    });
+                }
+
+                // Si no hay sesiones activas, eliminar lógicamente todos los usuarios del rol
+                foreach (var user in usersWithRole)
+                {
+                    user.Status = false;
+                    user.UpdatedAt = DateTime.Now;
+                }
             }
 
-            // Eliminar el rol
-            _context.Roles.Remove(role);
+            // Eliminación lógica del rol
+            role.Status = false;
+            role.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Rol eliminado: {RoleId}, Usuarios eliminados: {UserCount}", id, usersWithRole.Count);
-            return Ok(new { message = "Rol eliminado correctamente", usersDeleted = usersWithRole.Count });
+            _logger.LogInformation("Rol eliminado lógicamente en cascada: {RoleId}, Usuarios eliminados: {UserCount}", 
+                id, usersWithRole.Count);
+            return Ok(new { 
+                message = "Rol eliminado correctamente", 
+                usersDeleted = usersWithRole.Count 
+            });
         }
         catch (Exception ex)
         {

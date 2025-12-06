@@ -318,4 +318,20 @@ public class ApiService
             throw new Exception($"Error al verificar código: {ex.Message}", ex);
         }
     }
+
+    /// <summary>
+    /// Desregistra una computadora (cambia Status a false en la BD)
+    /// </summary>
+    public async Task<bool> UnregisterComputerAsync(int computerId)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"/api/computers/{computerId}");
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

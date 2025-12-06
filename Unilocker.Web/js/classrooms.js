@@ -252,7 +252,7 @@ async function saveClassroom(e) {
         await loadClassrooms();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el aula.');
+        showError(err.message || 'No se pudo guardar el aula.');
     } finally {
         hideLoading();
     }
@@ -264,22 +264,14 @@ async function deleteClassroom(id) {
 
     showLoading('Eliminando aula...');
     try {
-        const resp = await authFetch(`/api/classrooms/${id}`, {
-            method: 'DELETE'
-        });
+        const resp = await authFetch(`/api/classrooms/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando aula', resp.status, text);
-            showError(text || 'No se pudo eliminar el aula.');
-            return;
-        }
-
-        showToast('Aula eliminada correctamente.', 'success');
+        showToast(data.message || 'Aula eliminada correctamente.', 'success');
         await loadClassrooms();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el aula.');
+        showError(err.message || 'No se pudo eliminar el aula.');
     } finally {
         hideLoading();
     }

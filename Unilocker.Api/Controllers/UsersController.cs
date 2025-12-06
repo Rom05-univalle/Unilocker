@@ -27,6 +27,7 @@ public class UsersController : ControllerBase
         try
         {
             var users = await _context.Users
+                .Where(u => u.Status == true)
                 .OrderBy(u => u.Username)
                 .Select(u => new
                 {
@@ -333,7 +334,7 @@ public class UsersController : ControllerBase
             // Validación 1: No permitir eliminar el propio usuario
             if (currentUserId == id)
             {
-                return BadRequest(new { message = "No puedes eliminar tu propia cuenta" });
+                return BadRequest(new { message = "No puedes eliminar tu propia cuenta mientras estás autenticado." });
             }
 
             var user = await _context.Users
@@ -351,19 +352,25 @@ public class UsersController : ControllerBase
 
             if (hasActiveSession)
             {
-                return BadRequest(new { message = "No puedes eliminar un usuario con sesión activa. Debe cerrar sesión primero" });
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el usuario '{user.Username}' porque tiene una sesión activa. El usuario debe cerrar sesión primero." 
+                });
             }
 
             // Validación 3: No permitir eliminar administradores
             if (user.Role != null && user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest(new { message = "No puedes eliminar usuarios con rol de Administrador" });
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el usuario '{user.Username}' porque tiene rol de Administrador. Los administradores están protegidos." 
+                });
             }
 
-            _context.Users.Remove(user);
+            // Eliminación lógica
+            user.Status = false;
+            user.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Usuario eliminado: {UserId} por usuario {CurrentUserId}", id, currentUserId);
+            _logger.LogInformation("Usuario eliminado lógicamente: {UserId} por usuario {CurrentUserId}", id, currentUserId);
             return Ok(new { message = "Usuario eliminado correctamente" });
         }
         catch (Exception ex)

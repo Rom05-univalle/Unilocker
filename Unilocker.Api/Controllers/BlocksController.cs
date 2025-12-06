@@ -27,7 +27,7 @@ public class BlocksController : ControllerBase
     {
         try
         {
-            var query = _context.Blocks.AsQueryable();
+            var query = _context.Blocks.Where(b => b.Status == true);
 
             if (branchId.HasValue)
             {
@@ -46,7 +46,7 @@ public class BlocksController : ControllerBase
                     b.Status,
                     b.CreatedAt,
                     b.UpdatedAt,
-                    ClassroomCount = _context.Classrooms.Count(c => c.BlockId == b.Id)
+                    ClassroomCount = _context.Classrooms.Count(c => c.BlockId == b.Id && c.Status == true)
                 })
                 .ToListAsync();
 
@@ -184,7 +184,7 @@ public class BlocksController : ControllerBase
         }
     }
 
-    // DELETE: api/blocks/5
+    // DELETE: api/blocks/5 (Eliminación lógica)
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBlock(int id)
     {
@@ -196,9 +196,36 @@ public class BlocksController : ControllerBase
                 return NotFound(new { message = "Bloque no encontrado" });
             }
 
-            _context.Blocks.Remove(block);
+            // Verificar si hay aulas activas en este bloque
+            var activeClassrooms = await _context.Classrooms
+                .Where(c => c.BlockId == id && c.Status == true)
+                .ToListAsync();
+
+            if (activeClassrooms.Any())
+            {
+                // Verificar si alguna aula tiene computadoras activas
+                var classroomIds = activeClassrooms.Select(c => c.Id).ToList();
+                var hasActiveComputers = await _context.Computers
+                    .AnyAsync(comp => classroomIds.Contains(comp.ClassroomId) && comp.Status == true);
+
+                if (hasActiveComputers)
+                {
+                    return BadRequest(new { 
+                        message = $"No se puede eliminar el bloque '{block.Name}' porque tiene aulas con computadoras activas registradas. Desregistre las computadoras primero." 
+                    });
+                }
+
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el bloque '{block.Name}' porque tiene {activeClassrooms.Count} aula(s) activa(s). Elimine las aulas primero." 
+                });
+            }
+
+            // Eliminación lógica
+            block.Status = false;
+            block.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Bloque eliminado lógicamente: {Id}", id);
             return Ok(new { message = "Bloque eliminado correctamente" });
         }
         catch (Exception ex)

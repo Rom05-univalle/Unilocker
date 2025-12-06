@@ -315,18 +315,13 @@ async function deleteUser(id) {
     showLoading('Eliminando usuario...');
     try {
         const resp = await authFetch(`/api/users/${id}`, { method: 'DELETE' });
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando usuario', resp.status, text);
-            showError(text || 'No se pudo eliminar el usuario.');
-            return;
-        }
+        const data = await resp.json();
 
-        showToast('Usuario eliminado correctamente.');
+        showToast(data.message || 'Usuario eliminado correctamente.');
         await loadUsers();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el usuario.');
+        showError(err.message || 'No se pudo eliminar el usuario.');
     } finally {
         hideLoading();
     }

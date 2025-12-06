@@ -224,10 +224,24 @@ public class ProblemTypesController : ControllerBase
                 return NotFound(new { message = "Tipo de problema no encontrado" });
             }
 
-            _context.ProblemTypes.Remove(problemType);
+            // Verificar si hay reportes activos con este tipo de problema (Pending o In Progress)
+            var activeReportsCount = await _context.Reports
+                .CountAsync(r => r.ProblemTypeId == id && 
+                    (r.ReportStatus == "Pending" || r.ReportStatus == "In Progress"));
+
+            if (activeReportsCount > 0)
+            {
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el tipo de problema '{problemType.Name}' porque tiene {activeReportsCount} reporte(s) pendiente(s) o en progreso. Resuelva o cierre los reportes primero." 
+                });
+            }
+
+            // Eliminación lógica
+            problemType.Status = false;
+            problemType.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Tipo de problema eliminado: {ProblemTypeId}", id);
+            _logger.LogInformation("Tipo de problema eliminado lógicamente: {ProblemTypeId}", id);
             return Ok(new { message = "Tipo de problema eliminado correctamente" });
         }
         catch (Exception ex)

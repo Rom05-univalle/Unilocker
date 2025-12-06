@@ -332,7 +332,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Maneja el click del botón de desregistro
     /// </summary>
-    private void BtnUnregister_Click(object sender, RoutedEventArgs e)
+    private async void BtnUnregister_Click(object sender, RoutedEventArgs e)
     {
         var result = ModernDialog.ShowConfirm(
             "⚠️ ADVERTENCIA: DESREGISTRO DE COMPUTADORA ⚠️\n\n" +
@@ -356,6 +356,21 @@ public partial class MainWindow : Window
 
             if (confirmResult)
             {
+                // Intentar desregistrar en el servidor primero
+                var computerId = _configService.GetStoredComputerId();
+                if (computerId.HasValue)
+                {
+                    try
+                    {
+                        await _apiService.UnregisterComputerAsync(computerId.Value);
+                    }
+                    catch
+                    {
+                        // Si falla la llamada al API, continuar con el desregistro local
+                        // (por ejemplo, si no hay conexión)
+                    }
+                }
+
                 if (_configService.UnregisterComputer())
                 {
                     ModernDialog.Show(

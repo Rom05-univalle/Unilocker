@@ -149,7 +149,7 @@ async function saveBranch(e) {
         await loadBranches();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar la sucursal.');
+        showError(err.message || 'No se pudo guardar la sucursal.');
     } finally {
         hideLoading();
     }
@@ -162,13 +162,13 @@ async function deleteBranch(id) {
     showLoading('Eliminando sucursal...');
     try {
         const resp = await authFetch(`/api/branches/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
 
-        // Tu API devuelve 204, así que con llegar aquí ya está OK
-        showToast('Sucursal eliminada correctamente.');
-        await loadBranches();   // ← esta llamada es la que refresca la tabla
+        showToast(data.message || 'Sucursal eliminada correctamente.');
+        await loadBranches();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar la sucursal.');
+        showError(err.message || 'No se pudo eliminar la sucursal.');
     } finally {
         hideLoading();
     }

@@ -165,19 +165,13 @@ async function deleteRole(id) {
     showLoading('Eliminando rol...');
     try {
         const resp = await authFetch(`/api/roles/${id}`, { method: 'DELETE' });
-        const text = await resp.text();
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            console.error('Error eliminando rol', resp.status, text);
-            showError(text || 'No se pudo eliminar el rol.');
-            return;
-        }
-
-        showToast('Rol eliminado correctamente.');
+        showToast(data.message || 'Rol eliminado correctamente.');
         await loadRoles();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el rol.');
+        showError(err.message || 'No se pudo eliminar el rol.');
     } finally {
         hideLoading();
     }
