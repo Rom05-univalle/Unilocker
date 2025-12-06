@@ -15,11 +15,6 @@ function renderBranches(rows) {
             <td>${branch.name}</td>
             <td>${branch.code ?? ''}</td>
             <td>${branch.address ?? ''}</td>
-            <td>
-                <span class="badge ${branch.status ? 'bg-success' : 'bg-secondary'}">
-                    ${branch.status ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${branch.id}">
                     Editar
@@ -78,8 +73,6 @@ function openCreateModal() {
     document.getElementById('txtBranchName').value = '';
     document.getElementById('txtBranchCode').value = '';
     document.getElementById('txtBranchAddress').value = '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = true;
 
     const titleEl = document.getElementById('branchModalTitle');
     if (titleEl) titleEl.textContent = 'Nueva sucursal';
@@ -100,8 +93,6 @@ function openEditModal(id) {
     document.getElementById('txtBranchName').value = branch.name ?? '';
     document.getElementById('txtBranchCode').value = branch.code ?? '';
     document.getElementById('txtBranchAddress').value = branch.address ?? '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = !!branch.status;
 
     const titleEl = document.getElementById('branchModalTitle');
     if (titleEl) titleEl.textContent = 'Editar sucursal';
@@ -118,7 +109,6 @@ async function saveBranch(e) {
     const name = document.getElementById('txtBranchName').value.trim();
     const code = document.getElementById('txtBranchCode').value.trim();
     const address = document.getElementById('txtBranchAddress').value.trim();
-    const chk = document.getElementById('chkStatus');
 
     if (!name) {
         showError('El nombre es obligatorio.');
@@ -137,7 +127,7 @@ async function saveBranch(e) {
         name,
         code,
         address,
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;

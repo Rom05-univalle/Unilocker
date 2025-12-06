@@ -17,11 +17,6 @@ function renderClassrooms(items) {
             <td>${c.name}</td>
             <td>${c.blockName ?? ''}</td>
             <td>${c.branchName ?? ''}</td>
-            <td>
-                <span class="badge ${c.status ? 'bg-success' : 'bg-secondary'}">
-                    ${c.status ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${c.id}">
                     Editar
@@ -152,8 +147,6 @@ function openCreateModal() {
     const ddlBlock = document.getElementById('ddlBlock');
     if (ddlBranch) ddlBranch.value = '';
     if (ddlBlock) ddlBlock.innerHTML = '<option value="">Seleccione un bloque</option>';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = true;
 
     const titleEl = document.getElementById('classroomModalTitle');
     if (titleEl) titleEl.textContent = 'Nueva aula';
@@ -175,7 +168,6 @@ async function openEditModal(id) {
     document.getElementById('txtCapacity').value = classroom.capacity ?? '';
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
-    const chk = document.getElementById('chkStatus');
 
     if (ddlBranch) ddlBranch.value = classroom.branchId ?? '';
     await loadBlocksForSelect(classroom.branchId);
@@ -184,8 +176,6 @@ async function openEditModal(id) {
         const existsInBranch = blocksCache.some(b => b.id === classroom.blockId);
         ddlBlock.value = existsInBranch ? classroom.blockId : '';
     }
-
-    if (chk) chk.checked = !!classroom.status;
 
     const titleEl = document.getElementById('classroomModalTitle');
     if (titleEl) titleEl.textContent = 'Editar aula';
@@ -204,7 +194,6 @@ async function saveClassroom(e) {
     const capacity = capacityInput?.value ? parseInt(capacityInput.value, 10) : null;
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
-    const chk = document.getElementById('chkStatus');
 
     if (!name) {
         showError('El nombre del aula es obligatorio.');
@@ -232,7 +221,7 @@ async function saveClassroom(e) {
         name,
         capacity,
         blockId: parseInt(blockIdValue, 10),
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;

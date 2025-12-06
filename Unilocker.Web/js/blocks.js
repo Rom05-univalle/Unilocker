@@ -15,11 +15,6 @@ function renderBlocks(rows) {
         tr.innerHTML = `
             <td>${block.name}</td>
             <td>${block.branchName ?? ''}</td>
-            <td>
-                <span class="badge ${block.status ? 'bg-success' : 'bg-secondary'}">
-                    ${block.status ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${block.id}">
                     Editar
@@ -107,8 +102,6 @@ function openCreateModal() {
     document.getElementById('blockId').value = '';
     document.getElementById('txtBlockName').value = '';
     document.getElementById('ddlBranch').value = '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = true;
 
     const titleEl = document.getElementById('blockModalTitle');
     if (titleEl) titleEl.textContent = 'Nuevo bloque';
@@ -129,8 +122,6 @@ function openEditModal(id) {
     document.getElementById('txtBlockName').value = block.name ?? '';
     const ddl = document.getElementById('ddlBranch');
     if (ddl) ddl.value = block.branchId ?? '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = !!block.status;
 
     const titleEl = document.getElementById('blockModalTitle');
     if (titleEl) titleEl.textContent = 'Editar bloque';
@@ -146,7 +137,6 @@ async function saveBlock(e) {
 
     const name = document.getElementById('txtBlockName').value.trim();
     const ddl = document.getElementById('ddlBranch');
-    const chk = document.getElementById('chkStatus');
 
     if (!name) {
         showError('El nombre del bloque es obligatorio.');
@@ -163,7 +153,7 @@ async function saveBlock(e) {
         name,
         address: null, // Campo opcional del modelo
         branchId,
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;

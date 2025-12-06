@@ -179,8 +179,8 @@ public class ApiService
             var response = await _httpClient.GetAsync("/api/problemtypes");
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<ProblemTypesResponse>();
-            return result?.ProblemTypes ?? new List<ProblemType>();
+            var result = await response.Content.ReadFromJsonAsync<List<ProblemType>>();
+            return result ?? new List<ProblemType>();
         }
         catch (Exception ex)
         {

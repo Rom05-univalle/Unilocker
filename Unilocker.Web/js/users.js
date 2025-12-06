@@ -19,6 +19,7 @@ function renderUsers(items) {
         tr.innerHTML = `
             <td>${u.username}</td>
             <td>${u.email}</td>
+            <td>${u.phone ?? ''}</td>
             <td>${u.roleName ?? ''}</td>
             <td>
                 <span class="badge ${u.status ? 'bg-success' : 'bg-secondary'}">
@@ -64,6 +65,7 @@ async function loadUsers() {
             firstName: u.firstName,
             lastName: u.lastName,
             email: u.email,
+            phone: u.phone,
             status: activeUserIds.has(u.id), // Estado basado en si tiene sesión activa
             roleId: u.roleId,
             roleName: u.roleName
@@ -130,10 +132,8 @@ function openCreateModal() {
     document.getElementById('txtFirstName').value = '';
     document.getElementById('txtLastName').value = '';
     document.getElementById('txtEmail').value = '';
+    document.getElementById('txtPhone').value = '';
     document.getElementById('txtPassword').value = '';
-
-    const chk = document.getElementById('chkUserStatus');
-    if (chk) chk.checked = true;
 
     populateRolesSelect();
 
@@ -144,6 +144,13 @@ function openCreateModal() {
 }
 
 function openEditModal(id) {
+    // Validación: No permitir editar el propio usuario
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.userId === id) {
+        showError('No puedes editar tu propia cuenta.');
+        return;
+    }
+
     const u = usersCache.find(x => x.id === id);
     if (!u) return;
 
@@ -157,10 +164,8 @@ function openEditModal(id) {
     document.getElementById('txtFirstName').value = u.firstName ?? u.username ?? '';
     document.getElementById('txtLastName').value = u.lastName ?? u.username ?? '';
     document.getElementById('txtEmail').value = u.email ?? '';
+    document.getElementById('txtPhone').value = u.phone ?? '';
     document.getElementById('txtPassword').value = ''; // vacío: solo cambia si escribe algo
-
-    const chk = document.getElementById('chkUserStatus');
-    if (chk) chk.checked = !!u.status;
 
     populateRolesSelect(u.roleId);
 
@@ -182,9 +187,9 @@ async function saveUser(e) {
     const firstName = document.getElementById('txtFirstName').value.trim();
     const lastName = document.getElementById('txtLastName').value.trim();
     const email = document.getElementById('txtEmail').value.trim();
+    const phone = document.getElementById('txtPhone').value.trim();
     const password = document.getElementById('txtPassword').value;
     const selRole = document.getElementById('selUserRole');
-    const chk = document.getElementById('chkUserStatus');
 
     const roleId = selRole ? parseInt(selRole.value || '0', 10) : 0;
 
@@ -216,10 +221,11 @@ async function saveUser(e) {
     const payload = {
         username,
         email: email || null,
+        phone: phone || null,
         firstName,
         lastName,
         passwordHash: password || null,
-        status: chk ? chk.checked : true,
+        status: true,
         roleId
     };
 
@@ -235,10 +241,25 @@ async function saveUser(e) {
     showLoading('Guardando usuario...');
     try {
         const resp = await authFetch(url, { method, body: payload });
-        const text = await resp.text();
+        
         if (!resp.ok) {
-            console.error('Error guardando usuario', resp.status, text);
-            showError(text || 'No se pudo guardar el usuario.');
+            // Intentar parsear la respuesta como JSON para obtener el mensaje de error
+            let errorMessage = 'No se pudo guardar el usuario.';
+            try {
+                const errorData = await resp.json();
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (parseError) {
+                // Si no se puede parsear como JSON, intentar leer como texto
+                const text = await resp.text();
+                if (text) {
+                    errorMessage = text;
+                }
+            }
+            
+            console.error('Error guardando usuario', resp.status, errorMessage);
+            showError(errorMessage);
             return;
         }
 

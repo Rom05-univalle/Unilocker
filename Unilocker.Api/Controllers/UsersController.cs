@@ -33,6 +33,7 @@ public class UsersController : ControllerBase
                     u.Id,
                     u.Username,
                     u.Email,
+                    u.Phone,
                     u.FirstName,
                     u.LastName,
                     u.RoleId,
@@ -65,6 +66,7 @@ public class UsersController : ControllerBase
                     u.Id,
                     u.Username,
                     u.Email,
+                    u.Phone,
                     u.FirstName,
                     u.LastName,
                     u.RoleId,
@@ -100,6 +102,8 @@ public class UsersController : ControllerBase
             var username = dto.TryGetProperty("username", out var usernameEl) ? usernameEl.GetString() : string.Empty;
             var email = dto.TryGetProperty("email", out var emailEl) && emailEl.ValueKind != System.Text.Json.JsonValueKind.Null
                 ? emailEl.GetString() : null;
+            var phone = dto.TryGetProperty("phone", out var phoneEl) && phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? phoneEl.GetString() : null;
             var firstName = dto.TryGetProperty("firstName", out var firstNameEl) ? firstNameEl.GetString() : string.Empty;
             var lastName = dto.TryGetProperty("lastName", out var lastNameEl) ? lastNameEl.GetString() : string.Empty;
             var passwordHash = dto.TryGetProperty("passwordHash", out var passwordEl) ? passwordEl.GetString() : null;
@@ -131,6 +135,7 @@ public class UsersController : ControllerBase
             {
                 Username = username,
                 Email = email,
+                Phone = phone,
                 FirstName = firstName,
                 LastName = lastName,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordHash),
@@ -153,10 +158,23 @@ public class UsersController : ControllerBase
                 user.RoleId
             });
         }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Error de base de datos al crear usuario");
+            
+            // Detectar errores de duplicación
+            if (ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ||
+                ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return BadRequest(new { message = "Ya existe un usuario con ese email o username" });
+            }
+            
+            return StatusCode(500, new { message = "Error al crear usuario", error = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al crear usuario");
-            return StatusCode(500, new { message = "Error al crear usuario", error = ex.Message, stackTrace = ex.StackTrace });
+            return StatusCode(500, new { message = "Error al crear usuario", error = ex.Message });
         }
     }
 
@@ -185,9 +203,10 @@ public class UsersController : ControllerBase
             }
 
             // Validación adicional: Si se intenta cambiar el rol de un Admin, validar
-            if (dto.TryGetProperty("roleId", out var roleEl))
+            int? newRoleId = null;
+            if (dto.TryGetProperty("roleId", out var roleIdEl))
             {
-                var newRoleId = roleEl.GetInt32();
+                newRoleId = roleIdEl.GetInt32();
                 if (existingUser.Role != null && existingUser.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
                 {
                     // Verificar si el nuevo rol es diferente al actual
@@ -214,6 +233,10 @@ public class UsersController : ControllerBase
             {
                 existingUser.Email = emailEl.ValueKind != System.Text.Json.JsonValueKind.Null ? emailEl.GetString() : null;
             }
+            if (dto.TryGetProperty("phone", out var phoneEl))
+            {
+                existingUser.Phone = phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null ? phoneEl.GetString() : null;
+            }
             if (dto.TryGetProperty("firstName", out var firstNameEl) && firstNameEl.ValueKind == System.Text.Json.JsonValueKind.String)
             {
                 existingUser.FirstName = firstNameEl.GetString() ?? existingUser.FirstName;
@@ -222,9 +245,10 @@ public class UsersController : ControllerBase
             {
                 existingUser.LastName = lastNameEl.GetString() ?? existingUser.LastName;
             }
-            if (dto.TryGetProperty("roleId", out var roleIdEl))
+            if (newRoleId.HasValue && newRoleId.Value != existingUser.RoleId)
             {
-                existingUser.RoleId = roleIdEl.GetInt32();
+                // Solo actualizar el RoleId, EF Core manejará la navegación automáticamente
+                existingUser.RoleId = newRoleId.Value;
             }
             if (dto.TryGetProperty("status", out var statusEl))
             {
@@ -255,10 +279,23 @@ public class UsersController : ControllerBase
                 existingUser.Status
             });
         }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Error de base de datos al actualizar usuario");
+            
+            // Detectar errores de duplicación
+            if (ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ||
+                ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return BadRequest(new { message = "Ya existe un usuario con ese email o username" });
+            }
+            
+            return StatusCode(500, new { message = "Error al actualizar usuario", error = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al actualizar usuario");
-            return StatusCode(500, new { message = "Error al actualizar usuario", error = ex.Message, stackTrace = ex.StackTrace });
+            return StatusCode(500, new { message = "Error al actualizar usuario", error = ex.Message });
         }
     }
 

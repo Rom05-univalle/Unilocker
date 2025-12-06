@@ -12,15 +12,9 @@ function renderProblemTypes(items) {
 
     tbody.innerHTML = '';
     items.forEach(p => {
-        const statusBadge = p.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${p.name}</td>
-            <td>
-                <span class="badge ${p.status ? 'bg-success' : 'bg-secondary'}">
-                    ${statusBadge}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${p.id}">
                     Editar
@@ -71,9 +65,6 @@ function openCreateModal() {
     document.getElementById('txtProblemTypeName').value = '';
     document.getElementById('txtDescription').value = '';
 
-    const chk = document.getElementById('chkProblemTypeStatus');
-    if (chk) chk.checked = true;
-
     const titleEl = document.getElementById('problemTypeModalTitle');
     if (titleEl) titleEl.textContent = 'Nuevo tipo de problema';
 
@@ -93,9 +84,6 @@ function openEditModal(id) {
     document.getElementById('txtProblemTypeName').value = p.name ?? '';
     document.getElementById('txtDescription').value = p.description ?? '';
 
-    const chk = document.getElementById('chkProblemTypeStatus');
-    if (chk) chk.checked = !!p.status;
-
     const titleEl = document.getElementById('problemTypeModalTitle');
     if (titleEl) titleEl.textContent = 'Editar tipo de problema';
 
@@ -112,7 +100,6 @@ async function saveProblemType(e) {
 
     const name = document.getElementById('txtProblemTypeName').value.trim();
     const description = document.getElementById('txtDescription').value.trim();
-    const chk = document.getElementById('chkProblemTypeStatus');
     if (!name) {
         showError('El nombre es obligatorio.');
         return;
@@ -121,7 +108,7 @@ async function saveProblemType(e) {
     const payload = {
         name,
         description: description || null,
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;

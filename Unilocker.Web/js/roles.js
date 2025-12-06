@@ -12,16 +12,10 @@ function renderRoles(items) {
 
     tbody.innerHTML = '';
     items.forEach(r => {
-        const statusBadge = r.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${r.name}</td>
             <td>${r.description ?? ''}</td>
-            <td>
-                <span class="badge ${r.status ? 'bg-success' : 'bg-secondary'}">
-                    ${statusBadge}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${r.id}">
                     Editar
@@ -72,9 +66,6 @@ function openCreateModal() {
     document.getElementById('txtRoleName').value = '';
     document.getElementById('txtRoleDescription').value = '';
 
-    const chk = document.getElementById('chkRoleStatus');
-    if (chk) chk.checked = true;
-
     const titleEl = document.getElementById('roleModalTitle');
     if (titleEl) titleEl.textContent = 'Nuevo rol';
 
@@ -94,9 +85,6 @@ function openEditModal(id) {
     document.getElementById('txtRoleName').value = r.name ?? '';
     document.getElementById('txtRoleDescription').value = r.description ?? '';
 
-    const chk = document.getElementById('chkRoleStatus');
-    if (chk) chk.checked = !!r.status;
-
     const titleEl = document.getElementById('roleModalTitle');
     if (titleEl) titleEl.textContent = 'Editar rol';
 
@@ -113,7 +101,6 @@ async function saveRole(e) {
 
     const name = document.getElementById('txtRoleName').value.trim();
     const description = document.getElementById('txtRoleDescription').value.trim();
-    const chk = document.getElementById('chkRoleStatus');
 
     if (!name) {
         showError('El nombre es obligatorio.');
@@ -123,7 +110,7 @@ async function saveRole(e) {
     const payload = {
         name,
         description: description || null,
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;

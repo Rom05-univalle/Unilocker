@@ -156,11 +156,11 @@ public partial class ReportWindow : Window
         TxtStatus.Foreground = isError
             ? System.Windows.Media.Brushes.Red
             : System.Windows.Media.Brushes.Green;
-        TxtStatus.Visibility = Visibility.Visible;
+        StatusMessageBorder.Visibility = Visibility.Visible;
     }
 
     private void HideStatus()
     {
-        TxtStatus.Visibility = Visibility.Collapsed;
+        StatusMessageBorder.Visibility = Visibility.Collapsed;
     }
 }

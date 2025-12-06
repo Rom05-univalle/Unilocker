@@ -49,6 +49,7 @@
                                 <tr>
                                     <th>Usuario</th>
                                     <th>Email</th>
+                                    <th>Teléfono</th>
                                     <th>Rol</th>
                                     <th>Estado</th>
                                     <th class="text-end" style="width: 220px;">Acciones</th>
@@ -96,6 +97,10 @@
                         <input type="email" class="form-control" id="txtEmail" required />
                     </div>
                     <div class="mb-3">
+                        <label for="txtPhone" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="txtPhone" placeholder="Ej: 70123456" />
+                    </div>
+                    <div class="mb-3">
                         <label for="selUserRole" class="form-label">Rol</label>
                         <select id="selUserRole" class="form-select" required>
                             <option value="">Seleccione rol...</option>
@@ -107,10 +112,6 @@
                             <small class="text-muted d-block">(obligatoria solo al crear; en edición déjala vacía si no deseas cambiarla)</small>
                         </label>
                         <input type="password" class="form-control" id="txtPassword" />
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="chkUserStatus" checked />
-                        <label class="form-check-label" for="chkUserStatus">Activo</label>
                     </div>
                 </div>
                 <div class="modal-footer">
