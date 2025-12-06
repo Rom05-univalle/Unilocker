@@ -207,7 +207,7 @@ public class UsersController : ControllerBase
             if (dto.TryGetProperty("roleId", out var roleIdEl))
             {
                 newRoleId = roleIdEl.GetInt32();
-                if (existingUser.Role != null && existingUser.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                if (existingUser.Role != null && existingUser.Role.Name.ToLower() == "admin")
                 {
                     // Verificar si el nuevo rol es diferente al actual
                     if (newRoleId != existingUser.RoleId)
@@ -215,7 +215,7 @@ public class UsersController : ControllerBase
                         // Contar cuántos admins hay actualmente
                         var adminCount = await _context.Users
                             .Include(u => u.Role)
-                            .CountAsync(u => u.Role != null && u.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+                            .CountAsync(u => u.Role != null && u.Role.Name.ToLower() == "admin");
 
                         if (adminCount <= 1)
                         {
@@ -247,6 +247,9 @@ public class UsersController : ControllerBase
             }
             if (newRoleId.HasValue && newRoleId.Value != existingUser.RoleId)
             {
+                _logger.LogInformation("Cambiando rol del usuario {UserId} de RoleId {OldRoleId} a {NewRoleId}", 
+                    existingUser.Id, existingUser.RoleId, newRoleId.Value);
+                
                 // Solo actualizar el RoleId, EF Core manejará la navegación automáticamente
                 existingUser.RoleId = newRoleId.Value;
             }
@@ -265,7 +268,9 @@ public class UsersController : ControllerBase
             
             existingUser.UpdatedAt = DateTime.Now;
 
+            _logger.LogInformation("Guardando cambios en base de datos para usuario {UserId}", existingUser.Id);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("SaveChangesAsync completado exitosamente");
 
             _logger.LogInformation("Usuario actualizado exitosamente: {UserId} por usuario {CurrentUserId}", id, currentUserId);
             return Ok(new
@@ -281,7 +286,8 @@ public class UsersController : ControllerBase
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
         {
-            _logger.LogError(ex, "Error de base de datos al actualizar usuario");
+            _logger.LogError(ex, "DbUpdateException al actualizar usuario {UserId}. InnerException: {InnerException}", 
+                id, ex.InnerException?.Message ?? "null");
             
             // Detectar errores de duplicación
             if (ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ||
@@ -290,12 +296,24 @@ public class UsersController : ControllerBase
                 return BadRequest(new { message = "Ya existe un usuario con ese email o username" });
             }
             
-            return StatusCode(500, new { message = "Error al actualizar usuario", error = ex.Message });
+            return StatusCode(500, new { 
+                message = "Error al actualizar usuario en base de datos", 
+                error = ex.Message,
+                innerError = ex.InnerException?.Message,
+                stackTrace = ex.StackTrace
+            });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al actualizar usuario");
-            return StatusCode(500, new { message = "Error al actualizar usuario", error = ex.Message });
+            _logger.LogError(ex, "Exception genérica al actualizar usuario {UserId}. Tipo: {ExceptionType}", 
+                id, ex.GetType().Name);
+            
+            return StatusCode(500, new { 
+                message = "Error al actualizar usuario", 
+                error = ex.Message,
+                exceptionType = ex.GetType().Name,
+                stackTrace = ex.StackTrace
+            });
         }
     }
 
