@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
             if (user == null)
             {
                 _logger.LogWarning("❌ Usuario NO encontrado en BD");
-                return Unauthorized(new { message = "Credenciales inválidas" });
+                return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
             }
 
             _logger.LogInformation("✅ Usuario encontrado: {Username} (ID: {Id})", user.Username, user.Id);
@@ -76,16 +76,20 @@ public class AuthController : ControllerBase
 
             // 4. Verificar contraseña con BCrypt
             _logger.LogInformation("🔐 Verificando contraseña...");
+            _logger.LogInformation("🔐 Hash almacenado: {Hash}", user.PasswordHash);
+            _logger.LogInformation("🔐 Contraseña ingresada: {Password}", request.Password);
 
             bool isPasswordValid = false;
             try
             {
                 isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+                _logger.LogInformation("🔐 Resultado de BCrypt.Verify: {Result}", isPasswordValid);
             }
             catch (Exception ex)
             {
                 _logger.LogError("❌ Error al verificar BCrypt: {Error}", ex.Message);
-                return StatusCode(500, new { message = "Error al verificar contraseña" });
+                _logger.LogError("❌ StackTrace: {StackTrace}", ex.StackTrace);
+                return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
             }
 
             if (!isPasswordValid)
@@ -103,7 +107,7 @@ public class AuthController : ControllerBase
                 }
 
                 await _context.SaveChangesAsync();
-                return Unauthorized(new { message = "Credenciales inválidas" });
+                return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
             }
 
             _logger.LogInformation("✅ Contraseña válida");

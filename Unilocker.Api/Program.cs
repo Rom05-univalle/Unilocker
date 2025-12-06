@@ -102,4 +102,11 @@ app.MapGet("/api/health", async (UnilockerDbContext db) =>
     }
 });
 
+// Endpoint temporal para generar hash BCrypt
+app.MapPost("/api/generate-hash", (string password) =>
+{
+    var hash = BCrypt.Net.BCrypt.HashPassword(password, 12);
+    return Results.Ok(new { password, hash });
+});
+
 app.Run();

@@ -138,7 +138,7 @@ public class UsersController : ControllerBase
                 Phone = phone,
                 FirstName = firstName,
                 LastName = lastName,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordHash),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordHash, 12),
                 RoleId = roleId,
                 Status = status,
                 CreatedAt = DateTime.Now
@@ -263,7 +263,7 @@ public class UsersController : ControllerBase
                 passwordEl.ValueKind == System.Text.Json.JsonValueKind.String && 
                 !string.IsNullOrEmpty(passwordEl.GetString()))
             {
-                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordEl.GetString());
+                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordEl.GetString(), 12);
             }
             
             existingUser.UpdatedAt = DateTime.Now;
