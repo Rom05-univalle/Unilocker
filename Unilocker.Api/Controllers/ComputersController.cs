@@ -258,13 +258,14 @@ public class ComputersController : ControllerBase
     }
 
     /// <summary>
-    /// Desregistra una computadora (borrado lógico - cambia Status a false)
+    /// Desregistra una computadora (borrado lógico - cambia Status a false y cierra sesiones activas)
     /// </summary>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UnregisterComputer(int id)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var computer = await _context.Computers.FindAsync(id);
@@ -273,18 +274,51 @@ public class ComputersController : ControllerBase
                 return NotFound(new { error = "Computadora no encontrada" });
             }
 
+            // Cerrar todas las sesiones activas de esta computadora
+            var activeSessions = await _context.Sessions
+                .Where(s => s.ComputerId == id && s.IsActive == true)
+                .ToListAsync();
+
+            int sessionsClosed = 0;
+            foreach (var session in activeSessions)
+            {
+                session.IsActive = false;
+                session.EndDateTime = DateTime.Now;
+                session.EndMethod = "Administrative";
+                session.UpdatedAt = DateTime.Now;
+                sessionsClosed++;
+                
+                _logger.LogInformation("Sesión {SessionId} cerrada automáticamente al desregistrar computadora {ComputerId}", 
+                    session.Id, id);
+            }
+
+            // Guardar cambios de sesiones primero
+            if (sessionsClosed > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
             // Borrado lógico: cambiar Status a false
             computer.Status = false;
             computer.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Computadora desregistrada (borrado lógico): {Id}", id);
-            return Ok(new { message = "Computadora desregistrada correctamente" });
+            await transaction.CommitAsync();
+
+            var message = sessionsClosed > 0 
+                ? $"Computadora desregistrada correctamente. Se cerraron {sessionsClosed} sesión(es) activa(s)."
+                : "Computadora desregistrada correctamente";
+
+            _logger.LogInformation("Computadora desregistrada (borrado lógico): {Id}, sesiones cerradas: {Count}", 
+                id, sessionsClosed);
+            
+            return Ok(new { message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al desregistrar computadora {Id}", id);
-            return StatusCode(500, new { error = "Error al desregistrar la computadora" });
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error al desregistrar computadora {Id}: {Message}", id, ex.Message);
+            return StatusCode(500, new { error = "Error al desregistrar la computadora", details = ex.Message });
         }
     }
 }

@@ -119,10 +119,10 @@ public class AuthController : ControllerBase
             if (user.Role != null)
             {
                 _logger.LogInformation("📋 Nombre del rol: '{RoleName}'", user.Role.Name);
-                _logger.LogInformation("📋 Comparación con 'Admin': {IsAdmin}", user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+                _logger.LogInformation("📋 Comparación con 'Administrador': {IsAdmin}", user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
             }
 
-            if (user.Role == null || !user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            if (user.Role == null || !user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}, RoleId: {RoleId}", 
                     user.Role?.Name ?? "Sin rol", user.RoleId);
@@ -251,7 +251,7 @@ public class AuthController : ControllerBase
             }
 
             // 3. Verificar que el usuario tenga rol de Administrador
-            if (user.Role == null || !user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            if (user.Role == null || !user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}", user.Role?.Name ?? "Sin rol");
                 return StatusCode(403, new { message = "Acceso denegado. Solo usuarios con rol de Administrador pueden acceder a la plataforma web." });

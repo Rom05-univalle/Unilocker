@@ -15,6 +15,7 @@ function renderProblemTypes(items) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${p.name}</td>
+            <td>${p.description || '<em class="text-muted">Sin descripción</em>'}</td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${p.id}">
                     Editar
@@ -123,19 +124,14 @@ async function saveProblemType(e) {
     showLoading('Guardando tipo de problema...');
     try {
         const resp = await authFetch(url, { method, body: payload });
-        const text = await resp.text();
-        if (!resp.ok) {
-            console.error('Error guardando tipo de problema', resp.status, text);
-            showError(text || 'No se pudo guardar el tipo de problema.');
-            return;
-        }
+        const data = await resp.json();
 
-        showToast(isNew ? 'Tipo de problema creado correctamente.' : 'Tipo de problema actualizado correctamente.');
+        showToast(data.message || (isNew ? 'Tipo de problema creado correctamente.' : 'Tipo de problema actualizado correctamente.'));
         problemTypeModal.hide();
         await loadProblemTypes();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el tipo de problema.');
+        showError(err.message || 'No se pudo guardar el tipo de problema.');
     } finally {
         hideLoading();
     }

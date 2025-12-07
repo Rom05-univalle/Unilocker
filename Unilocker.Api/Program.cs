@@ -66,7 +66,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Comentado porque usamos HTTP en desarrollo
 
 // ===== ORDEN IMPORTANTE =====
 app.UseCors("AllowAll");

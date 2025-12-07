@@ -40,11 +40,31 @@
 
             <div class="card shadow-sm">
                 <div class="card-body p-0">
-                    <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
                         <div class="d-flex align-items-center gap-2">
-                            <label for="filterClassroom" class="form-label mb-0 small">Filtrar por aula</label>
-                            <select id="filterClassroom" class="form-select form-select-sm" style="min-width: 220px;">
+                            <label for="filterBranch" class="form-label mb-0 small">Sucursal</label>
+                            <select id="filterBranch" class="form-select form-select-sm" style="min-width: 200px;">
                                 <option value="0">Todas</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="filterBlock" class="form-label mb-0 small">Bloque</label>
+                            <select id="filterBlock" class="form-select form-select-sm" style="min-width: 150px;" disabled>
+                                <option value="0">Todos</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="filterClassroom" class="form-label mb-0 small">Aula</label>
+                            <select id="filterClassroom" class="form-select form-select-sm" style="min-width: 150px;" disabled>
+                                <option value="0">Todas</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="filterStatus" class="form-label mb-0 small">Estado sesión</label>
+                            <select id="filterStatus" class="form-select form-select-sm" style="min-width: 150px;">
+                                <option value="">Todos</option>
+                                <option value="active">Con sesión activa</option>
+                                <option value="inactive">Sin sesión activa</option>
                             </select>
                         </div>
                     </div>

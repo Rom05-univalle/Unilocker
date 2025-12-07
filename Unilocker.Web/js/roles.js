@@ -76,6 +76,12 @@ function openEditModal(id) {
     const r = rolesCache.find(x => x.id === id);
     if (!r) return;
 
+    // Validación: No permitir editar el rol Administrador
+    if (r.name && r.name.toLowerCase() === 'administrador') {
+        showError('El rol Administrador no se puede editar.');
+        return;
+    }
+
     const form = document.getElementById('roleForm');
     if (!form) return;
 
@@ -125,19 +131,14 @@ async function saveRole(e) {
     showLoading('Guardando rol...');
     try {
         const resp = await authFetch(url, { method, body: payload });
-        const text = await resp.text();
-        if (!resp.ok) {
-            console.error('Error guardando rol', resp.status, text);
-            showError(text || 'No se pudo guardar el rol.');
-            return;
-        }
+        const data = await resp.json();
 
-        showToast(isNew ? 'Rol creado correctamente.' : 'Rol actualizado correctamente.');
+        showToast(data.message || (isNew ? 'Rol creado correctamente.' : 'Rol actualizado correctamente.'));
         roleModal.hide();
         await loadRoles();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el rol.');
+        showError(err.message || 'No se pudo guardar el rol.');
     } finally {
         hideLoading();
     }
@@ -153,8 +154,8 @@ async function deleteRole(id) {
         return;
     }
 
-    // Validación: No permitir eliminar el rol Admin
-    if (roleToDelete.name && roleToDelete.name.toLowerCase() === 'admin') {
+    // Validación: No permitir eliminar el rol Administrador
+    if (roleToDelete.name && roleToDelete.name.toLowerCase() === 'administrador') {
         showError('No puedes eliminar el rol de Administrador.');
         return;
     }

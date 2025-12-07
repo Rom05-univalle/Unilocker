@@ -213,6 +213,10 @@ async function saveUser(e) {
         showError('La contraseña es obligatoria para un usuario nuevo.');
         return;
     }
+    if (password && password.length < 6) {
+        showError('La contraseña debe tener al menos 6 caracteres.');
+        return;
+    }
     if (!roleId) {
         showError('Debes seleccionar un rol.');
         return;
@@ -241,39 +245,18 @@ async function saveUser(e) {
     showLoading('Guardando usuario...');
     try {
         const resp = await authFetch(url, { method, body: payload });
-        
-        if (!resp.ok) {
-            // Intentar parsear la respuesta como JSON para obtener el mensaje de error
-            let errorMessage = 'No se pudo guardar el usuario.';
-            try {
-                const errorData = await resp.json();
-                if (errorData.message) {
-                    errorMessage = errorData.message;
-                }
-            } catch (parseError) {
-                // Si no se puede parsear como JSON, intentar leer como texto
-                const text = await resp.text();
-                if (text) {
-                    errorMessage = text;
-                }
-            }
-            
-            console.error('Error guardando usuario', resp.status, errorMessage);
-            showError(errorMessage);
-            return;
-        }
+        const data = await resp.json();
 
-        showToast(isNew ? 'Usuario creado correctamente.' : 'Usuario actualizado correctamente.');
+        showToast(data.message || (isNew ? 'Usuario creado correctamente.' : 'Usuario actualizado correctamente.'));
         userModal.hide();
         await loadUsers();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el usuario.');
+        showError(err.message || 'No se pudo guardar el usuario.');
     } finally {
         hideLoading();
     }
 }
-
 // ELIMINAR (BORRADO DEFINITIVO)
 
 async function deleteUser(id) {
@@ -303,8 +286,8 @@ async function deleteUser(id) {
         return;
     }
 
-    // Validación 3: No permitir eliminar administradores (rol Admin)
-    if (userToDelete.roleName && userToDelete.roleName.toLowerCase() === 'admin') {
+    // Validación 3: No permitir eliminar administradores (rol Administrador)
+    if (userToDelete.roleName && userToDelete.roleName.toLowerCase() === 'administrador') {
         showError('No puedes eliminar usuarios con rol de Administrador.');
         return;
     }

@@ -127,6 +127,10 @@ public class UsersController : ControllerBase
             {
                 return BadRequest(new { message = "La contraseña es obligatoria" });
             }
+            if (passwordHash.Length < 6)
+            {
+                return BadRequest(new { message = "La contraseña debe tener al menos 6 caracteres" });
+            }
             if (roleId == 0)
             {
                 return BadRequest(new { message = "RoleId es obligatorio" });
@@ -208,7 +212,7 @@ public class UsersController : ControllerBase
             if (dto.TryGetProperty("roleId", out var roleIdEl))
             {
                 newRoleId = roleIdEl.GetInt32();
-                if (existingUser.Role != null && existingUser.Role.Name.ToLower() == "admin")
+                if (existingUser.Role != null && existingUser.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
                 {
                     // Verificar si el nuevo rol es diferente al actual
                     if (newRoleId != existingUser.RoleId)
@@ -216,7 +220,7 @@ public class UsersController : ControllerBase
                         // Contar cuántos admins hay actualmente
                         var adminCount = await _context.Users
                             .Include(u => u.Role)
-                            .CountAsync(u => u.Role != null && u.Role.Name.ToLower() == "admin");
+                            .CountAsync(u => u.Role != null && u.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
 
                         if (adminCount <= 1)
                         {
@@ -264,7 +268,12 @@ public class UsersController : ControllerBase
                 passwordEl.ValueKind == System.Text.Json.JsonValueKind.String && 
                 !string.IsNullOrEmpty(passwordEl.GetString()))
             {
-                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordEl.GetString(), 12);
+                var newPassword = passwordEl.GetString();
+                if (newPassword != null && newPassword.Length < 6)
+                {
+                    return BadRequest(new { message = "La contraseña debe tener al menos 6 caracteres" });
+                }
+                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, 12);
             }
             
             existingUser.UpdatedAt = DateTime.Now;
@@ -358,7 +367,7 @@ public class UsersController : ControllerBase
             }
 
             // Validación 3: No permitir eliminar administradores
-            if (user.Role != null && user.Role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            if (user.Role != null && user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(new { 
                     message = $"No se puede eliminar el usuario '{user.Username}' porque tiene rol de Administrador. Los administradores están protegidos." 

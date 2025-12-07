@@ -34,7 +34,11 @@ function renderReports(items) {
             <td>${r.userName ?? '-'}</td>
             <td>${r.computerName ?? '-'}</td>
             <td>${r.problemTypeName ?? '-'}</td>
-            <td>${r.description ?? '-'}</td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-info" style="pointer-events: none;">
+                    <i class="fa-solid fa-eye"></i> Ver detalles
+                </button>
+            </td>
             <td>${getStatusBadge(r.reportStatus)}</td>
         `;
         tbody.appendChild(tr);

@@ -119,9 +119,9 @@ public class RolesController : ControllerBase
                 return NotFound(new { message = "Rol no encontrado" });
             }
 
-            // Validación: No permitir cambiar el nombre del rol Admin
-            if (existingRole.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase) && 
-                !role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            // Validación: No permitir cambiar el nombre del rol Administrador
+            if (existingRole.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase) && 
+                !role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(new { message = "No puedes cambiar el nombre del rol Administrador" });
             }
@@ -155,8 +155,8 @@ public class RolesController : ControllerBase
                 return NotFound(new { message = "Rol no encontrado" });
             }
 
-            // Validación 1: No permitir eliminar el rol Admin
-            if (role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            // Validación 1: No permitir eliminar el rol Administrador
+            if (role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(new { message = $"No se puede eliminar el rol '{role.Name}' porque es un rol del sistema protegido." });
             }

@@ -235,19 +235,10 @@ async function saveClassroom(e) {
 
     showLoading('Guardando aula...');
     try {
-        const resp = await authFetch(url, {
-            method,
-            body: payload
-        });
+        const resp = await authFetch(url, { method, body: payload });
+        const data = await resp.json();
 
-        if (!resp.ok) {
-            const text = await resp.text();
-            console.error('Error guardando aula', resp.status, text);
-            showError(text || 'No se pudo guardar el aula.');
-            return;
-        }
-
-        showToast(isNew ? 'Aula creada correctamente.' : 'Aula actualizada correctamente.', 'success');
+        showToast(data.message || (isNew ? 'Aula creada correctamente.' : 'Aula actualizada correctamente.'), 'success');
         classroomModal.hide();
         await loadClassrooms();
     } catch (err) {
