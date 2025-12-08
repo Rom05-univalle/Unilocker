@@ -36,18 +36,35 @@
         <main class="flex-grow-1 p-3" id="pageContent">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3><i class="fa-solid fa-desktop me-2"></i>Computadoras</h3>
-                <button class="btn btn-primary" id="btnNewComputer">
-                    <i class="fa-solid fa-plus me-1"></i>Agregar nuevo
-                </button>
             </div>
 
             <div class="card shadow-sm">
                 <div class="card-body p-0">
-                    <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
                         <div class="d-flex align-items-center gap-2">
-                            <label for="filterClassroom" class="form-label mb-0 small">Filtrar por aula</label>
-                            <select id="filterClassroom" class="form-select form-select-sm" style="min-width: 220px;">
+                            <label for="filterBranch" class="form-label mb-0 small">Sucursal</label>
+                            <select id="filterBranch" class="form-select form-select-sm" style="min-width: 200px;">
                                 <option value="0">Todas</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="filterBlock" class="form-label mb-0 small">Bloque</label>
+                            <select id="filterBlock" class="form-select form-select-sm" style="min-width: 150px;" disabled>
+                                <option value="0">Todos</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="filterClassroom" class="form-label mb-0 small">Aula</label>
+                            <select id="filterClassroom" class="form-select form-select-sm" style="min-width: 150px;" disabled>
+                                <option value="0">Todas</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="filterStatus" class="form-label mb-0 small">Estado sesión</label>
+                            <select id="filterStatus" class="form-select form-select-sm" style="min-width: 150px;">
+                                <option value="">Todos</option>
+                                <option value="active">Con sesión activa</option>
+                                <option value="inactive">Sin sesión activa</option>
                             </select>
                         </div>
                     </div>
@@ -56,14 +73,13 @@
                         <table class="table table-striped table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>ID</th>
                                     <th>Sucursal</th>
                                     <th>Bloque</th>
                                     <th>Aula</th>
                                     <th>Nombre</th>
                                     <th>UUID</th>
                                     <th>Estado</th>
-                                    <th class="text-end" style="width: 200px;">Acciones</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="computersTableBody">
@@ -131,14 +147,14 @@
 
 <!-- Modal confirmación global -->
 <div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-labelledby="globalConfirmTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="globalConfirmTitle">Confirmar acción</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <p id="globalConfirmMessage">¿Seguro que deseas continuar?</p>
+                <div id="globalConfirmMessage">¿Seguro que deseas continuar?</div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="globalConfirmCancel" data-bs-dismiss="modal">Cancelar</button>

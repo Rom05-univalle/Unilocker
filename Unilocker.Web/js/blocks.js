@@ -13,14 +13,8 @@ function renderBlocks(rows) {
     rows.forEach(block => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${block.id}</td>
             <td>${block.name}</td>
             <td>${block.branchName ?? ''}</td>
-            <td>
-                <span class="badge ${block.status ? 'bg-success' : 'bg-secondary'}">
-                    ${block.status ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${block.id}">
                     Editar
@@ -108,8 +102,6 @@ function openCreateModal() {
     document.getElementById('blockId').value = '';
     document.getElementById('txtBlockName').value = '';
     document.getElementById('ddlBranch').value = '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = true;
 
     const titleEl = document.getElementById('blockModalTitle');
     if (titleEl) titleEl.textContent = 'Nuevo bloque';
@@ -130,8 +122,6 @@ function openEditModal(id) {
     document.getElementById('txtBlockName').value = block.name ?? '';
     const ddl = document.getElementById('ddlBranch');
     if (ddl) ddl.value = block.branchId ?? '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = !!block.status;
 
     const titleEl = document.getElementById('blockModalTitle');
     if (titleEl) titleEl.textContent = 'Editar bloque';
@@ -147,7 +137,6 @@ async function saveBlock(e) {
 
     const name = document.getElementById('txtBlockName').value.trim();
     const ddl = document.getElementById('ddlBranch');
-    const chk = document.getElementById('chkStatus');
 
     if (!name) {
         showError('El nombre del bloque es obligatorio.');
@@ -162,34 +151,31 @@ async function saveBlock(e) {
 
     const payload = {
         name,
+        address: null, // Campo opcional del modelo
         branchId,
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/blocks' : `/api/blocks/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando bloque...');
     try {
-        const resp = await authFetch(url, {
-            method,
-            body: payload
-        });
+        const resp = await authFetch(url, { method, body: payload });
+        const data = await resp.json();
 
-        if (!resp.ok) {
-            const text = await resp.text();
-            console.error('Error guardando bloque', resp.status, text);
-            showError(text || 'No se pudo guardar el bloque.');
-            return;
-        }
-
-        showToast(isNew ? 'Bloque creado correctamente.' : 'Bloque actualizado correctamente.', 'success');
+        showToast(data.message || (isNew ? 'Bloque creado correctamente.' : 'Bloque actualizado correctamente.'), 'success');
         blockModal.hide();
         await loadBlocks();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el bloque.');
+        showError(err.message || 'No se pudo guardar el bloque.');
     } finally {
         hideLoading();
     }
@@ -201,22 +187,14 @@ async function deleteBlock(id) {
 
     showLoading('Eliminando bloque...');
     try {
-        const resp = await authFetch(`/api/blocks/${id}`, {
-            method: 'DELETE'
-        });
+        const resp = await authFetch(`/api/blocks/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando bloque', resp.status, text);
-            showError(text || 'No se pudo eliminar el bloque.');
-            return;
-        }
-
-        showToast('Bloque eliminado correctamente.', 'success');
+        showToast(data.message || 'Bloque eliminado correctamente.', 'success');
         await loadBlocks();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el bloque.');
+        showError(err.message || 'No se pudo eliminar el bloque.');
     } finally {
         hideLoading();
     }

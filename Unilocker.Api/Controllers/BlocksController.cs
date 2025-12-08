@@ -1,201 +1,237 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
-using Unilocker.Api.DTOs;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class BlocksController : ControllerBase
 {
     private readonly UnilockerDbContext _context;
+    private readonly ILogger<BlocksController> _logger;
 
-    public BlocksController(UnilockerDbContext context)
+    public BlocksController(UnilockerDbContext context, ILogger<BlocksController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    // GET: /api/blocks
+    // GET: api/blocks
+    // GET: api/blocks?branchId=1
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<BlockDto>>> GetAll([FromQuery] int? branchId)
+    public async Task<ActionResult<IEnumerable<object>>> GetBlocks([FromQuery] int? branchId)
     {
-        var query = _context.Blocks
-            .Include(b => b.Branch)
-            .Where(b => b.Branch.Status) // solo sucursales activas
-            .AsQueryable();
-
-        if (branchId.HasValue)
+        try
         {
-            query = query.Where(b => b.BranchId == branchId.Value);
+            var query = _context.Blocks.Where(b => b.Status == true);
+
+            if (branchId.HasValue)
+            {
+                query = query.Where(b => b.BranchId == branchId.Value);
+            }
+
+            var blocks = await query
+                .OrderBy(b => b.Name)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.Name,
+                    b.Address,
+                    b.BranchId,
+                    BranchName = _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault(),
+                    b.Status,
+                    b.CreatedAt,
+                    b.UpdatedAt,
+                    ClassroomCount = _context.Classrooms.Count(c => c.BlockId == b.Id && c.Status == true)
+                })
+                .ToListAsync();
+
+            return Ok(blocks);
         }
-
-        var blocks = await query
-            .OrderBy(b => b.Branch.Name)
-            .ThenBy(b => b.Name)
-            .Select(b => new BlockDto
-            {
-                Id = b.Id,
-                Name = b.Name,
-                Status = b.Status, // true = Activo, false = Inactivo
-                BranchId = b.BranchId,
-                BranchName = b.Branch.Name
-            })
-            .ToListAsync();
-
-        return Ok(blocks);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener bloques");
+            return StatusCode(500, new { message = "Error al obtener bloques", error = ex.Message });
+        }
     }
 
-    // GET: /api/blocks/5
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<BlockDto>> GetById(int id)
+    // GET: api/blocks/5
+    [HttpGet("{id}")]
+    public async Task<ActionResult<object>> GetBlock(int id)
     {
-        var block = await _context.Blocks
-            .Where(b => b.Status && b.Id == id)
-            .Include(b => b.Branch)
-            .Select(b => new BlockDto
+        try
+        {
+            var block = await _context.Blocks
+                .Where(b => b.Id == id)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.Name,
+                    b.Address,
+                    b.BranchId,
+                    BranchName = _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault(),
+                    b.Status,
+                    b.CreatedAt,
+                    b.UpdatedAt,
+                    Classrooms = _context.Classrooms.Where(c => c.BlockId == b.Id).Select(c => new { c.Id, c.Name }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (block == null)
             {
-                Id = b.Id,
-                Name = b.Name,
-                Status = b.Status,
-                BranchId = b.BranchId,
-                BranchName = b.Branch.Name
-            })
-            .FirstOrDefaultAsync();
+                return NotFound(new { message = "Bloque no encontrado" });
+            }
 
-        if (block == null)
-            return NotFound();
-
-        return Ok(block);
+            return Ok(block);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener bloque");
+            return StatusCode(500, new { message = "Error al obtener bloque", error = ex.Message });
+        }
     }
 
-    // POST: /api/blocks
+    // POST: api/blocks
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BlockDto>> Create([FromBody] BlockCreateUpdateDto dto)
+    public async Task<ActionResult<Block>> CreateBlock([FromBody] System.Text.Json.JsonElement dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return BadRequest("El nombre es obligatorio.");
-
-        var branchExists = await _context.Branches.AnyAsync(b => b.Id == dto.BranchId && b.Status);
-        if (!branchExists)
-            return BadRequest("La sucursal especificada no existe o está inactiva.");
-
-        var entity = new Block
+        try
         {
-            Name = dto.Name,
-            BranchId = dto.BranchId,
-            Status = true
-        };
+            _logger.LogInformation("CreateBlock - Payload recibido: {Payload}", dto.ToString());
 
-        _context.Blocks.Add(entity);
+            var name = dto.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : string.Empty;
+            var address = dto.TryGetProperty("address", out var addressEl) && addressEl.ValueKind != System.Text.Json.JsonValueKind.Null 
+                ? addressEl.GetString() : null;
+            var branchId = dto.TryGetProperty("branchId", out var branchEl) ? branchEl.GetInt32() : 0;
+            var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
 
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
-        {
-            _context.CurrentUserId = uid;
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest(new { message = "El nombre es obligatorio" });
+            }
+            if (branchId == 0)
+            {
+                return BadRequest(new { message = "BranchId es obligatorio" });
+            }
+
+            var block = new Block
+            {
+                Name = name,
+                Address = address,
+                BranchId = branchId,
+                Status = status,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Blocks.Add(block);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Bloque creado exitosamente: {BlockId}", block.Id);
+            return CreatedAtAction(nameof(GetBlock), new { id = block.Id }, block);
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        // recargar con Include para obtener BranchName
-        entity = await _context.Blocks
-            .Include(b => b.Branch)
-            .FirstAsync(b => b.Id == entity.Id);
-
-        var result = new BlockDto
+        catch (Exception ex)
         {
-            Id = entity.Id,
-            Name = entity.Name,
-            Status = entity.Status,
-            BranchId = entity.BranchId,
-            BranchName = entity.Branch.Name
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, result);
+            _logger.LogError(ex, "Error al crear bloque");
+            return StatusCode(500, new { message = "Error al crear bloque", error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
-    // PUT: /api/blocks/5
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<BlockDto>> Update(int id, [FromBody] BlockCreateUpdateDto dto)
+    // PUT: api/blocks/5
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateBlock(int id, [FromBody] System.Text.Json.JsonElement dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return BadRequest("El nombre es obligatorio.");
-
-        var entity = await _context.Blocks.FindAsync(id);
-        if (entity == null)
-            return NotFound();
-
-        var branchExists = await _context.Branches.AnyAsync(b => b.Id == dto.BranchId && b.Status);
-        if (!branchExists)
-            return BadRequest("La sucursal especificada no existe o está inactiva.");
-
-        entity.Name = dto.Name;
-        entity.BranchId = dto.BranchId;
-        entity.Status = dto.status; // asegúrate que la propiedad en el DTO sea 'Status'
-
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        try
         {
-            _context.CurrentUserId = uid;
+            _logger.LogInformation("UpdateBlock - ID: {Id}, Payload: {Payload}", id, dto.ToString());
+
+            var existingBlock = await _context.Blocks.FindAsync(id);
+            if (existingBlock == null)
+            {
+                return NotFound(new { message = "Bloque no encontrado" });
+            }
+
+            if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingBlock.Name = nameEl.GetString() ?? existingBlock.Name;
+            }
+            if (dto.TryGetProperty("address", out var addressEl))
+            {
+                existingBlock.Address = addressEl.ValueKind != System.Text.Json.JsonValueKind.Null ? addressEl.GetString() : null;
+            }
+            if (dto.TryGetProperty("branchId", out var branchEl))
+            {
+                existingBlock.BranchId = branchEl.GetInt32();
+            }
+            if (dto.TryGetProperty("status", out var statusEl))
+            {
+                existingBlock.Status = statusEl.GetBoolean();
+            }
+            existingBlock.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Bloque actualizado exitosamente: {BlockId}", id);
+            return Ok(existingBlock);
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        entity = await _context.Blocks
-            .Include(b => b.Branch)
-            .FirstAsync(b => b.Id == entity.Id);
-
-        var result = new BlockDto
+        catch (Exception ex)
         {
-            Id = entity.Id,
-            Name = entity.Name,
-            Status = entity.Status,
-            BranchId = entity.BranchId,
-            BranchName = entity.Branch.Name
-        };
-
-        return Ok(result);
+            _logger.LogError(ex, "Error al actualizar bloque");
+            return StatusCode(500, new { message = "Error al actualizar bloque", error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
-    // DELETE: /api/blocks/5 (borrado definitivo)
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    // DELETE: api/blocks/5 (Eliminación lógica)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteBlock(int id)
     {
-        var entity = await _context.Blocks.FindAsync(id);
-        if (entity == null)
-            return NotFound();
-
-        _context.Blocks.Remove(entity); // elimina físicamente el bloque
-
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        try
         {
-            _context.CurrentUserId = uid;
+            var block = await _context.Blocks.FindAsync(id);
+            if (block == null)
+            {
+                return NotFound(new { message = "Bloque no encontrado" });
+            }
+
+            // Verificar si hay aulas activas en este bloque
+            var activeClassrooms = await _context.Classrooms
+                .Where(c => c.BlockId == id && c.Status == true)
+                .ToListAsync();
+
+            if (activeClassrooms.Any())
+            {
+                // Verificar si alguna aula tiene computadoras activas
+                var classroomIds = activeClassrooms.Select(c => c.Id).ToList();
+                var hasActiveComputers = await _context.Computers
+                    .AnyAsync(comp => classroomIds.Contains(comp.ClassroomId) && comp.Status == true);
+
+                if (hasActiveComputers)
+                {
+                    return BadRequest(new { 
+                        message = $"No se puede eliminar el bloque '{block.Name}' porque tiene aulas con computadoras activas registradas. Desregistre las computadoras primero." 
+                    });
+                }
+
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el bloque '{block.Name}' porque tiene {activeClassrooms.Count} aula(s) activa(s). Elimine las aulas primero." 
+                });
+            }
+
+            // Eliminación lógica
+            block.Status = false;
+            block.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Bloque eliminado lógicamente: {Id}", id);
+            return Ok(new { message = "Bloque eliminado correctamente" });
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al eliminar bloque");
+            return StatusCode(500, new { message = "Error al eliminar bloque", error = ex.Message });
+        }
     }
 }

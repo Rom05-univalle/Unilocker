@@ -17,10 +17,10 @@ public class JwtService
 
     public string GenerateToken(User user)
     {
-        var jwtKey = _configuration["Jwt:Key"]!;
-        var jwtIssuer = _configuration["Jwt:Issuer"]!;
-        var jwtAudience = _configuration["Jwt:Audience"]!;
-        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"]!);
+        var jwtKey = _configuration["Jwt:Key"];
+        var jwtIssuer = _configuration["Jwt:Issuer"];
+        var jwtAudience = _configuration["Jwt:Audience"];
+        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"]);
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -29,16 +29,9 @@ public class JwtService
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username),
-
-            // Claim de rol que usa [Authorize(Roles = "Admin")]
-            new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty),
-
-            // Claims adicionales (opcionales)
             new Claim("userId", user.Id.ToString()),
             new Claim("roleId", user.RoleId.ToString()),
-            new Claim("roleName", user.Role?.Name ?? string.Empty),
+            new Claim("roleName", user.Role.Name),
             new Claim("fullName", $"{user.FirstName} {user.LastName}")
         };
 
@@ -55,7 +48,7 @@ public class JwtService
 
     public DateTime GetTokenExpirationTime()
     {
-        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"]!);
+        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"]);
         return DateTime.UtcNow.AddMinutes(expirationMinutes);
     }
 }

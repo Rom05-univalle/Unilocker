@@ -86,10 +86,22 @@
 
 <script type="module">
   import { initUI } from './js/ui.js';
+  import { authFetch } from './js/api.js';
   import './js/auth.js';
   //import './js/dashboard.v2.js';
 
   const CURRENT_PAGE = 'dashboard';
+
+  async function loadDashboardStats() {
+    try {
+      const res = await authFetch('/api/dashboard/stats');
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('dashComputersCount').innerText = data.activeComputers ?? 0;
+    } catch (err) {
+      console.error('Error cargando stats del dashboard', err);
+    }
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     const placeholder = document.getElementById('sidebar-placeholder');
@@ -108,6 +120,7 @@
         });
 
         initUI('Inicio', 'Resumen');
+        loadDashboardStats();
       })
       .catch(console.error);
   });

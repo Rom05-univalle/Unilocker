@@ -63,7 +63,7 @@ namespace Unilocker.Api.Migrations
 
                     b.HasIndex("ResponsibleUserId");
 
-                    b.ToTable("AuditLog", (string)null);
+                    b.ToTable("AuditLog");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.Block", b =>
@@ -107,7 +107,7 @@ namespace Unilocker.Api.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.ToTable("Block", (string)null);
+                    b.ToTable("Block");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.Branch", b =>
@@ -154,7 +154,7 @@ namespace Unilocker.Api.Migrations
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
 
-                    b.ToTable("Branch", (string)null);
+                    b.ToTable("Branch");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.Classroom", b =>
@@ -197,7 +197,7 @@ namespace Unilocker.Api.Migrations
 
                     b.HasIndex("BlockId");
 
-                    b.ToTable("Classroom", (string)null);
+                    b.ToTable("Classroom");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.Computer", b =>
@@ -254,7 +254,7 @@ namespace Unilocker.Api.Migrations
                     b.HasIndex(new[] { "Uuid" }, "UQ__Computer__65A475E665A2F2EB")
                         .IsUnique();
 
-                    b.ToTable("Computer", (string)null);
+                    b.ToTable("Computer");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.ProblemType", b =>
@@ -296,7 +296,7 @@ namespace Unilocker.Api.Migrations
                     b.HasIndex(new[] { "Name" }, "UQ__ProblemT__737584F636E9F078")
                         .IsUnique();
 
-                    b.ToTable("ProblemType", (string)null);
+                    b.ToTable("ProblemType");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.Report", b =>
@@ -348,7 +348,7 @@ namespace Unilocker.Api.Migrations
 
                     b.HasIndex("SessionId");
 
-                    b.ToTable("Report", (string)null);
+                    b.ToTable("Report");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.Role", b =>
@@ -390,7 +390,7 @@ namespace Unilocker.Api.Migrations
                     b.HasIndex(new[] { "Name" }, "UQ__Role__737584F690BF6C18")
                         .IsUnique();
 
-                    b.ToTable("Role", (string)null);
+                    b.ToTable("Role");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.Session", b =>
@@ -442,35 +442,7 @@ namespace Unilocker.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Session", (string)null);
-                });
-
-            modelBuilder.Entity("Unilocker.Api.Models.TwoFactorCode", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("Used")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("TwoFactorCodes");
+                    b.ToTable("Session");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.User", b =>
@@ -557,7 +529,7 @@ namespace Unilocker.Api.Migrations
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL");
 
-                    b.ToTable("User", (string)null);
+                    b.ToTable("User");
                 });
 
             modelBuilder.Entity("Unilocker.Api.Models.AuditLog", b =>
@@ -641,17 +613,6 @@ namespace Unilocker.Api.Migrations
                         .HasConstraintName("FK_Session_User");
 
                     b.Navigation("Computer");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Unilocker.Api.Models.TwoFactorCode", b =>
-                {
-                    b.HasOne("Unilocker.Api.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });

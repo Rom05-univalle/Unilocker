@@ -11,8 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginError = document.getElementById('loginError');
     const verificationError = document.getElementById('verificationError');
 
-    const timerText = document.getElementById('timerText');
-    const timerValue = document.getElementById('timerValue');
     const btnResend = document.getElementById('btnResend');
 
     let currentUserId = null;
@@ -38,19 +36,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startTimer() {
         let remaining = CODE_DURATION;
-        timerValue.textContent = remaining.toString();
         btnResend.disabled = true;
 
         if (timerInterval) clearInterval(timerInterval);
 
         timerInterval = setInterval(() => {
             remaining--;
-            timerValue.textContent = remaining.toString();
 
             if (remaining <= 0) {
                 clearInterval(timerInterval);
                 btnResend.disabled = false;
-                timerText.textContent = 'El código ha expirado.';
             }
         }, 1000);
     }
@@ -77,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginForm.style.display = 'none';
                 verificationForm.style.display = 'block';
 
-                timerText.textContent = 'El código expira en ';
                 btnResend.disabled = true;
                 startTimer();
             }
@@ -117,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await resendCode(currentUserId);
-            timerText.textContent = 'El código expira en ';
             startTimer();
         } catch (err) {
             console.error(err);

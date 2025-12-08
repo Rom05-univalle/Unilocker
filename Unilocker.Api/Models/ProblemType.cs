@@ -29,5 +29,4 @@ public partial class ProblemType
 
     [InverseProperty("ProblemType")]
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
-
 }

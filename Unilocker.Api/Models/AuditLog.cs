@@ -10,7 +10,7 @@ namespace Unilocker.Api.Models;
 public partial class AuditLog
 {
     [Key]
-    public long Id { get; set; } //el id
+    public long Id { get; set; }
 
     [StringLength(50)]
     public string AffectedTable { get; set; } = null!;

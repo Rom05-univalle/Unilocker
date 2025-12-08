@@ -1,210 +1,234 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
-using Unilocker.Api.DTOs;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class ClassroomsController : ControllerBase
 {
     private readonly UnilockerDbContext _context;
+    private readonly ILogger<ClassroomsController> _logger;
 
-    public ClassroomsController(UnilockerDbContext context)
+    public ClassroomsController(UnilockerDbContext context, ILogger<ClassroomsController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    // GET: /api/classrooms
+    // GET: api/classrooms
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ClassroomDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<object>>> GetClassrooms()
     {
-        var classrooms = await _context.Classrooms
-            .Where(c => c.Status && c.Block.Status && c.Block.Branch.Status)
-            .Include(c => c.Block)
-            .ThenInclude(b => b.Branch)
-            .OrderBy(c => c.Block.Branch.Name)
-            .ThenBy(c => c.Block.Name)
-            .ThenBy(c => c.Name)
-            .Select(c => new ClassroomDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Status = c.Status,
-                BlockId = c.BlockId,
-                BlockName = c.Block.Name,
-                BranchId = c.Block.BranchId,
-                BranchName = c.Block.Branch.Name
-            })
-            .ToListAsync();
+        try
+        {
+            var classrooms = await _context.Classrooms
+                .Where(c => c.Status == true) // Solo aulas activas
+                .OrderBy(c => c.Name)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Name,
+                    c.Capacity,
+                    c.BlockId,
+                    BlockName = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.Name).FirstOrDefault(),
+                    BranchId = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.BranchId).FirstOrDefault(),
+                    BranchName = _context.Blocks.Where(b => b.Id == c.BlockId)
+                        .Select(b => _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault())
+                        .FirstOrDefault(),
+                    c.Status,
+                    c.CreatedAt,
+                    c.UpdatedAt,
+                    ComputerCount = _context.Computers.Count(comp => comp.ClassroomId == c.Id && comp.Status == true)
+                })
+                .ToListAsync();
 
-        return Ok(classrooms);
+            return Ok(classrooms);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener aulas");
+            return StatusCode(500, new { message = "Error al obtener aulas", error = ex.Message });
+        }
     }
 
-    // GET: /api/classrooms/5
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ClassroomDto>> GetById(int id)
+    // GET: api/classrooms/5
+    [HttpGet("{id}")]
+    public async Task<ActionResult<object>> GetClassroom(int id)
     {
-        var classroom = await _context.Classrooms
-            .Where(c => c.Status && c.Id == id)
-            .Include(c => c.Block)
-            .ThenInclude(b => b.Branch)
-            .Select(c => new ClassroomDto
+        try
+        {
+            var classroom = await _context.Classrooms
+                .Where(c => c.Id == id)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Name,
+                    c.Capacity,
+                    c.BlockId,
+                    BlockName = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.Name).FirstOrDefault(),
+                    BranchId = _context.Blocks.Where(b => b.Id == c.BlockId).Select(b => b.BranchId).FirstOrDefault(),
+                    BranchName = _context.Blocks.Where(b => b.Id == c.BlockId)
+                        .Select(b => _context.Branches.Where(br => br.Id == b.BranchId).Select(br => br.Name).FirstOrDefault())
+                        .FirstOrDefault(),
+                    c.Status,
+                    c.CreatedAt,
+                    c.UpdatedAt,
+                    Computers = _context.Computers.Where(comp => comp.ClassroomId == c.Id).Select(comp => new { comp.Id, comp.Name }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (classroom == null)
             {
-                Id = c.Id,
-                Name = c.Name,
-                Status = c.Status,
-                BlockId = c.BlockId,
-                BlockName = c.Block.Name,
-                BranchId = c.Block.BranchId,
-                BranchName = c.Block.Branch.Name
-            })
-            .FirstOrDefaultAsync();
+                return NotFound(new { message = "Aula no encontrada" });
+            }
 
-        if (classroom == null)
-            return NotFound();
-
-        return Ok(classroom);
+            return Ok(classroom);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener aula");
+            return StatusCode(500, new { message = "Error al obtener aula", error = ex.Message });
+        }
     }
 
-    // POST: /api/classrooms
+    // POST: api/classrooms
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ClassroomDto>> Create([FromBody] ClassroomCreateUpdateDto dto)
+    public async Task<ActionResult<Classroom>> CreateClassroom([FromBody] System.Text.Json.JsonElement dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return BadRequest("El nombre es obligatorio.");
-
-        var block = await _context.Blocks
-            .Include(b => b.Branch)
-            .FirstOrDefaultAsync(b => b.Id == dto.BlockId && b.Status && b.Branch.Status);
-
-        if (block == null)
-            return BadRequest("El bloque especificado no existe o está inactivo.");
-
-        var entity = new Classroom
+        try
         {
-            Name = dto.Name,
-            BlockId = dto.BlockId,
-            Status = true
-        };
+            _logger.LogInformation("CreateClassroom - Payload: {Payload}", dto.ToString());
 
-        _context.Classrooms.Add(entity);
+            var name = dto.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : string.Empty;
+            var capacity = dto.TryGetProperty("capacity", out var capacityEl) && capacityEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? capacityEl.GetInt32() : (int?)null;
+            var blockId = dto.TryGetProperty("blockId", out var blockEl) ? blockEl.GetInt32() : 0;
+            var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
 
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
-        {
-            _context.CurrentUserId = uid;
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest(new { message = "El nombre es obligatorio" });
+            }
+            if (capacity.HasValue && capacity.Value > 100)
+            {
+                return BadRequest(new { message = "La capacidad no puede ser mayor a 100" });
+            }
+            if (blockId == 0)
+            {
+                return BadRequest(new { message = "BlockId es obligatorio" });
+            }
+
+            var classroom = new Classroom
+            {
+                Name = name,
+                Capacity = capacity,
+                BlockId = blockId,
+                Status = status,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Classrooms.Add(classroom);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Aula creada exitosamente: {ClassroomId}", classroom.Id);
+            return CreatedAtAction(nameof(GetClassroom), new { id = classroom.Id }, classroom);
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        entity = await _context.Classrooms
-            .Include(c => c.Block)
-            .ThenInclude(b => b.Branch)
-            .FirstAsync(c => c.Id == entity.Id);
-
-        var result = new ClassroomDto
+        catch (Exception ex)
         {
-            Id = entity.Id,
-            Name = entity.Name,
-            Status = entity.Status,
-            BlockId = entity.BlockId,
-            BlockName = entity.Block.Name,
-            BranchId = entity.Block.BranchId,
-            BranchName = entity.Block.Branch.Name
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, result);
+            _logger.LogError(ex, "Error al crear aula");
+            return StatusCode(500, new { message = "Error al crear aula", error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
-    // PUT: /api/classrooms/5
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ClassroomDto>> Update(int id, [FromBody] ClassroomCreateUpdateDto dto)
+    // PUT: api/classrooms/5
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateClassroom(int id, [FromBody] System.Text.Json.JsonElement dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return BadRequest("El nombre es obligatorio.");
-
-        var entity = await _context.Classrooms.FindAsync(id);
-        if (entity == null || !entity.Status)
-            return NotFound();
-
-        var block = await _context.Blocks
-            .Include(b => b.Branch)
-            .FirstOrDefaultAsync(b => b.Id == dto.BlockId && b.Status && b.Branch.Status);
-
-        if (block == null)
-            return BadRequest("El bloque especificado no existe o está inactivo.");
-
-        entity.Name = dto.Name;
-        entity.BlockId = dto.BlockId;
-
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        try
         {
-            _context.CurrentUserId = uid;
+            _logger.LogInformation("UpdateClassroom - ID: {Id}, Payload: {Payload}", id, dto.ToString());
+
+            var existingClassroom = await _context.Classrooms.FindAsync(id);
+            if (existingClassroom == null)
+            {
+                return NotFound(new { message = "Aula no encontrada" });
+            }
+
+            if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingClassroom.Name = nameEl.GetString() ?? existingClassroom.Name;
+            }
+            if (dto.TryGetProperty("capacity", out var capacityEl))
+            {
+                var newCapacity = capacityEl.ValueKind != System.Text.Json.JsonValueKind.Null ? capacityEl.GetInt32() : (int?)null;
+                if (newCapacity.HasValue && newCapacity.Value > 100)
+                {
+                    return BadRequest(new { message = "La capacidad no puede ser mayor a 100" });
+                }
+                existingClassroom.Capacity = newCapacity;
+            }
+            if (dto.TryGetProperty("blockId", out var blockEl))
+            {
+                existingClassroom.BlockId = blockEl.GetInt32();
+            }
+            if (dto.TryGetProperty("status", out var statusEl))
+            {
+                existingClassroom.Status = statusEl.GetBoolean();
+            }
+            existingClassroom.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Aula actualizada exitosamente: {ClassroomId}", id);
+            return Ok(existingClassroom);
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        entity = await _context.Classrooms
-            .Include(c => c.Block)
-            .ThenInclude(b => b.Branch)
-            .FirstAsync(c => c.Id == entity.Id);
-
-        var result = new ClassroomDto
+        catch (Exception ex)
         {
-            Id = entity.Id,
-            Name = entity.Name,
-            Status = entity.Status,
-            BlockId = entity.BlockId,
-            BlockName = entity.Block.Name,
-            BranchId = entity.Block.BranchId,
-            BranchName = entity.Block.Branch.Name
-        };
-
-        return Ok(result);
+            _logger.LogError(ex, "Error al actualizar aula");
+            return StatusCode(500, new { message = "Error al actualizar aula", error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
-    // DELETE: /api/classrooms/5
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    // DELETE: api/classrooms/5 (Eliminación lógica)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteClassroom(int id)
     {
-        var entity = await _context.Classrooms.FindAsync(id);
-        if (entity == null || !entity.Status)
-            return NotFound();
-
-        entity.Status = false;
-
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        try
         {
-            _context.CurrentUserId = uid;
+            var classroom = await _context.Classrooms.FindAsync(id);
+            if (classroom == null)
+            {
+                return NotFound(new { message = "Aula no encontrada" });
+            }
+
+            // Verificar si hay computadoras activas en esta aula
+            var activeComputersCount = await _context.Computers
+                .CountAsync(c => c.ClassroomId == id && c.Status == true);
+
+            if (activeComputersCount > 0)
+            {
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el aula '{classroom.Name}' porque tiene {activeComputersCount} computadora(s) activa(s) registrada(s). Desregistre las computadoras primero." 
+                });
+            }
+
+            // Eliminación lógica
+            classroom.Status = false;
+            classroom.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Aula eliminada lógicamente: {Id}", id);
+            return Ok(new { message = "Aula eliminada correctamente" });
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al eliminar aula");
+            return StatusCode(500, new { message = "Error al eliminar aula", error = ex.Message });
+        }
     }
 }

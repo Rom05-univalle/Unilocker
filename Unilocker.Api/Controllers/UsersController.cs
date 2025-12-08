@@ -1,295 +1,391 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-
 using Unilocker.Api.Data;
-using Unilocker.Api.DTOs;
 using Unilocker.Api.Models;
-
-using System.Security.Claims;
 
 namespace Unilocker.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")] // api/users
 [Authorize]
+[ApiController]
+[Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
     private readonly UnilockerDbContext _context;
-    private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(UnilockerDbContext context, IPasswordHasher<User> passwordHasher)
+    public UsersController(UnilockerDbContext context, ILogger<UsersController> logger)
     {
         _context = context;
-        _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
-    // =====================
-    // CRUD ADMIN
-    // =====================
-
-    // GET: /api/users
+    // GET: api/users
     [HttpGet]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<object>>> GetUsers()
     {
-        var users = await _context.Users
-            // .Where(u => u.Status)   // ← quita esta línea para ver activos e inactivos
-            .Include(u => u.Role)
-            .OrderBy(u => u.Username)
-            .Select(u => new UserDto
-            {
-                Id = u.Id,
-                Username = u.Username,
-                Email = u.Email,
-                Status = u.Status,
-                RoleId = u.RoleId,
-                RoleName = u.Role != null ? u.Role.Name : null
-            })
-            .ToListAsync();
+        try
+        {
+            var users = await _context.Users
+                .Where(u => u.Status == true)
+                .OrderBy(u => u.Username)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Username,
+                    u.Email,
+                    u.Phone,
+                    u.FirstName,
+                    u.LastName,
+                    u.RoleId,
+                    RoleName = _context.Roles.Where(r => r.Id == u.RoleId).Select(r => r.Name).FirstOrDefault(),
+                    IsActive = u.Status,
+                    u.CreatedAt,
+                    u.UpdatedAt
+                })
+                .ToListAsync();
 
-        return Ok(users);
+            return Ok(users);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener usuarios");
+            return StatusCode(500, new { message = "Error al obtener usuarios", error = ex.Message });
+        }
     }
 
-
-    // GET: /api/users/5
-    [HttpGet("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<UserDto>> GetById(int id)
+    // GET: api/users/5
+    [HttpGet("{id}")]
+    public async Task<ActionResult<object>> GetUser(int id)
     {
-        var user = await _context.Users
-            .Where(u => u.Status && u.Id == id)
-            .Include(u => u.Role)
-            .Select(u => new UserDto
+        try
+        {
+            var user = await _context.Users
+                .Where(u => u.Id == id)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Username,
+                    u.Email,
+                    u.Phone,
+                    u.FirstName,
+                    u.LastName,
+                    u.RoleId,
+                    RoleName = _context.Roles.Where(r => r.Id == u.RoleId).Select(r => r.Name).FirstOrDefault(),
+                    IsActive = u.Status,
+                    u.CreatedAt,
+                    u.UpdatedAt
+                })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
             {
-                Id = u.Id,
-                Username = u.Username,
-                Email = u.Email,
-                Status = u.Status,
-                RoleId = u.RoleId,
-                RoleName = u.Role != null ? u.Role.Name : null
-            })
-            .FirstOrDefaultAsync();
+                return NotFound(new { message = "Usuario no encontrado" });
+            }
 
-        if (user == null)
-            return NotFound();
-
-        return Ok(user);
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener usuario");
+            return StatusCode(500, new { message = "Error al obtener usuario", error = ex.Message });
+        }
     }
 
-    // POST: /api/users
+    // POST: api/users
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<UserDto>> Create([FromBody] UserCreateUpdateDto dto)
+    public async Task<ActionResult<User>> CreateUser([FromBody] System.Text.Json.JsonElement dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (string.IsNullOrWhiteSpace(dto.Username))
-            return BadRequest("El username es obligatorio.");
-
-        if (string.IsNullOrWhiteSpace(dto.Email))
-            return BadRequest("El email es obligatorio.");
-
-        if (string.IsNullOrWhiteSpace(dto.Password))
-            return BadRequest("La contraseña es obligatoria.");
-
-        var emailExists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
-        if (emailExists)
-            return BadRequest("El email ya está en uso.");
-
-        var usernameExists = await _context.Users.AnyAsync(u => u.Username == dto.Username);
-        if (usernameExists)
-            return BadRequest("El username ya está en uso.");
-
-        Role? role = null;
-        if (dto.RoleId.HasValue)
+        try
         {
-            role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == dto.RoleId.Value && r.Status);
-            if (role == null)
-                return BadRequest("El rol especificado no existe o está inactivo.");
-        }
+            _logger.LogInformation("CreateUser - Payload: {Payload}", dto.ToString());
 
-        var user = new User
-        {
-            Username = dto.Username,
-            Email = dto.Email,
-            Status = true,
-            RoleId = (int)dto.RoleId,
-            FirstName = dto.Username,      // o "N/A" si prefieres
-            LastName = dto.Username        // o string.Empty
-        };
+            var username = dto.TryGetProperty("username", out var usernameEl) ? usernameEl.GetString() : string.Empty;
+            var email = dto.TryGetProperty("email", out var emailEl) && emailEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? emailEl.GetString() : null;
+            var phone = dto.TryGetProperty("phone", out var phoneEl) && phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? phoneEl.GetString() : null;
+            var firstName = dto.TryGetProperty("firstName", out var firstNameEl) ? firstNameEl.GetString() : string.Empty;
+            var lastName = dto.TryGetProperty("lastName", out var lastNameEl) ? lastNameEl.GetString() : string.Empty;
+            var passwordHash = dto.TryGetProperty("passwordHash", out var passwordEl) ? passwordEl.GetString() : null;
+            var roleId = dto.TryGetProperty("roleId", out var roleEl) ? roleEl.GetInt32() : 0;
+            var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
 
-        user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        var result = new UserDto
-        {
-            Id = user.Id,
-            Username = user.Username,
-            Email = user.Email,
-            Status = user.Status,
-            RoleId = user.RoleId,
-            RoleName = role?.Name
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = user.Id }, result);
-    }
-
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<UserDto>> Update(int id, [FromBody] UserCreateUpdateDto dto)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var user = await _context.Users.FindAsync(id);
-        if (user == null) // quitar || !user.Status
-            return NotFound();
-
-        if (string.IsNullOrWhiteSpace(dto.Username))
-            return BadRequest("El username es obligatorio.");
-
-        if (string.IsNullOrWhiteSpace(dto.Email))
-            return BadRequest("El email es obligatorio.");
-
-        var emailExists = await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != id);
-        if (emailExists)
-            return BadRequest("El email ya está en uso.");
-
-        var usernameExists = await _context.Users.AnyAsync(u => u.Username == dto.Username && u.Id != id);
-        if (usernameExists)
-            return BadRequest("El username ya está en uso.");
-
-        Role? role = null;
-        if (dto.RoleId.HasValue)
-        {
-            role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == dto.RoleId.Value && r.Status);
-            if (role == null)
-                return BadRequest("El rol especificado no existe o está inactivo.");
-        }
-
-        user.Username = dto.Username;
-        user.Email = dto.Email;
-        user.RoleId = (int)dto.RoleId;
-        user.Status = dto.Status;              // ← aquí se actualiza el estado
-
-        if (!string.IsNullOrWhiteSpace(dto.Password))
-        {
-            user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
-        }
-
-        await _context.SaveChangesAsync();
-
-        var result = await _context.Users
-            .Where(u => u.Id == user.Id)
-            .Include(u => u.Role)
-            .Select(u => new UserDto
+            if (string.IsNullOrEmpty(username))
             {
-                Id = u.Id,
-                Username = u.Username,
-                Email = u.Email,
-                Status = u.Status,
-                RoleId = u.RoleId,
-                RoleName = u.Role != null ? u.Role.Name : null
-            })
-            .FirstAsync();
+                return BadRequest(new { message = "El username es obligatorio" });
+            }
+            if (string.IsNullOrEmpty(firstName))
+            {
+                return BadRequest(new { message = "El nombre es obligatorio" });
+            }
+            if (string.IsNullOrEmpty(lastName))
+            {
+                return BadRequest(new { message = "El apellido es obligatorio" });
+            }
+            if (string.IsNullOrEmpty(passwordHash))
+            {
+                return BadRequest(new { message = "La contraseña es obligatoria" });
+            }
+            if (passwordHash.Length < 6)
+            {
+                return BadRequest(new { message = "La contraseña debe tener al menos 6 caracteres" });
+            }
+            if (roleId == 0)
+            {
+                return BadRequest(new { message = "RoleId es obligatorio" });
+            }
 
-        return Ok(result);
-    }
+            var user = new User
+            {
+                Username = username,
+                Email = email,
+                Phone = phone,
+                FirstName = firstName,
+                LastName = lastName,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordHash, 12),
+                RoleId = roleId,
+                Status = status,
+                CreatedAt = DateTime.Now
+            };
 
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
-    // DELETE: /api/users/5
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var user = await _context.Users.FindAsync(id);
-        if (user == null)
-            return NotFound();
-
-        _context.Users.Remove(user);   // ← borrar definitivo
-        await _context.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-
-    // =====================
-    // PERFIL DEL USUARIO (UNI-67)
-    // =====================
-
-    // GET: /api/users/me
-    [HttpGet("me")]
-    public async Task<ActionResult<UserDto>> GetCurrentUser()
-    {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
-
-        if (!int.TryParse(userId, out var idValue))
-            return Unauthorized();
-
-        var user = await _context.Users
-            .Where(u => u.Status && u.Id == idValue)
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync();
-
-        if (user == null)
-            return NotFound();
-
-        var dto = new UserDto
+            _logger.LogInformation("Usuario creado exitosamente: {UserId}", user.Id);
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, new
+            {
+                user.Id,
+                user.Username,
+                user.Email,
+                user.FirstName,
+                user.LastName,
+                user.RoleId
+            });
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
         {
-            Id = user.Id,
-            Username = user.Username,
-            Email = user.Email,
-            Status = user.Status,
-            RoleId = user.RoleId,
-            RoleName = user.Role?.Name
-        };
-
-        return Ok(dto);
+            _logger.LogError(ex, "Error de base de datos al crear usuario");
+            
+            // Detectar errores de duplicación
+            if (ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ||
+                ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return BadRequest(new { message = "Ya existe un usuario con ese email o username" });
+            }
+            
+            return StatusCode(500, new { message = "Error al crear usuario", error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear usuario");
+            return StatusCode(500, new { message = "Error al crear usuario", error = ex.Message });
+        }
     }
 
-
-    public class ChangeMyPasswordRequest
+    // PUT: api/users/5
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] System.Text.Json.JsonElement dto)
     {
-        public string? OldPassword { get; set; }  // opcional
-        public string NewPassword { get; set; } = string.Empty;
+        try
+        {
+            _logger.LogInformation("UpdateUser - ID: {Id}, Payload: {Payload}", id, dto.ToString());
+
+            var existingUser = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (existingUser == null)
+            {
+                return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            // Obtener el usuario autenticado
+            var currentUserIdClaim = User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(currentUserIdClaim) || !int.TryParse(currentUserIdClaim, out int currentUserId))
+            {
+                return Unauthorized(new { message = "No se pudo identificar al usuario actual" });
+            }
+
+            // Validación adicional: Si se intenta cambiar el rol de un Admin, validar
+            int? newRoleId = null;
+            if (dto.TryGetProperty("roleId", out var roleIdEl))
+            {
+                newRoleId = roleIdEl.GetInt32();
+                if (existingUser.Role != null && existingUser.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Verificar si el nuevo rol es diferente al actual
+                    if (newRoleId != existingUser.RoleId)
+                    {
+                        // Contar cuántos admins hay actualmente
+                        var adminCount = await _context.Users
+                            .Include(u => u.Role)
+                            .CountAsync(u => u.Role != null && u.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
+
+                        if (adminCount <= 1)
+                        {
+                            return BadRequest(new { message = "No puedes cambiar el rol del único administrador del sistema" });
+                        }
+                    }
+                }
+            }
+
+            if (dto.TryGetProperty("username", out var usernameEl) && usernameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingUser.Username = usernameEl.GetString() ?? existingUser.Username;
+            }
+            if (dto.TryGetProperty("email", out var emailEl))
+            {
+                existingUser.Email = emailEl.ValueKind != System.Text.Json.JsonValueKind.Null ? emailEl.GetString() : null;
+            }
+            if (dto.TryGetProperty("phone", out var phoneEl))
+            {
+                existingUser.Phone = phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null ? phoneEl.GetString() : null;
+            }
+            if (dto.TryGetProperty("firstName", out var firstNameEl) && firstNameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingUser.FirstName = firstNameEl.GetString() ?? existingUser.FirstName;
+            }
+            if (dto.TryGetProperty("lastName", out var lastNameEl) && lastNameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingUser.LastName = lastNameEl.GetString() ?? existingUser.LastName;
+            }
+            if (newRoleId.HasValue && newRoleId.Value != existingUser.RoleId)
+            {
+                _logger.LogInformation("Cambiando rol del usuario {UserId} de RoleId {OldRoleId} a {NewRoleId}", 
+                    existingUser.Id, existingUser.RoleId, newRoleId.Value);
+                
+                // Solo actualizar el RoleId, EF Core manejará la navegación automáticamente
+                existingUser.RoleId = newRoleId.Value;
+            }
+            if (dto.TryGetProperty("status", out var statusEl))
+            {
+                existingUser.Status = statusEl.GetBoolean();
+            }
+            
+            // Solo actualizar contraseña si se proporciona una nueva
+            if (dto.TryGetProperty("passwordHash", out var passwordEl) && 
+                passwordEl.ValueKind == System.Text.Json.JsonValueKind.String && 
+                !string.IsNullOrEmpty(passwordEl.GetString()))
+            {
+                var newPassword = passwordEl.GetString();
+                if (newPassword != null && newPassword.Length < 6)
+                {
+                    return BadRequest(new { message = "La contraseña debe tener al menos 6 caracteres" });
+                }
+                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, 12);
+            }
+            
+            existingUser.UpdatedAt = DateTime.Now;
+
+            _logger.LogInformation("Guardando cambios en base de datos para usuario {UserId}", existingUser.Id);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("SaveChangesAsync completado exitosamente");
+
+            _logger.LogInformation("Usuario actualizado exitosamente: {UserId} por usuario {CurrentUserId}", id, currentUserId);
+            return Ok(new
+            {
+                existingUser.Id,
+                existingUser.Username,
+                existingUser.Email,
+                existingUser.FirstName,
+                existingUser.LastName,
+                existingUser.RoleId,
+                existingUser.Status
+            });
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        {
+            _logger.LogError(ex, "DbUpdateException al actualizar usuario {UserId}. InnerException: {InnerException}", 
+                id, ex.InnerException?.Message ?? "null");
+            
+            // Detectar errores de duplicación
+            if (ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ||
+                ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return BadRequest(new { message = "Ya existe un usuario con ese email o username" });
+            }
+            
+            return StatusCode(500, new { 
+                message = "Error al actualizar usuario en base de datos", 
+                error = ex.Message,
+                innerError = ex.InnerException?.Message,
+                stackTrace = ex.StackTrace
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception genérica al actualizar usuario {UserId}. Tipo: {ExceptionType}", 
+                id, ex.GetType().Name);
+            
+            return StatusCode(500, new { 
+                message = "Error al actualizar usuario", 
+                error = ex.Message,
+                exceptionType = ex.GetType().Name,
+                stackTrace = ex.StackTrace
+            });
+        }
     }
 
-    // PUT: /api/users/me/password
-    [HttpPut("me/password")]
-    public async Task<IActionResult> ChangeMyPassword([FromBody] ChangeMyPasswordRequest request)
+    // DELETE: api/users/5
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.NewPassword))
-            return BadRequest("Nueva contraseña requerida.");
+        try
+        {
+            // Obtener el usuario autenticado
+            var currentUserIdClaim = User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(currentUserIdClaim) || !int.TryParse(currentUserIdClaim, out int currentUserId))
+            {
+                return Unauthorized(new { message = "No se pudo identificar al usuario actual" });
+            }
 
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+            // Validación 1: No permitir eliminar el propio usuario
+            if (currentUserId == id)
+            {
+                return BadRequest(new { message = "No puedes eliminar tu propia cuenta mientras estás autenticado." });
+            }
 
-        if (!int.TryParse(userId, out var idValue))
-            return Unauthorized();
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-        var user = await _context.Users.FindAsync(idValue);
-        if (user == null || !user.Status)
-            return NotFound();
+            if (user == null)
+            {
+                return NotFound(new { message = "Usuario no encontrado" });
+            }
 
-        // Si quieres validar la contraseña actual, descomenta y ajusta:
-        // if (!string.IsNullOrWhiteSpace(request.OldPassword))
-        // {
-        //     var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.OldPassword);
-        //     if (verification == PasswordVerificationResult.Failed)
-        //         return BadRequest("La contraseña actual no es correcta.");
-        // }
+            // Validación 2: Verificar si el usuario tiene sesión activa
+            var hasActiveSession = await _context.Sessions
+                .AnyAsync(s => s.UserId == id && s.IsActive == true);
 
-        user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
-        await _context.SaveChangesAsync();
+            if (hasActiveSession)
+            {
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el usuario '{user.Username}' porque tiene una sesión activa. El usuario debe cerrar sesión primero." 
+                });
+            }
 
-        return NoContent();
+            // Validación 3: No permitir eliminar administradores
+            if (user.Role != null && user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el usuario '{user.Username}' porque tiene rol de Administrador. Los administradores están protegidos." 
+                });
+            }
+
+            // Eliminación lógica
+            user.Status = false;
+            user.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Usuario eliminado lógicamente: {UserId} por usuario {CurrentUserId}", id, currentUserId);
+            return Ok(new { message = "Usuario eliminado correctamente" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al eliminar usuario");
+            return StatusCode(500, new { message = "Error al eliminar usuario", error = ex.Message });
+        }
     }
 }

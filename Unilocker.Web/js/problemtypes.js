@@ -12,16 +12,10 @@ function renderProblemTypes(items) {
 
     tbody.innerHTML = '';
     items.forEach(p => {
-        const statusBadge = p.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${p.id}</td>
             <td>${p.name}</td>
-            <td>
-                <span class="badge ${p.status ? 'bg-success' : 'bg-secondary'}">
-                    ${statusBadge}
-                </span>
-            </td>
+            <td>${p.description || '<em class="text-muted">Sin descripción</em>'}</td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${p.id}">
                     Editar
@@ -46,6 +40,7 @@ async function loadProblemTypes() {
         problemTypesCache = data.map(p => ({
             id: p.id,
             name: p.name,
+            description: p.description,
             status: p.status === true || p.status === 1
         }));
 
@@ -69,9 +64,7 @@ function openCreateModal() {
 
     document.getElementById('problemTypeId').value = '';
     document.getElementById('txtProblemTypeName').value = '';
-
-    const chk = document.getElementById('chkProblemTypeStatus');
-    if (chk) chk.checked = true;
+    document.getElementById('txtDescription').value = '';
 
     const titleEl = document.getElementById('problemTypeModalTitle');
     if (titleEl) titleEl.textContent = 'Nuevo tipo de problema';
@@ -90,9 +83,7 @@ function openEditModal(id) {
 
     document.getElementById('problemTypeId').value = p.id;
     document.getElementById('txtProblemTypeName').value = p.name ?? '';
-
-    const chk = document.getElementById('chkProblemTypeStatus');
-    if (chk) chk.checked = !!p.status;
+    document.getElementById('txtDescription').value = p.description ?? '';
 
     const titleEl = document.getElementById('problemTypeModalTitle');
     if (titleEl) titleEl.textContent = 'Editar tipo de problema';
@@ -109,37 +100,38 @@ async function saveProblemType(e) {
     const id = form.dataset.id;
 
     const name = document.getElementById('txtProblemTypeName').value.trim();
-    const chk = document.getElementById('chkProblemTypeStatus');
+    const description = document.getElementById('txtDescription').value.trim();
     if (!name) {
         showError('El nombre es obligatorio.');
         return;
     }
 
     const payload = {
-    name,
-    status: chk ? chk.checked : true
+        name,
+        description: description || null,
+        status: true
     };
 
     const isNew = !id;
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/problemtypes' : `/api/problemtypes/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando tipo de problema...');
     try {
         const resp = await authFetch(url, { method, body: payload });
-        const text = await resp.text();
-        if (!resp.ok) {
-            console.error('Error guardando tipo de problema', resp.status, text);
-            showError(text || 'No se pudo guardar el tipo de problema.');
-            return;
-        }
+        const data = await resp.json();
 
-        showToast(isNew ? 'Tipo de problema creado correctamente.' : 'Tipo de problema actualizado correctamente.');
+        showToast(data.message || (isNew ? 'Tipo de problema creado correctamente.' : 'Tipo de problema actualizado correctamente.'));
         problemTypeModal.hide();
         await loadProblemTypes();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el tipo de problema.');
+        showError(err.message || 'No se pudo guardar el tipo de problema.');
     } finally {
         hideLoading();
     }
@@ -154,19 +146,13 @@ async function deleteProblemType(id) {
     showLoading('Eliminando tipo de problema...');
     try {
         const resp = await authFetch(`/api/problemtypes/${id}`, { method: 'DELETE' });
-        const text = await resp.text();
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            console.error('Error eliminando tipo de problema', resp.status, text);
-            showError(text || 'No se pudo eliminar el tipo de problema.');
-            return;
-        }
-
-        showToast('Tipo de problema eliminado correctamente.');
+        showToast(data.message || 'Tipo de problema eliminado correctamente.');
         await loadProblemTypes();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el tipo de problema.');
+        showError(err.message || 'No se pudo eliminar el tipo de problema.');
     } finally {
         hideLoading();
     }

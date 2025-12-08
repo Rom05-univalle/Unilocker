@@ -42,15 +42,24 @@
                     </h5>
                     <!-- Filtros y tabla -->
                     <div class="row g-2 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Rango de fechas</label>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha inicio</label>
                             <input type="date" class="form-control" id="reportStartDate">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label invisible">.</label>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha fin</label>
                             <input type="date" class="form-control" id="reportEndDate">
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="reportStatusFilter">
+                                <option value="">Todos</option>
+                                <option value="Pending">Pendiente</option>
+                                <option value="InReview">En Revisión</option>
+                                <option value="Resolved">Resuelto</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
                             <button class="btn btn-primary me-2" id="btnFilterReports">
                                 <i class="fa-solid fa-filter me-1"></i>Filtrar
                             </button>
@@ -64,12 +73,12 @@
                         <table class="table table-striped table-hover mb-0">
                             <thead class="table-light">
                             <tr>
-                                <th>ID</th>
                                 <th>Fecha</th>
                                 <th>Usuario</th>
                                 <th>Computadora</th>
                                 <th>Tipo</th>
-                                <th>Detalle</th>
+                                <th class="text-center">Detalles</th>
+                                <th>Estado</th>
                             </tr>
                             </thead>
                             <tbody id="reportsTableBody"></tbody>

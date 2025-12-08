@@ -14,15 +14,9 @@ function renderClassrooms(items) {
     items.forEach(c => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${c.id}</td>
             <td>${c.name}</td>
             <td>${c.blockName ?? ''}</td>
             <td>${c.branchName ?? ''}</td>
-            <td>
-                <span class="badge ${c.status ? 'bg-success' : 'bg-secondary'}">
-                    ${c.status ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${c.id}">
                     Editar
@@ -122,6 +116,7 @@ async function loadClassrooms() {
         classroomsCache = data.map(c => ({
             id: c.id,
             name: c.name,
+            capacity: c.capacity,
             blockId: c.blockId,
             blockName: c.blockName,
             branchId: c.branchId,
@@ -147,12 +142,11 @@ function openCreateModal() {
 
     document.getElementById('classroomId').value = '';
     document.getElementById('txtClassroomName').value = '';
+    document.getElementById('txtCapacity').value = '';
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
     if (ddlBranch) ddlBranch.value = '';
     if (ddlBlock) ddlBlock.innerHTML = '<option value="">Seleccione un bloque</option>';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = true;
 
     const titleEl = document.getElementById('classroomModalTitle');
     if (titleEl) titleEl.textContent = 'Nueva aula';
@@ -171,9 +165,9 @@ async function openEditModal(id) {
 
     document.getElementById('classroomId').value = classroom.id;
     document.getElementById('txtClassroomName').value = classroom.name ?? '';
+    document.getElementById('txtCapacity').value = classroom.capacity ?? '';
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
-    const chk = document.getElementById('chkStatus');
 
     if (ddlBranch) ddlBranch.value = classroom.branchId ?? '';
     await loadBlocksForSelect(classroom.branchId);
@@ -182,8 +176,6 @@ async function openEditModal(id) {
         const existsInBranch = blocksCache.some(b => b.id === classroom.blockId);
         ddlBlock.value = existsInBranch ? classroom.blockId : '';
     }
-
-    if (chk) chk.checked = !!classroom.status;
 
     const titleEl = document.getElementById('classroomModalTitle');
     if (titleEl) titleEl.textContent = 'Editar aula';
@@ -198,12 +190,19 @@ async function saveClassroom(e) {
     const id = form.dataset.id;
 
     const name = document.getElementById('txtClassroomName').value.trim();
+    const capacityInput = document.getElementById('txtCapacity');
+    const capacity = capacityInput?.value ? parseInt(capacityInput.value, 10) : null;
     const ddlBranch = document.getElementById('ddlBranch');
     const ddlBlock = document.getElementById('ddlBlock');
-    const chk = document.getElementById('chkStatus');
 
     if (!name) {
         showError('El nombre del aula es obligatorio.');
+        return;
+    }
+
+    // Validar capacidad máxima
+    if (capacity !== null && capacity > 100) {
+        showError('La capacidad no puede ser mayor a 100.');
         return;
     }
 
@@ -220,34 +219,31 @@ async function saveClassroom(e) {
 
     const payload = {
         name,
+        capacity,
         blockId: parseInt(blockIdValue, 10),
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/classrooms' : `/api/classrooms/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando aula...');
     try {
-        const resp = await authFetch(url, {
-            method,
-            body: payload
-        });
+        const resp = await authFetch(url, { method, body: payload });
+        const data = await resp.json();
 
-        if (!resp.ok) {
-            const text = await resp.text();
-            console.error('Error guardando aula', resp.status, text);
-            showError(text || 'No se pudo guardar el aula.');
-            return;
-        }
-
-        showToast(isNew ? 'Aula creada correctamente.' : 'Aula actualizada correctamente.', 'success');
+        showToast(data.message || (isNew ? 'Aula creada correctamente.' : 'Aula actualizada correctamente.'), 'success');
         classroomModal.hide();
         await loadClassrooms();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el aula.');
+        showError(err.message || 'No se pudo guardar el aula.');
     } finally {
         hideLoading();
     }
@@ -259,22 +255,14 @@ async function deleteClassroom(id) {
 
     showLoading('Eliminando aula...');
     try {
-        const resp = await authFetch(`/api/classrooms/${id}`, {
-            method: 'DELETE'
-        });
+        const resp = await authFetch(`/api/classrooms/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando aula', resp.status, text);
-            showError(text || 'No se pudo eliminar el aula.');
-            return;
-        }
-
-        showToast('Aula eliminada correctamente.', 'success');
+        showToast(data.message || 'Aula eliminada correctamente.', 'success');
         await loadClassrooms();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el aula.');
+        showError(err.message || 'No se pudo eliminar el aula.');
     } finally {
         hideLoading();
     }

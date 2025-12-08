@@ -2,172 +2,252 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
-using Unilocker.Api.Models;
-using DtoProblemType = Unilocker.Api.DTOs.ProblemTypeDto;
-using DtoProblemTypeCreateUpdate = Unilocker.Api.DTOs.ProblemTypeCreateUpdateDto;
 
 namespace Unilocker.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")] // api/problemtypes
 [Authorize]
+[ApiController]
+[Route("api/[controller]")]
 public class ProblemTypesController : ControllerBase
 {
     private readonly UnilockerDbContext _context;
+    private readonly ILogger<ProblemTypesController> _logger;
 
-    public ProblemTypesController(UnilockerDbContext context)
+    public ProblemTypesController(UnilockerDbContext context, ILogger<ProblemTypesController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    // GET: /api/problemtypes
+    // GET: api/problemtypes
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<DtoProblemType>>> GetAll()
+    public async Task<ActionResult<object>> GetProblemTypes([FromQuery] bool activeOnly = true)
     {
-        var items = await _context.ProblemTypes
-            // .Where(p => p.Status) // descomenta si quieres solo activos
-            .OrderBy(p => p.Name)
-            .Select(p => new DtoProblemType
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Status = p.Status
-            })
-            .ToListAsync();
+        try
+        {
+            _logger.LogInformation("Obteniendo tipos de problema (activeOnly={ActiveOnly})", activeOnly);
 
-        return Ok(items);
+            var query = _context.ProblemTypes.AsQueryable();
+
+            if (activeOnly)
+            {
+                query = query.Where(pt => pt.Status);
+            }
+
+            var problemTypes = await query
+                .OrderBy(pt => pt.Name)
+                .Select(pt => new
+                {
+                    pt.Id,
+                    pt.Name,
+                    pt.Description,
+                    pt.Status
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("Se encontraron {Count} tipos de problema", problemTypes.Count);
+
+            return Ok(problemTypes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener tipos de problema");
+            return StatusCode(500, new { message = "Error interno al obtener tipos de problema", error = ex.Message });
+        }
     }
 
-    // GET: /api/problemtypes/5
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<DtoProblemType>> GetById(int id)
+    // GET: api/problemtypes/{id}
+    [HttpGet("{id}")]
+    public async Task<ActionResult<object>> GetProblemTypeById(int id)
     {
-        var item = await _context.ProblemTypes
-            // .Where(p => p.Status && p.Id == id)
-            .Where(p => p.Id == id)
-            .Select(p => new DtoProblemType
+        try
+        {
+            _logger.LogInformation("Obteniendo tipo de problema con ID: {ProblemTypeId}", id);
+
+            var problemType = await _context.ProblemTypes
+                .Where(pt => pt.Id == id)
+                .Select(pt => new
+                {
+                    pt.Id,
+                    pt.Name,
+                    pt.Description,
+                    pt.Status,
+                    reportCount = pt.Reports.Count,
+                    pendingReports = pt.Reports.Count(r => r.ReportStatus == "Pending")
+                })
+                .FirstOrDefaultAsync();
+
+            if (problemType == null)
             {
-                Id = p.Id,
-                Name = p.Name,
-                Status = p.Status
-            })
-            .FirstOrDefaultAsync();
+                _logger.LogWarning("Tipo de problema no encontrado: {ProblemTypeId}", id);
+                return NotFound(new { message = $"Tipo de problema con ID {id} no encontrado" });
+            }
 
-        if (item == null)
-            return NotFound();
-
-        return Ok(item);
+            return Ok(problemType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener tipo de problema {ProblemTypeId}", id);
+            return StatusCode(500, new { message = "Error interno al obtener tipo de problema", error = ex.Message });
+        }
     }
 
-    // POST: /api/problemtypes
+    // GET: api/problemtypes/stats
+    [HttpGet("stats")]
+    public async Task<ActionResult<object>> GetProblemTypeStats()
+    {
+        try
+        {
+            _logger.LogInformation("Obteniendo estadísticas de tipos de problema");
+
+            var stats = await _context.ProblemTypes
+                .Where(pt => pt.Status)
+                .Select(pt => new
+                {
+                    pt.Id,
+                    pt.Name,
+                    totalReports = pt.Reports.Count,
+                    pendingReports = pt.Reports.Count(r => r.ReportStatus == "Pending"),
+                    resolvedReports = pt.Reports.Count(r => r.ReportStatus == "Resolved"),
+                    rejectedReports = pt.Reports.Count(r => r.ReportStatus == "Rejected")
+                })
+                .OrderByDescending(x => x.totalReports)
+                .ToListAsync();
+
+            var totalReports = stats.Sum(x => x.totalReports);
+
+            _logger.LogInformation("Se generaron estadísticas para {Count} tipos de problema", stats.Count);
+
+            return Ok(new
+            {
+                problemTypeStats = stats,
+                totalReports,
+                totalTypes = stats.Count,
+                generatedAt = DateTime.Now
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener estadísticas de tipos de problema");
+            return StatusCode(500, new { message = "Error interno al obtener estadísticas", error = ex.Message });
+        }
+    }
+
+    // POST: api/problemtypes
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<DtoProblemType>> Create([FromBody] DtoProblemTypeCreateUpdate dto)
+    public async Task<ActionResult> CreateProblemType([FromBody] System.Text.Json.JsonElement dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return BadRequest("El nombre es obligatorio.");
-
-        var exists = await _context.ProblemTypes.AnyAsync(p => p.Name == dto.Name);
-        if (exists)
-            return BadRequest("Ya existe un tipo de problema con ese nombre.");
-
-        var entity = new ProblemType
+        try
         {
-            Name = dto.Name,
-            Status = dto.Status
-        };
+            _logger.LogInformation("CreateProblemType - Payload: {Payload}", dto.ToString());
 
-        _context.ProblemTypes.Add(entity);
+            var name = dto.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : string.Empty;
+            var description = dto.TryGetProperty("description", out var descEl) && descEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? descEl.GetString() : null;
+            var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
 
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
-        {
-            _context.CurrentUserId = uid;
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest(new { message = "El nombre es obligatorio" });
+            }
+
+            var problemType = new Models.ProblemType
+            {
+                Name = name,
+                Description = description,
+                Status = status,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.ProblemTypes.Add(problemType);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Tipo de problema creado exitosamente: {ProblemTypeId}", problemType.Id);
+            return CreatedAtAction(nameof(GetProblemTypeById), new { id = problemType.Id }, problemType);
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        var result = new DtoProblemType
+        catch (Exception ex)
         {
-            Id = entity.Id,
-            Name = entity.Name,
-            Status = entity.Status
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, result);
+            _logger.LogError(ex, "Error al crear tipo de problema");
+            return StatusCode(500, new { message = "Error al crear tipo de problema", error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
-    // PUT: /api/problemtypes/5
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<DtoProblemType>> Update(int id, [FromBody] DtoProblemTypeCreateUpdate dto)
+    // PUT: api/problemtypes/5
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProblemType(int id, [FromBody] System.Text.Json.JsonElement dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var entity = await _context.ProblemTypes.FindAsync(id);
-        if (entity == null)
-            return NotFound();
-
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return BadRequest("El nombre es obligatorio.");
-
-        var exists = await _context.ProblemTypes.AnyAsync(p => p.Name == dto.Name && p.Id != id);
-        if (exists)
-            return BadRequest("Ya existe otro tipo de problema con ese nombre.");
-
-        entity.Name = dto.Name;
-        entity.Status = dto.Status;
-
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        try
         {
-            _context.CurrentUserId = uid;
+            _logger.LogInformation("UpdateProblemType - ID: {Id}, Payload: {Payload}", id, dto.ToString());
+
+            var existingProblemType = await _context.ProblemTypes.FindAsync(id);
+            if (existingProblemType == null)
+            {
+                return NotFound(new { message = "Tipo de problema no encontrado" });
+            }
+
+            if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                existingProblemType.Name = nameEl.GetString() ?? existingProblemType.Name;
+            }
+            if (dto.TryGetProperty("description", out var descEl))
+            {
+                existingProblemType.Description = descEl.ValueKind != System.Text.Json.JsonValueKind.Null ? descEl.GetString() : null;
+            }
+            if (dto.TryGetProperty("status", out var statusEl))
+            {
+                existingProblemType.Status = statusEl.GetBoolean();
+            }
+            existingProblemType.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Tipo de problema actualizado exitosamente: {ProblemTypeId}", id);
+            return Ok(existingProblemType);
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        var result = new DtoProblemType
+        catch (Exception ex)
         {
-            Id = entity.Id,
-            Name = entity.Name,
-            Status = entity.Status
-        };
-
-        return Ok(result);
+            _logger.LogError(ex, "Error al actualizar tipo de problema");
+            return StatusCode(500, new { message = "Error al actualizar tipo de problema", error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
-    // DELETE: /api/problemtypes/5
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    // DELETE: api/problemtypes/5
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProblemType(int id)
     {
-        var entity = await _context.ProblemTypes.FindAsync(id);
-        if (entity == null)
-            return NotFound();
-
-        _context.ProblemTypes.Remove(entity); // borrado físico
-
-        // ==== Auditoría ====
-        var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid))
+        try
         {
-            _context.CurrentUserId = uid;
+            var problemType = await _context.ProblemTypes.FindAsync(id);
+            if (problemType == null)
+            {
+                return NotFound(new { message = "Tipo de problema no encontrado" });
+            }
+
+            // Verificar si hay reportes activos con este tipo de problema (Pending o In Progress)
+            var activeReportsCount = await _context.Reports
+                .CountAsync(r => r.ProblemTypeId == id && 
+                    (r.ReportStatus == "Pending" || r.ReportStatus == "In Progress"));
+
+            if (activeReportsCount > 0)
+            {
+                return BadRequest(new { 
+                    message = $"No se puede eliminar el tipo de problema '{problemType.Name}' porque tiene {activeReportsCount} reporte(s) pendiente(s) o en progreso. Resuelva o cierre los reportes primero." 
+                });
+            }
+
+            // Eliminación lógica
+            problemType.Status = false;
+            problemType.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Tipo de problema eliminado lógicamente: {ProblemTypeId}", id);
+            return Ok(new { message = "Tipo de problema eliminado correctamente" });
         }
-        _context.CurrentIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        // ====================
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al eliminar tipo de problema");
+            return StatusCode(500, new { message = "Error al eliminar tipo de problema", error = ex.Message });
+        }
     }
 }

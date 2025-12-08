@@ -21,7 +21,7 @@ public class ReportsController : ControllerBase
         _logger = logger;
     }
 
-   
+    // POST: api/reports
     [HttpPost]
     public async Task<ActionResult<ReportResponse>> CreateReport([FromBody] CreateReportRequest request)
     {
@@ -30,7 +30,7 @@ public class ReportsController : ControllerBase
             _logger.LogInformation("Creando reporte para SessionId: {SessionId}, ProblemTypeId: {ProblemTypeId}",
                 request.SessionId, request.ProblemTypeId);
 
-        
+            // Validar que la sesión existe
             var session = await _context.Sessions
                 .Include(s => s.User)
                 .Include(s => s.Computer)
@@ -45,7 +45,7 @@ public class ReportsController : ControllerBase
                 return NotFound(new { message = $"Sesión con ID {request.SessionId} no encontrada" });
             }
 
-         
+            // Validar que el tipo de problema existe
             var problemType = await _context.ProblemTypes
                 .FirstOrDefaultAsync(pt => pt.Id == request.ProblemTypeId && pt.Status);
 
@@ -55,7 +55,7 @@ public class ReportsController : ControllerBase
                 return BadRequest(new { message = $"Tipo de problema con ID {request.ProblemTypeId} no encontrado o inactivo" });
             }
 
-
+            // Crear el reporte
             var report = new Report
             {
                 SessionId = request.SessionId,
@@ -71,7 +71,7 @@ public class ReportsController : ControllerBase
 
             _logger.LogInformation("Reporte creado exitosamente con ID: {ReportId}", report.Id);
 
-
+            // Recargar con todas las relaciones para el response
             var createdReport = await _context.Reports
                 .Include(r => r.ProblemType)
                 .Include(r => r.Session)
@@ -94,6 +94,7 @@ public class ReportsController : ControllerBase
         }
     }
 
+    // GET: api/reports
     [HttpGet]
     public async Task<ActionResult<List<ReportResponse>>> GetReports(
         [FromQuery] string? status = null,
@@ -108,17 +109,9 @@ public class ReportsController : ControllerBase
             _logger.LogInformation("Obteniendo reportes con filtros - Status: {Status}, ProblemTypeId: {ProblemTypeId}, StartDate: {StartDate}, EndDate: {EndDate}",
                 status, problemTypeId, startDate, endDate);
 
-            var query = _context.Reports
-                .Include(r => r.ProblemType)
-                .Include(r => r.Session)
-                    .ThenInclude(s => s.User)
-                .Include(r => r.Session)
-                    .ThenInclude(s => s.Computer)
-                        .ThenInclude(c => c.Classroom)
-                            .ThenInclude(cl => cl.Block)
-                                .ThenInclude(b => b.Branch)
-                .AsQueryable();
+            var query = _context.Reports.AsQueryable();
 
+            // Aplicar filtros
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(r => r.ReportStatus == status);
@@ -140,17 +133,32 @@ public class ReportsController : ControllerBase
                 query = query.Where(r => r.ReportDate <= endOfDay);
             }
 
-
-            query = query.OrderByDescending(r => r.ReportDate);
-
-
+            // Paginación
             var totalRecords = await query.CountAsync();
+            
             var reports = await query
+                .OrderByDescending(r => r.ReportDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(r => new
+                {
+                    Id = r.Id,
+                    SessionId = r.SessionId,
+                    ProblemTypeId = r.ProblemTypeId,
+                    ProblemTypeName = _context.ProblemTypes.Where(pt => pt.Id == r.ProblemTypeId).Select(pt => pt.Name).FirstOrDefault(),
+                    Description = r.Description,
+                    ReportDate = r.ReportDate,
+                    ReportStatus = r.ReportStatus,
+                    ResolutionDate = r.ResolutionDate,
+                    CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt,
+                    UserName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.User != null ? s.User.Username : null).FirstOrDefault(),
+                    ComputerName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.Computer != null ? s.Computer.Name : null).FirstOrDefault(),
+                    ClassroomName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.Computer != null && s.Computer.Classroom != null ? s.Computer.Classroom.Name : null).FirstOrDefault()
+                })
                 .ToListAsync();
 
-            var response = reports.Select(MapToReportResponse).ToList();
+            var response = reports;
 
             _logger.LogInformation("Se encontraron {Count} reportes de {Total} totales", response.Count, totalRecords);
 
@@ -167,7 +175,7 @@ public class ReportsController : ControllerBase
         }
     }
 
-
+    // GET: api/reports/{id}
     [HttpGet("{id}")]
     public async Task<ActionResult<ReportResponse>> GetReportById(int id)
     {
@@ -202,7 +210,7 @@ public class ReportsController : ControllerBase
         }
     }
 
-
+    // PUT: api/reports/{id}/status
     [HttpPut("{id}/status")]
     public async Task<ActionResult<ReportResponse>> UpdateReportStatus(int id, [FromBody] UpdateReportStatusRequest request)
     {
@@ -227,18 +235,18 @@ public class ReportsController : ControllerBase
                 return NotFound(new { message = $"Reporte con ID {id} no encontrado" });
             }
 
-
+            // Validar estados válidos
             var validStatuses = new[] { "Pending", "InReview", "Resolved", "Rejected" };
             if (!validStatuses.Contains(request.ReportStatus))
             {
                 return BadRequest(new { message = $"Estado '{request.ReportStatus}' no es válido. Estados válidos: {string.Join(", ", validStatuses)}" });
             }
 
-
+            // Actualizar estado
             report.ReportStatus = request.ReportStatus;
             report.UpdatedAt = DateTime.Now;
 
-
+            // Si el estado es "Resolved", actualizar fecha de resolución
             if (request.ReportStatus == "Resolved" && !report.ResolutionDate.HasValue)
             {
                 report.ResolutionDate = DateTime.Now;
@@ -257,7 +265,7 @@ public class ReportsController : ControllerBase
         }
     }
 
-
+    // GET: api/reports/pending
     [HttpGet("pending")]
     public async Task<ActionResult<List<ReportResponse>>> GetPendingReports()
     {
@@ -291,7 +299,7 @@ public class ReportsController : ControllerBase
         }
     }
 
- 
+    // Método helper para mapear Report a ReportResponse
     private ReportResponse MapToReportResponse(Report report)
     {
         return new ReportResponse

@@ -90,18 +90,29 @@ export function showToast(message, type = 'success') {
 }
 
 // Confirmación reutilizable: devuelve Promise<boolean>
-export function showConfirm(message) {
+// Acepta title y message para mostrar HTML en el cuerpo
+export function showConfirm(titleOrMessage, message = null) {
+    const titleEl = document.getElementById('globalConfirmTitle');
     const msgEl = document.getElementById('globalConfirmMessage');
 
     return new Promise((resolve) => {
-        // Si no hay modal global, usar window.confirm
+        // Si no hay modal global, usar window.confirm con solo texto
         if (!confirmModalInstance || !msgEl) {
-            const ok = window.confirm(message);
+            const textOnly = message ? `${titleOrMessage}\n${message}` : titleOrMessage;
+            const ok = window.confirm(textOnly);
             resolve(ok);
             return;
         }
 
-        msgEl.textContent = message;
+        // Si se pasa un segundo parámetro, el primero es el título
+        if (message) {
+            if (titleEl) titleEl.textContent = titleOrMessage;
+            msgEl.innerHTML = message; // Permitir HTML en el mensaje
+        } else {
+            if (titleEl) titleEl.textContent = 'Confirmar acción';
+            msgEl.innerHTML = titleOrMessage; // Permitir HTML
+        }
+
         confirmCallback = (accepted) => {
             resolve(accepted);
         };

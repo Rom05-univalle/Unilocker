@@ -12,15 +12,9 @@ function renderBranches(rows) {
     rows.forEach(branch => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${branch.id}</td>
             <td>${branch.name}</td>
             <td>${branch.code ?? ''}</td>
             <td>${branch.address ?? ''}</td>
-            <td>
-                <span class="badge ${branch.status ? 'bg-success' : 'bg-secondary'}">
-                    ${branch.status ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${branch.id}">
                     Editar
@@ -79,8 +73,6 @@ function openCreateModal() {
     document.getElementById('txtBranchName').value = '';
     document.getElementById('txtBranchCode').value = '';
     document.getElementById('txtBranchAddress').value = '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = true;
 
     const titleEl = document.getElementById('branchModalTitle');
     if (titleEl) titleEl.textContent = 'Nueva sucursal';
@@ -101,8 +93,6 @@ function openEditModal(id) {
     document.getElementById('txtBranchName').value = branch.name ?? '';
     document.getElementById('txtBranchCode').value = branch.code ?? '';
     document.getElementById('txtBranchAddress').value = branch.address ?? '';
-    const chk = document.getElementById('chkStatus');
-    if (chk) chk.checked = !!branch.status;
 
     const titleEl = document.getElementById('branchModalTitle');
     if (titleEl) titleEl.textContent = 'Editar sucursal';
@@ -119,7 +109,6 @@ async function saveBranch(e) {
     const name = document.getElementById('txtBranchName').value.trim();
     const code = document.getElementById('txtBranchCode').value.trim();
     const address = document.getElementById('txtBranchAddress').value.trim();
-    const chk = document.getElementById('chkStatus');
 
     if (!name) {
         showError('El nombre es obligatorio.');
@@ -138,12 +127,17 @@ async function saveBranch(e) {
         name,
         code,
         address,
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/branches' : `/api/branches/${id}`;
+
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
 
     showLoading('Guardando sucursal...');
     try {
@@ -155,26 +149,26 @@ async function saveBranch(e) {
         await loadBranches();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar la sucursal.');
+        showError(err.message || 'No se pudo guardar la sucursal.');
     } finally {
         hideLoading();
     }
 }
 
 async function deleteBranch(id) {
-    const ok = await showConfirm('¿Seguro que deseas eliminar esta sucursal?');
+    const ok = await showConfirm('¿Seguro que deseas eliminar esta sucursal? (Se eliminaran todos los registros relacionados)');
     if (!ok) return;
 
     showLoading('Eliminando sucursal...');
     try {
         const resp = await authFetch(`/api/branches/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
 
-        // Tu API devuelve 204, así que con llegar aquí ya está OK
-        showToast('Sucursal eliminada correctamente.');
-        await loadBranches();   // ← esta llamada es la que refresca la tabla
+        showToast(data.message || 'Sucursal eliminada correctamente.');
+        await loadBranches();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar la sucursal.');
+        showError(err.message || 'No se pudo eliminar la sucursal.');
     } finally {
         hideLoading();
     }

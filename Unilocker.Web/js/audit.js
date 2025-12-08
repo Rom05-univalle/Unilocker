@@ -41,14 +41,16 @@ function renderTable(items) {
     items.forEach(a => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${a.id}</td>
             <td>${formatDateTime(a.actionDate)}</td>
             <td>${a.responsibleUserName || ''}</td>
             <td>${a.actionType || ''}</td>
             <td>${a.affectedTable || ''}</td>
             <td>${a.recordId}</td>
-            <td>${a.ipAddress || ''}</td>
-            <td>${a.changeDetails || ''}</td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-info btn-view-details" data-details='${JSON.stringify(a.changeDetails || '')}' data-user="${a.responsibleUserName || ''}" data-action="${a.actionType || ''}" data-table="${a.affectedTable || ''}">
+                    <i class="fa-solid fa-eye"></i> Ver detalles
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -149,6 +151,40 @@ function initFilters() {
             });
             currentPage = 1;
             loadAudit();
+        });
+    }
+
+    // Event listener para botones "Ver detalles"
+    const tbody = document.getElementById('auditTableBody');
+    if (tbody) {
+        tbody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-view-details');
+            if (btn) {
+                const details = btn.dataset.details;
+                const user = btn.dataset.user;
+                const action = btn.dataset.action;
+                const table = btn.dataset.table;
+                
+                // Formatear JSON si es posible
+                let formattedDetails = details;
+                try {
+                    const parsed = JSON.parse(details);
+                    formattedDetails = JSON.stringify(parsed, null, 2);
+                } catch (err) {
+                    // Si no es JSON válido, mostrar como está
+                    formattedDetails = details;
+                }
+                
+                // Llenar el modal
+                document.getElementById('detailUser').textContent = user;
+                document.getElementById('detailAction').textContent = action;
+                document.getElementById('detailTable').textContent = table;
+                document.getElementById('detailChanges').textContent = formattedDetails;
+                
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('auditDetailsModal'));
+                modal.show();
+            }
         });
     }
 }

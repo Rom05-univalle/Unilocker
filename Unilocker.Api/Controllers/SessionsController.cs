@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 using Unilocker.Api.Data;
 using Unilocker.Api.DTOs;
 using Unilocker.Api.Models;
-
-using System.Security.Claims;
 
 namespace Unilocker.Api.Controllers;
 
@@ -97,6 +94,7 @@ public class SessionsController : ControllerBase
     /// Finalizar una sesión
     /// </summary>
     [HttpPut("{id}/end")]
+    [HttpPut("{id}/close")] // Alias para compatibilidad con web
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -109,6 +107,7 @@ public class SessionsController : ControllerBase
 
             // 1. Buscar sesión
             var session = await _context.Sessions.FindAsync(id);
+
             if (session == null)
             {
                 return NotFound(new { message = "Sesión no encontrada" });
@@ -132,6 +131,7 @@ public class SessionsController : ControllerBase
 
             // 4. Retornar sesión actualizada
             var sessionResponse = await GetSessionResponseById(id);
+
             return Ok(sessionResponse);
         }
         catch (Exception ex)
@@ -148,7 +148,7 @@ public class SessionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult> Heartbeat(int id)
+    public async Task<IActionResult> Heartbeat(int id)
     {
         try
         {
@@ -182,7 +182,57 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
-    /// Obtener una sesión por id
+    /// Forzar cierre de todas las sesiones activas de un usuario
+    /// </summary>
+    [HttpPost("user/{userId}/force-close")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ForceCloseUserSessions(int userId)
+    {
+        try
+        {
+            _logger.LogInformation("Forzando cierre de sesiones activas para UserId: {UserId}", userId);
+
+            // Buscar todas las sesiones activas del usuario
+            var activeSessions = await _context.Sessions
+                .Where(s => s.UserId == userId && s.IsActive)
+                .ToListAsync();
+
+            if (!activeSessions.Any())
+            {
+                return Ok(new { message = "No hay sesiones activas para cerrar", closedCount = 0 });
+            }
+
+            // Cerrar todas las sesiones activas
+            foreach (var session in activeSessions)
+            {
+                session.EndDateTime = DateTime.Now;
+                session.IsActive = false;
+                session.EndMethod = "Forced";
+                session.UpdatedAt = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Se cerraron {Count} sesiones activas del usuario {UserId}", 
+                activeSessions.Count, userId);
+
+            return Ok(new
+            {
+                message = "Sesiones cerradas exitosamente",
+                closedCount = activeSessions.Count,
+                sessionIds = activeSessions.Select(s => s.Id).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al forzar cierre de sesiones para UserId: {UserId}", userId);
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtener sesión por ID
     /// </summary>
     [HttpGet("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -192,6 +242,7 @@ public class SessionsController : ControllerBase
         try
         {
             var sessionResponse = await GetSessionResponseById(id);
+
             if (sessionResponse == null)
             {
                 return NotFound(new { message = "Sesión no encontrada" });
@@ -211,22 +262,34 @@ public class SessionsController : ControllerBase
     /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<SessionResponse>>> GetActiveSessions()
+    public async Task<ActionResult<IEnumerable<object>>> GetActiveSessions()
     {
         try
         {
             var sessions = await _context.Sessions
                 .Where(s => s.IsActive)
-                .Include(s => s.User)
-                .Include(s => s.Computer)
-                    .ThenInclude(c => c.Classroom)
-                    .ThenInclude(cl => cl.Block)
-                    .ThenInclude(b => b.Branch)
                 .OrderByDescending(s => s.StartDateTime)
+                .Select(s => new
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.Username).FirstOrDefault(),
+                    UserFullName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                    ComputerId = s.ComputerId,
+                    ComputerName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Name).FirstOrDefault(),
+                    ClassroomName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Classroom != null ? c.Classroom.Name : null).FirstOrDefault(),
+                    BlockName = (string)null,
+                    BranchName = (string)null,
+                    StartTime = s.StartDateTime,
+                    EndTime = s.EndDateTime,
+                    IsActive = s.IsActive,
+                    EndMethod = s.EndMethod,
+                    LastHeartbeat = s.LastHeartbeat,
+                    DurationMinutes = (int)(DateTime.Now - s.StartDateTime).TotalMinutes
+                })
                 .ToListAsync();
 
-            var response = sessions.Select(s => MapToSessionResponse(s)).ToList();
-            return Ok(response);
+            return Ok(sessions);
         }
         catch (Exception ex)
         {
@@ -236,13 +299,12 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
-    /// Obtener sesiones (paginadas, filtradas).
-    /// Ahora soporta userId=me para el usuario autenticado.
+    /// Obtener todas las sesiones (con paginación opcional)
     /// </summary>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<SessionResponse>>> GetSessions(
-        [FromQuery] string? userId = null,
+    public async Task<ActionResult<IEnumerable<object>>> GetSessions(
+        [FromQuery] int? userId = null,
         [FromQuery] int? computerId = null,
         [FromQuery] bool? isActive = null,
         [FromQuery] int page = 1,
@@ -250,56 +312,46 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var query = _context.Sessions
-                .Include(s => s.User)
-                .Include(s => s.Computer)
-                    .ThenInclude(c => c.Classroom)
-                    .ThenInclude(cl => cl.Block)
-                    .ThenInclude(b => b.Branch)
-                .AsQueryable();
+            var query = _context.Sessions.AsQueryable();
 
-            // Soporte userId=me (para perfil)
-            int? effectiveUserId = null;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                if (string.Equals(userId, "me", StringComparison.OrdinalIgnoreCase))
-                {
-                    var claimId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out var parsedId))
-                    {
-                        return Unauthorized();
-                    }
-                    effectiveUserId = parsedId;
-                }
-                else if (int.TryParse(userId, out var parsedUserId))
-                {
-                    effectiveUserId = parsedUserId;
-                }
-            }
-
-            if (effectiveUserId.HasValue)
-            {
-                query = query.Where(s => s.UserId == effectiveUserId.Value);
-            }
+            // Aplicar filtros opcionales
+            if (userId.HasValue)
+                query = query.Where(s => s.UserId == userId.Value);
 
             if (computerId.HasValue)
-            {
                 query = query.Where(s => s.ComputerId == computerId.Value);
-            }
 
             if (isActive.HasValue)
-            {
                 query = query.Where(s => s.IsActive == isActive.Value);
-            }
 
+            // Paginación con proyección
             var sessions = await query
                 .OrderByDescending(s => s.StartDateTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(s => new
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.Username).FirstOrDefault(),
+                    UserFullName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                    ComputerId = s.ComputerId,
+                    ComputerName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Name).FirstOrDefault(),
+                    ClassroomName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Classroom != null ? c.Classroom.Name : null).FirstOrDefault(),
+                    BlockName = (string)null,
+                    BranchName = (string)null,
+                    StartTime = s.StartDateTime,
+                    EndTime = s.EndDateTime,
+                    IsActive = s.IsActive,
+                    EndMethod = s.EndMethod,
+                    LastHeartbeat = s.LastHeartbeat,
+                    DurationMinutes = s.EndDateTime.HasValue 
+                        ? (int)(s.EndDateTime.Value - s.StartDateTime).TotalMinutes
+                        : s.IsActive ? (int)(DateTime.Now - s.StartDateTime).TotalMinutes : (int?)null
+                })
                 .ToListAsync();
 
-            var response = sessions.Select(s => MapToSessionResponse(s)).ToList();
-            return Ok(response);
+            return Ok(sessions);
         }
         catch (Exception ex)
         {
@@ -308,9 +360,7 @@ public class SessionsController : ControllerBase
         }
     }
 
-    // =========================
-    // Métodos privados de ayuda
-    // =========================
+    // ===== MÉTODOS PRIVADOS AUXILIARES =====
 
     private async Task<SessionResponse?> GetSessionResponseById(int id)
     {
@@ -318,8 +368,8 @@ public class SessionsController : ControllerBase
             .Include(s => s.User)
             .Include(s => s.Computer)
                 .ThenInclude(c => c.Classroom)
-                .ThenInclude(cl => cl.Block)
-                .ThenInclude(b => b.Branch)
+                    .ThenInclude(cl => cl.Block)
+                        .ThenInclude(b => b.Branch)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         return session != null ? MapToSessionResponse(session) : null;

@@ -1,5 +1,6 @@
 import { authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError, showConfirm } from './ui.js';
+import { getCurrentUser } from './auth.js';
 
 let userModal;
 let usersCache = [];
@@ -16,9 +17,9 @@ function renderUsers(items) {
         const statusBadge = u.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${u.id}</td>
             <td>${u.username}</td>
             <td>${u.email}</td>
+            <td>${u.phone ?? ''}</td>
             <td>${u.roleName ?? ''}</td>
             <td>
                 <span class="badge ${u.status ? 'bg-success' : 'bg-secondary'}">
@@ -43,14 +44,29 @@ function renderUsers(items) {
 async function loadUsers() {
     showLoading('Cargando usuarios...');
     try {
-        const resp = await authFetch('/api/users');
-        const data = await resp.json();
+        // Cargar usuarios
+        const respUsers = await authFetch('/api/users');
+        const dataUsers = await respUsers.json();
 
-        usersCache = data.map(u => ({
+        // Cargar sesiones activas
+        const respSessions = await authFetch('/api/sessions');
+        const dataSessions = await respSessions.json();
+
+        // Crear un Set con los IDs de usuarios que tienen sesiones activas
+        const activeUserIds = new Set(
+            dataSessions
+                .filter(s => s.isActive === true)
+                .map(s => s.userId)
+        );
+
+        usersCache = dataUsers.map(u => ({
             id: u.id,
             username: u.username,
+            firstName: u.firstName,
+            lastName: u.lastName,
             email: u.email,
-            status: u.status === true || u.status === 1,
+            phone: u.phone,
+            status: activeUserIds.has(u.id), // Estado basado en si tiene sesión activa
             roleId: u.roleId,
             roleName: u.roleName
         }));
@@ -113,11 +129,11 @@ function openCreateModal() {
 
     document.getElementById('userId').value = '';
     document.getElementById('txtUsername').value = '';
+    document.getElementById('txtFirstName').value = '';
+    document.getElementById('txtLastName').value = '';
     document.getElementById('txtEmail').value = '';
+    document.getElementById('txtPhone').value = '';
     document.getElementById('txtPassword').value = '';
-
-    const chk = document.getElementById('chkUserStatus');
-    if (chk) chk.checked = true;
 
     populateRolesSelect();
 
@@ -128,6 +144,13 @@ function openCreateModal() {
 }
 
 function openEditModal(id) {
+    // Validación: No permitir editar el propio usuario
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.userId === id) {
+        showError('No puedes editar tu propia cuenta.');
+        return;
+    }
+
     const u = usersCache.find(x => x.id === id);
     if (!u) return;
 
@@ -138,11 +161,11 @@ function openEditModal(id) {
 
     document.getElementById('userId').value = u.id;
     document.getElementById('txtUsername').value = u.username ?? '';
+    document.getElementById('txtFirstName').value = u.firstName ?? u.username ?? '';
+    document.getElementById('txtLastName').value = u.lastName ?? u.username ?? '';
     document.getElementById('txtEmail').value = u.email ?? '';
+    document.getElementById('txtPhone').value = u.phone ?? '';
     document.getElementById('txtPassword').value = ''; // vacío: solo cambia si escribe algo
-
-    const chk = document.getElementById('chkUserStatus');
-    if (chk) chk.checked = !!u.status;
 
     populateRolesSelect(u.roleId);
 
@@ -161,15 +184,25 @@ async function saveUser(e) {
     const id = form.dataset.id;
 
     const username = document.getElementById('txtUsername').value.trim();
+    const firstName = document.getElementById('txtFirstName').value.trim();
+    const lastName = document.getElementById('txtLastName').value.trim();
     const email = document.getElementById('txtEmail').value.trim();
+    const phone = document.getElementById('txtPhone').value.trim();
     const password = document.getElementById('txtPassword').value;
     const selRole = document.getElementById('selUserRole');
-    const chk = document.getElementById('chkUserStatus');
 
     const roleId = selRole ? parseInt(selRole.value || '0', 10) : 0;
 
     if (!username) {
         showError('El username es obligatorio.');
+        return;
+    }
+    if (!firstName) {
+        showError('El nombre es obligatorio.');
+        return;
+    }
+    if (!lastName) {
+        showError('El apellido es obligatorio.');
         return;
     }
     if (!email) {
@@ -180,6 +213,10 @@ async function saveUser(e) {
         showError('La contraseña es obligatoria para un usuario nuevo.');
         return;
     }
+    if (password && password.length < 6) {
+        showError('La contraseña debe tener al menos 6 caracteres.');
+        return;
+    }
     if (!roleId) {
         showError('Debes seleccionar un rol.');
         return;
@@ -187,9 +224,12 @@ async function saveUser(e) {
 
     const payload = {
         username,
-        email,
-        password: password || null,       // en update, si va null no cambia
-        status: chk ? chk.checked : true, // aunque el backend use solo Status internamente
+        email: email || null,
+        phone: phone || null,
+        firstName,
+        lastName,
+        passwordHash: password || null,
+        status: true,
         roleId
     };
 
@@ -197,48 +237,74 @@ async function saveUser(e) {
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/users' : `/api/users/${id}`;
 
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
+
     showLoading('Guardando usuario...');
     try {
         const resp = await authFetch(url, { method, body: payload });
-        const text = await resp.text();
-        if (!resp.ok) {
-            console.error('Error guardando usuario', resp.status, text);
-            showError(text || 'No se pudo guardar el usuario.');
-            return;
-        }
+        const data = await resp.json();
 
-        showToast(isNew ? 'Usuario creado correctamente.' : 'Usuario actualizado correctamente.');
+        showToast(data.message || (isNew ? 'Usuario creado correctamente.' : 'Usuario actualizado correctamente.'));
         userModal.hide();
         await loadUsers();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el usuario.');
+        showError(err.message || 'No se pudo guardar el usuario.');
     } finally {
         hideLoading();
     }
 }
-
 // ELIMINAR (BORRADO DEFINITIVO)
 
 async function deleteUser(id) {
+    // Obtener información del usuario actual
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        showError('No se pudo obtener información del usuario actual.');
+        return;
+    }
+
+    // Validación 1: No permitir eliminar el propio usuario
+    if (currentUser.userId === id) {
+        showError('No puedes eliminar tu propia cuenta.');
+        return;
+    }
+
+    // Buscar el usuario a eliminar en la caché
+    const userToDelete = usersCache.find(u => u.id === id);
+    if (!userToDelete) {
+        showError('Usuario no encontrado.');
+        return;
+    }
+
+    // Validación 2: No permitir eliminar usuarios con sesión activa
+    if (userToDelete.status === true) {
+        showError('No puedes eliminar un usuario con sesión activa. Debe cerrar sesión primero.');
+        return;
+    }
+
+    // Validación 3: No permitir eliminar administradores (rol Administrador)
+    if (userToDelete.roleName && userToDelete.roleName.toLowerCase() === 'administrador') {
+        showError('No puedes eliminar usuarios con rol de Administrador.');
+        return;
+    }
+
     const ok = await showConfirm('¿Seguro que quieres eliminar este usuario? Esta acción no se puede deshacer.');
     if (!ok) return;
 
     showLoading('Eliminando usuario...');
     try {
         const resp = await authFetch(`/api/users/${id}`, { method: 'DELETE' });
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando usuario', resp.status, text);
-            showError(text || 'No se pudo eliminar el usuario.');
-            return;
-        }
+        const data = await resp.json();
 
-        showToast('Usuario eliminado correctamente.');
+        showToast(data.message || 'Usuario eliminado correctamente.');
         await loadUsers();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el usuario.');
+        showError(err.message || 'No se pudo eliminar el usuario.');
     } finally {
         hideLoading();
     }

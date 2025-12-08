@@ -101,4 +101,152 @@ public class ConfigService
         return appSettings["ApiSettings"]?["BaseUrl"]?.ToString()
             ?? "https://localhost:5001";
     }
+
+    private readonly string _tokenFile = "auth_token.dat";
+    private readonly string _computerIdFile = "computer.id";
+    private readonly string _roleFile = "user_role.dat";
+
+    /// <summary>
+    /// Guarda el token JWT de forma cifrada
+    /// </summary>
+    public void SaveToken(string token)
+    {
+        string filePath = Path.Combine(_dataDirectory, _tokenFile);
+        // Cifrado simple (en producción usar ProtectedData)
+        byte[] tokenBytes = System.Text.Encoding.UTF8.GetBytes(token);
+        string encoded = Convert.ToBase64String(tokenBytes);
+        File.WriteAllText(filePath, encoded);
+    }
+
+    /// <summary>
+    /// Obtiene el token JWT guardado
+    /// </summary>
+    public string? GetStoredToken()
+    {
+        string filePath = Path.Combine(_dataDirectory, _tokenFile);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            string encoded = File.ReadAllText(filePath);
+            byte[] tokenBytes = Convert.FromBase64String(encoded);
+            return System.Text.Encoding.UTF8.GetString(tokenBytes);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Elimina el token guardado
+    /// </summary>
+    public void ClearToken()
+    {
+        string filePath = Path.Combine(_dataDirectory, _tokenFile);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    /// <summary>
+    /// Guarda el ID de la computadora registrada
+    /// </summary>
+    public void SaveComputerId(int computerId)
+    {
+        string filePath = Path.Combine(_dataDirectory, _computerIdFile);
+        File.WriteAllText(filePath, computerId.ToString());
+    }
+
+    /// <summary>
+    /// Obtiene el ID de la computadora guardado
+    /// </summary>
+    public int? GetStoredComputerId()
+    {
+        string filePath = Path.Combine(_dataDirectory, _computerIdFile);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            string content = File.ReadAllText(filePath);
+            if (int.TryParse(content, out int computerId))
+            {
+                return computerId;
+            }
+        }
+        catch
+        {
+            // Ignorar errores
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Desregistra la computadora eliminando los archivos de configuración
+    /// </summary>
+    public bool UnregisterComputer()
+    {
+        try
+        {
+            string registeredFlagPath = Path.Combine(_dataDirectory, _registeredFlagFile);
+            string computerIdPath = Path.Combine(_dataDirectory, _computerIdFile);
+            string tokenPath = Path.Combine(_dataDirectory, _tokenFile);
+            string machineIdPath = Path.Combine(_dataDirectory, _machineIdFile);
+
+            // Eliminar archivos
+            if (File.Exists(registeredFlagPath))
+                File.Delete(registeredFlagPath);
+
+            if (File.Exists(computerIdPath))
+                File.Delete(computerIdPath);
+
+            if (File.Exists(tokenPath))
+                File.Delete(tokenPath);
+
+            if (File.Exists(machineIdPath))
+                File.Delete(machineIdPath);
+
+            string rolePath = Path.Combine(_dataDirectory, _roleFile);
+            if (File.Exists(rolePath))
+                File.Delete(rolePath);
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Guarda el rol del usuario
+    /// </summary>
+    public void SaveUserRole(string roleName)
+    {
+        string filePath = Path.Combine(_dataDirectory, _roleFile);
+        File.WriteAllText(filePath, roleName);
+    }
+
+    /// <summary>
+    /// Obtiene el rol del usuario guardado
+    /// </summary>
+    public string? GetStoredUserRole()
+    {
+        string filePath = Path.Combine(_dataDirectory, _roleFile);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            return File.ReadAllText(filePath);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

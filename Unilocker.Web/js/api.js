@@ -1,6 +1,7 @@
 import { getToken, logout } from './auth.js';
 
-export const API_BASE_URL = "http://localhost:7198";
+// Para red local: cambiar localhost por la IP del servidor (ej: "http://192.168.0.5:5013")
+export const API_BASE_URL = "http://localhost:5000";
 
 export async function authFetch(relativeEndpoint, options = {}) {
   const endpoint = `${API_BASE_URL}${relativeEndpoint}`;
@@ -36,11 +37,21 @@ export async function authFetch(relativeEndpoint, options = {}) {
     return resp;
   }
 
-  // 3) Otros errores
+  // 3) Otros errores - extraer mensaje del servidor si existe
   if (!resp.ok) {
-    const msg = `Error API (${resp.status})`;
-    window.showToast(msg, "error");
-    throw new Error(msg);
+    let errorMsg = `Error API (${resp.status})`;
+    try {
+      const errorData = await resp.json();
+      if (errorData.message) {
+        errorMsg = errorData.message;
+      }
+    } catch (e) {
+      // Si no se puede parsear JSON, usar mensaje genérico
+    }
+    // NO mostrar toast aquí, dejar que el código llamador lo maneje
+    const error = new Error(errorMsg);
+    error.response = resp;
+    throw error;
   }
 
   return resp;

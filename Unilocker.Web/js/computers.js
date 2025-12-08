@@ -3,7 +3,9 @@ import { showLoading, hideLoading, showToast, showError, showConfirm } from './u
 
 let computerModal;
 let computersCache = [];
-let classroomsOptions = [];
+let branchesCache = [];
+let blocksCache = [];
+let classroomsCache = [];
 
 function renderComputers(items) {
     const tbody = document.getElementById('computersTableBody');
@@ -14,7 +16,6 @@ function renderComputers(items) {
         const statusBadge = pc.status ? 'Activa' : 'Inactiva';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${pc.id}</td>
             <td>${pc.branchName ?? ''}</td>
             <td>${pc.blockName ?? ''}</td>
             <td>${pc.classroomName ?? ''}</td>
@@ -25,41 +26,80 @@ function renderComputers(items) {
                     ${statusBadge}
                 </span>
             </td>
-            <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${pc.id}">
-                    Editar
-                </button>
-                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${pc.id}">
-                    Eliminar
+            <td>
+                <button class="btn btn-sm btn-danger" data-id="${pc.id}" data-name="${pc.name}" title="Desregistrar computadora">
+                    <i class="fa-solid fa-trash"></i>
                 </button>
             </td>
         `;
+        
+        const btnDelete = tr.querySelector('button[data-id]');
+        if (btnDelete) {
+            btnDelete.addEventListener('click', () => {
+                const id = parseInt(btnDelete.getAttribute('data-id'), 10);
+                const name = btnDelete.getAttribute('data-name');
+                confirmUnregister(id, name);
+            });
+        }
+        
         tbody.appendChild(tr);
     });
 }
 
 function applyFilter() {
-    const sel = document.getElementById('filterClassroom');
-    const classroomId = sel ? parseInt(sel.value || '0', 10) : 0;
+    const filterBranch = document.getElementById('filterBranch');
+    const filterBlock = document.getElementById('filterBlock');
+    const filterClassroom = document.getElementById('filterClassroom');
+    const filterStatus = document.getElementById('filterStatus');
+
+    const branchId = filterBranch ? parseInt(filterBranch.value || '0', 10) : 0;
+    const blockId = filterBlock ? parseInt(filterBlock.value || '0', 10) : 0;
+    const classroomId = filterClassroom ? parseInt(filterClassroom.value || '0', 10) : 0;
+    const statusFilter = filterStatus ? filterStatus.value : '';
 
     let filtered = [...computersCache];
+    
+    if (branchId > 0) {
+        filtered = filtered.filter(c => c.branchId === branchId);
+    }
+    if (blockId > 0) {
+        filtered = filtered.filter(c => c.blockId === blockId);
+    }
     if (classroomId > 0) {
         filtered = filtered.filter(c => c.classroomId === classroomId);
     }
+    if (statusFilter === 'active') {
+        filtered = filtered.filter(c => c.status === true);
+    } else if (statusFilter === 'inactive') {
+        filtered = filtered.filter(c => c.status === false);
+    }
+    
     renderComputers(filtered);
 }
 
 async function loadComputers() {
     showLoading('Cargando computadoras...');
     try {
+        // Cargar computadoras
         const resp = await authFetch('/api/computers');
         const data = await resp.json();
+
+        // Cargar sesiones activas
+        const respSessions = await authFetch('/api/sessions');
+        const dataSessions = await respSessions.json();
+
+        // Crear un Set con los IDs de computadoras que tienen sesiones activas
+        const activeComputerIds = new Set(
+            dataSessions
+                .filter(s => s.isActive === true)
+                .map(s => s.computerId)
+        );
 
         computersCache = data.map(c => ({
             id: c.id,
             name: c.name,
             uuid: c.uuid,
-            status: c.status === true || c.status === 1,
+            status: activeComputerIds.has(c.id), // Estado basado en si tiene sesión activa
             classroomId: c.classroomId,
             classroomName: c.classroomName,
             blockId: c.blockId,
@@ -77,229 +117,145 @@ async function loadComputers() {
     }
 }
 
-// CARGA DE AULAS PARA SELECT
+// CARGA DE DATOS
+async function loadBranches() {
+    try {
+        const resp = await authFetch('/api/branches');
+        const data = await resp.json();
+        branchesCache = data.filter(b => b.status === true || b.status === 1);
+        populateBranchSelect();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function loadBlocks() {
+    try {
+        const resp = await authFetch('/api/blocks');
+        const data = await resp.json();
+        blocksCache = data.filter(b => b.status === true || b.status === 1);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 async function loadClassrooms() {
     try {
         const resp = await authFetch('/api/classrooms');
         const data = await resp.json();
-
-        classroomsOptions = data.map(c => ({
-            id: c.id,
-            name: c.name,
-            blockName: c.blockName,
-            branchName: c.branchName
-        }));
-
-        populateClassroomSelect();
-        populateFilterClassroomSelect();
+        classroomsCache = data.filter(c => c.status === true || c.status === 1);
     } catch (err) {
         console.error(err);
-        showError('Error al cargar aulas.');
     }
 }
 
-function populateClassroomSelect(selectedId = null) {
-    const sel = document.getElementById('selClassroom');
+function populateBranchSelect() {
+    const sel = document.getElementById('filterBranch');
     if (!sel) return;
-
-    sel.innerHTML = '<option value="">Seleccione...</option>';
-
-    classroomsOptions.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = `${c.branchName} - ${c.blockName} - ${c.name}`;
-        if (selectedId && selectedId === c.id) {
-            opt.selected = true;
-        }
-        sel.appendChild(opt);
-    });
-}
-
-function populateFilterClassroomSelect() {
-    const sel = document.getElementById('filterClassroom');
-    if (!sel) return;
-
+    
     sel.innerHTML = '<option value="0">Todas</option>';
-    classroomsOptions.forEach(c => {
+    branchesCache.forEach(b => {
         const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = `${c.branchName} - ${c.blockName} - ${c.name}`;
+        opt.value = b.id;
+        opt.textContent = b.name;
         sel.appendChild(opt);
     });
 }
 
-// MODAL
-
-function openCreateModal() {
-    const form = document.getElementById('computerForm');
-    if (!form) return;
-
-    form.reset();
-    form.dataset.id = '';
-
-    document.getElementById('computerId').value = '';
-    document.getElementById('txtComputerName').value = '';
-    document.getElementById('txtComputerUuid').value = '';
-
-    const chk = document.getElementById('chkComputerStatus');
-    if (chk) chk.checked = true;
-
-    populateClassroomSelect();
-
-    const titleEl = document.getElementById('computerModalTitle');
-    if (titleEl) titleEl.textContent = 'Nueva computadora';
-
-    computerModal.show();
-}
-
-function openEditModal(id) {
-    const pc = computersCache.find(c => c.id === id);
-    if (!pc) return;
-
-    const form = document.getElementById('computerForm');
-    if (!form) return;
-    form.dataset.id = String(pc.id);
-
-    document.getElementById('computerId').value = pc.id;
-    document.getElementById('txtComputerName').value = pc.name ?? '';
-    document.getElementById('txtComputerUuid').value = pc.uuid ?? '';
-
-    const chk = document.getElementById('chkComputerStatus');
-    if (chk) chk.checked = !!pc.status;
-
-    populateClassroomSelect(pc.classroomId);
-
-    const titleEl = document.getElementById('computerModalTitle');
-    if (titleEl) titleEl.textContent = 'Editar computadora';
-
-    computerModal.show();
-}
-
-async function saveComputer(e) {
-    e.preventDefault();
-
-    const form = document.getElementById('computerForm');
-    const id = form.dataset.id;
-
-    const name = document.getElementById('txtComputerName').value.trim();
-    let uuid = document.getElementById('txtComputerUuid').value.trim();
-    const selClassroom = document.getElementById('selClassroom');
-    const chk = document.getElementById('chkComputerStatus');
-
-    const classroomId = selClassroom ? parseInt(selClassroom.value || '0', 10) : 0;
-
-    if (!name) {
-        showError('El nombre es obligatorio.');
-        return;
-    }
-    if (!classroomId) {
-        showError('Debes seleccionar un aula.');
-        return;
-    }
-
-    // Generar UUID válido si está vacío o mal formado
-    try {
-        if (!uuid || !/^[0-9a-fA-F-]{36}$/.test(uuid)) {
-            uuid = crypto.randomUUID();
-            document.getElementById('txtComputerUuid').value = uuid;
-        }
-    } catch {
-        showError('Este navegador no soporta crypto.randomUUID().');
-        return;
-    }
-
-    const payload = {
-        name,
-        uuid,
-        status: chk ? chk.checked : true,
-        classroomId
-    };
-
-    const isNew = !id;
-    const method = isNew ? 'POST' : 'PUT';
-    const url = isNew ? '/api/computers' : `/api/computers/${id}`;
-
-    showLoading('Guardando computadora...');
-    try {
-        const resp = await authFetch(url, { method, body: payload });
-        await resp.text();
-
-        showToast(isNew ? 'Computadora creada correctamente.' : 'Computadora actualizada correctamente.');
-        computerModal.hide();
-        await loadComputers();
-    } catch (err) {
-        console.error(err);
-        showError('No se pudo guardar la computadora.');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function deleteComputer(id) {
-    const ok = await showConfirm('Seguro que quieres eliminar esta computadora? (borrado lógico).');
-    if (!ok) return;
-
-    showLoading('Eliminando computadora...');
-    try {
-        const resp = await authFetch(`/api/computers/${id}`, { method: 'DELETE' });
-
-        if (!resp.ok && resp.status !== 204) {
-            const text = await resp.text();
-            console.error('Error eliminando computadora', resp.status, text);
-            showError(text || 'No se pudo eliminar la computadora.');
-            return;
-        }
-
-        showToast('Computadora eliminada correctamente.');
-        await loadComputers();
-    } catch (err) {
-        console.error(err);
-        showError('No se pudo eliminar la computadora.');
-    } finally {
-        hideLoading();
-    }
-}
-
-function attachEvents() {
-    const btnNew = document.getElementById('btnNewComputer');
-    if (btnNew) btnNew.addEventListener('click', openCreateModal);
-
-    const form = document.getElementById('computerForm');
-    if (form) form.addEventListener('submit', saveComputer);
-
-    const selFilter = document.getElementById('filterClassroom');
-    if (selFilter) selFilter.addEventListener('change', applyFilter);
-
-    const tbody = document.getElementById('computersTableBody');
-    if (tbody) {
-        tbody.addEventListener('click', (e) => {
-            const target = e.target;
-            if (!(target instanceof HTMLElement)) return;
-
-            const button = target.closest('button');
-            if (!button) return;
-
-            const idAttr = button.dataset.id;
-            if (!idAttr) return;
-            const id = parseInt(idAttr, 10);
-            if (Number.isNaN(id)) return;
-
-            if (button.classList.contains('btn-edit')) {
-                openEditModal(id);
-            } else if (button.classList.contains('btn-delete')) {
-                deleteComputer(id);
-            }
+function populateBlockSelect(branchId) {
+    const sel = document.getElementById('filterBlock');
+    if (!sel) return;
+    
+    sel.innerHTML = '<option value="0">Todos</option>';
+    sel.disabled = branchId === 0;
+    
+    if (branchId > 0) {
+        const filtered = blocksCache.filter(b => b.branchId === branchId);
+        filtered.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.textContent = b.name;
+            sel.appendChild(opt);
         });
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const modalEl = document.getElementById('computerModal');
-    if (modalEl && window.bootstrap) {
-        computerModal = new bootstrap.Modal(modalEl);
+function populateClassroomSelect(blockId) {
+    const sel = document.getElementById('filterClassroom');
+    if (!sel) return;
+    
+    sel.innerHTML = '<option value="0">Todas</option>';
+    sel.disabled = blockId === 0;
+    
+    if (blockId > 0) {
+        const filtered = classroomsCache.filter(c => c.blockId === blockId);
+        filtered.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            sel.appendChild(opt);
+        });
+    }
+}
+
+// ELIMINAR/DESREGISTRAR COMPUTADORA
+async function confirmUnregister(id, name) {
+    const ok = await showConfirm(`¿Seguro que quieres desregistrar la computadora "${name}"? Se cerrarán las sesiones activas si las hay.`);
+    if (!ok) return;
+
+    showLoading('Desregistrando computadora...');
+    try {
+        const resp = await authFetch(`/api/computers/${id}`, { method: 'DELETE' });
+        const data = await resp.json();
+
+        showToast(data.message || 'Computadora desregistrada correctamente.');
+        await loadComputers();
+    } catch (err) {
+        console.error(err);
+        showError(err.message || 'No se pudo desregistrar la computadora.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// EVENTOS
+function attachEvents() {
+    const filterBranch = document.getElementById('filterBranch');
+    const filterBlock = document.getElementById('filterBlock');
+    const filterClassroom = document.getElementById('filterClassroom');
+    const filterStatus = document.getElementById('filterStatus');
+
+    if (filterBranch) {
+        filterBranch.addEventListener('change', () => {
+            const branchId = parseInt(filterBranch.value || '0', 10);
+            populateBlockSelect(branchId);
+            populateClassroomSelect(0);
+            applyFilter();
+        });
     }
 
+    if (filterBlock) {
+        filterBlock.addEventListener('change', () => {
+            const blockId = parseInt(filterBlock.value || '0', 10);
+            populateClassroomSelect(blockId);
+            applyFilter();
+        });
+    }
+
+    if (filterClassroom) {
+        filterClassroom.addEventListener('change', applyFilter);
+    }
+
+    if (filterStatus) {
+        filterStatus.addEventListener('change', applyFilter);
+    }
+}
+
+// INICIALIZACIÓN
+document.addEventListener('DOMContentLoaded', async () => {
     attachEvents();
+    await loadBranches();
+    await loadBlocks();
     await loadClassrooms();
     await loadComputers();
 });

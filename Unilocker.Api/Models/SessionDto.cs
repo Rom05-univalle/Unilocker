@@ -1,5 +1,8 @@
-﻿namespace Unilocker.Api.Models;
+namespace Unilocker.Api.Models;
 
+/// <summary>
+/// DTO simplificado para listar sesiones en el frontend web
+/// </summary>
 public class SessionDto
 {
     public int Id { get; set; }

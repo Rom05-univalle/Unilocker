@@ -1,5 +1,8 @@
-﻿namespace Unilocker.Api.Models;
+namespace Unilocker.Api.Models;
 
+/// <summary>
+/// DTO simplificado para listar reportes en el frontend web
+/// </summary>
 public class ReportDto
 {
     public int Id { get; set; }

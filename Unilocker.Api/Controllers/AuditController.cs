@@ -1,120 +1,110 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
-using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
 
+[Authorize]
 [ApiController]
-[Route("api/[controller]")] // api/audit
-[Authorize(Roles = "Admin")]
+[Route("api/[controller]")]
 public class AuditController : ControllerBase
 {
     private readonly UnilockerDbContext _context;
+    private readonly ILogger<AuditController> _logger;
 
-    public AuditController(UnilockerDbContext context)
+    public AuditController(UnilockerDbContext context, ILogger<AuditController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    // DTOs para respuesta
-    public class AuditLogDto
-    {
-        public long Id { get; set; }                 // AuditLog.Id
-        public string AffectedTable { get; set; } = null!;
-        public int RecordId { get; set; }
-        public string ActionType { get; set; } = null!;
-        public int? ResponsibleUserId { get; set; }
-        public string? ResponsibleUserName { get; set; }   // desde ResponsibleUser.Username si existe
-        public DateTime ActionDate { get; set; }
-        public string? ChangeDetails { get; set; }
-        public string? IpAddress { get; set; }
-    }
-
-    public class AuditPagedResultDto
-    {
-        public List<AuditLogDto> Items { get; set; } = new();
-        public int Total { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-    }
-
-    // GET: /api/audit
-    // Filtros: tabla, tipo de acción, usuario y rango de fechas
+    // GET: api/audit
     [HttpGet]
-    public async Task<ActionResult<AuditPagedResultDto>> Get(
-        string? table,          // AffectedTable
-        string? actionType,     // ActionType (Create, Update, Delete, etc.)
-        string? user,           // ResponsibleUser.Username
-        DateTime? from,
-        DateTime? to,
-        int page = 1,
-        int pageSize = 20)
+    public async Task<IActionResult> GetAuditLogs(
+        [FromQuery] string? table,
+        [FromQuery] string? actionType,
+        [FromQuery] string? user,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
-        if (page <= 0) page = 1;
-        if (pageSize <= 0 || pageSize > 100) pageSize = 20;
-
-        var query = _context.AuditLogs
-            .Include(a => a.ResponsibleUser)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(table))
+        try
         {
-            query = query.Where(a => a.AffectedTable.Contains(table));
-        }
+            var query = _context.AuditLogs.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(actionType))
-        {
-            query = query.Where(a => a.ActionType.Contains(actionType));
-        }
-
-        if (!string.IsNullOrWhiteSpace(user))
-        {
-            query = query.Where(a =>
-                a.ResponsibleUser != null &&
-                a.ResponsibleUser.Username.Contains(user));
-        }
-
-        if (from.HasValue)
-        {
-            query = query.Where(a => a.ActionDate >= from.Value);
-        }
-
-        if (to.HasValue)
-        {
-            var end = to.Value.Date.AddDays(1);
-            query = query.Where(a => a.ActionDate < end);
-        }
-
-        var total = await query.CountAsync();
-
-        var items = await query
-            .OrderByDescending(a => a.ActionDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(a => new AuditLogDto
+            // Filtrar por tabla afectada
+            if (!string.IsNullOrEmpty(table))
             {
-                Id = a.Id,
-                AffectedTable = a.AffectedTable,
-                RecordId = a.RecordId,
-                ActionType = a.ActionType,
-                ResponsibleUserId = a.ResponsibleUserId,
-                ResponsibleUserName = a.ResponsibleUser != null ? a.ResponsibleUser.Username : null,
-                ActionDate = a.ActionDate,
-                ChangeDetails = a.ChangeDetails,
-                IpAddress = a.IpAddress
-            })
-            .ToListAsync();
+                query = query.Where(a => a.AffectedTable.Contains(table));
+            }
 
-        var result = new AuditPagedResultDto
+            // Filtrar por tipo de acción
+            if (!string.IsNullOrEmpty(actionType))
+            {
+                query = query.Where(a => a.ActionType.Contains(actionType));
+            }
+
+            // Filtrar por nombre de usuario
+            if (!string.IsNullOrEmpty(user))
+            {
+                var userIds = await _context.Users
+                    .Where(u => (u.FirstName + " " + u.LastName).Contains(user) || u.Username.Contains(user))
+                    .Select(u => u.Id)
+                    .ToListAsync();
+                query = query.Where(a => a.ResponsibleUserId.HasValue && userIds.Contains(a.ResponsibleUserId.Value));
+            }
+
+            // Filtrar por fecha desde
+            if (from.HasValue)
+            {
+                query = query.Where(a => a.ActionDate >= from.Value);
+            }
+
+            // Filtrar por fecha hasta
+            if (to.HasValue)
+            {
+                var toDate = to.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(a => a.ActionDate <= toDate);
+            }
+
+            // Contar total antes de paginar
+            var total = await query.CountAsync();
+
+            // Paginar
+            var auditLogs = await query
+                .OrderByDescending(a => a.ActionDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(a => new
+                {
+                    Id = a.Id,
+                    ActionType = a.ActionType,
+                    AffectedTable = a.AffectedTable,
+                    RecordId = a.RecordId,
+                    ChangeDetails = a.ChangeDetails,
+                    ResponsibleUserId = a.ResponsibleUserId,
+                    ResponsibleUserName = a.ResponsibleUserId.HasValue 
+                        ? _context.Users.Where(u => u.Id == a.ResponsibleUserId.Value).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault()
+                        : "Sistema",
+                    ActionDate = a.ActionDate,
+                    IpAddress = a.IpAddress
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                items = auditLogs,
+                total,
+                page,
+                pageSize
+            });
+        }
+        catch (Exception ex)
         {
-            Items = items,
-            Total = total,
-            Page = page,
-            PageSize = pageSize
-        };
-
-        return Ok(result);
+            _logger.LogError(ex, "Error al obtener logs de auditoría");
+            return StatusCode(500, new { message = "Error al obtener auditoría", error = ex.Message });
+        }
     }
 }

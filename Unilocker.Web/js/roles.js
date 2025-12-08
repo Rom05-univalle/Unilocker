@@ -12,17 +12,10 @@ function renderRoles(items) {
 
     tbody.innerHTML = '';
     items.forEach(r => {
-        const statusBadge = r.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${r.id}</td>
             <td>${r.name}</td>
             <td>${r.description ?? ''}</td>
-            <td>
-                <span class="badge ${r.status ? 'bg-success' : 'bg-secondary'}">
-                    ${statusBadge}
-                </span>
-            </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${r.id}">
                     Editar
@@ -73,9 +66,6 @@ function openCreateModal() {
     document.getElementById('txtRoleName').value = '';
     document.getElementById('txtRoleDescription').value = '';
 
-    const chk = document.getElementById('chkRoleStatus');
-    if (chk) chk.checked = true;
-
     const titleEl = document.getElementById('roleModalTitle');
     if (titleEl) titleEl.textContent = 'Nuevo rol';
 
@@ -86,6 +76,12 @@ function openEditModal(id) {
     const r = rolesCache.find(x => x.id === id);
     if (!r) return;
 
+    // Validación: No permitir editar el rol Administrador
+    if (r.name && r.name.toLowerCase() === 'administrador') {
+        showError('El rol Administrador no se puede editar.');
+        return;
+    }
+
     const form = document.getElementById('roleForm');
     if (!form) return;
 
@@ -94,9 +90,6 @@ function openEditModal(id) {
     document.getElementById('roleId').value = r.id;
     document.getElementById('txtRoleName').value = r.name ?? '';
     document.getElementById('txtRoleDescription').value = r.description ?? '';
-
-    const chk = document.getElementById('chkRoleStatus');
-    if (chk) chk.checked = !!r.status;
 
     const titleEl = document.getElementById('roleModalTitle');
     if (titleEl) titleEl.textContent = 'Editar rol';
@@ -114,7 +107,6 @@ async function saveRole(e) {
 
     const name = document.getElementById('txtRoleName').value.trim();
     const description = document.getElementById('txtRoleDescription').value.trim();
-    const chk = document.getElementById('chkRoleStatus');
 
     if (!name) {
         showError('El nombre es obligatorio.');
@@ -124,29 +116,29 @@ async function saveRole(e) {
     const payload = {
         name,
         description: description || null,
-        status: chk ? chk.checked : true
+        status: true
     };
 
     const isNew = !id;
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? '/api/roles' : `/api/roles/${id}`;
+    
+    // Para PUT, agregar el id al payload
+    if (!isNew) {
+        payload.id = parseInt(id, 10);
+    }
 
     showLoading('Guardando rol...');
     try {
         const resp = await authFetch(url, { method, body: payload });
-        const text = await resp.text();
-        if (!resp.ok) {
-            console.error('Error guardando rol', resp.status, text);
-            showError(text || 'No se pudo guardar el rol.');
-            return;
-        }
+        const data = await resp.json();
 
-        showToast(isNew ? 'Rol creado correctamente.' : 'Rol actualizado correctamente.');
+        showToast(data.message || (isNew ? 'Rol creado correctamente.' : 'Rol actualizado correctamente.'));
         roleModal.hide();
         await loadRoles();
     } catch (err) {
         console.error(err);
-        showError('No se pudo guardar el rol.');
+        showError(err.message || 'No se pudo guardar el rol.');
     } finally {
         hideLoading();
     }
@@ -155,25 +147,32 @@ async function saveRole(e) {
 // ELIMINAR (borrado lógico según backend)
 
 async function deleteRole(id) {
-    const ok = await showConfirm('¿Seguro que quieres eliminar este rol?');
+    // Buscar el rol a eliminar en la caché
+    const roleToDelete = rolesCache.find(r => r.id === id);
+    if (!roleToDelete) {
+        showError('Rol no encontrado.');
+        return;
+    }
+
+    // Validación: No permitir eliminar el rol Administrador
+    if (roleToDelete.name && roleToDelete.name.toLowerCase() === 'administrador') {
+        showError('No puedes eliminar el rol de Administrador.');
+        return;
+    }
+
+    const ok = await showConfirm('¿Seguro que quieres eliminar este rol? (También se eliminarán todos los usuarios con este rol)');
     if (!ok) return;
 
     showLoading('Eliminando rol...');
     try {
         const resp = await authFetch(`/api/roles/${id}`, { method: 'DELETE' });
-        const text = await resp.text();
+        const data = await resp.json();
 
-        if (!resp.ok && resp.status !== 204) {
-            console.error('Error eliminando rol', resp.status, text);
-            showError(text || 'No se pudo eliminar el rol.');
-            return;
-        }
-
-        showToast('Rol eliminado correctamente.');
+        showToast(data.message || 'Rol eliminado correctamente.');
         await loadRoles();
     } catch (err) {
         console.error(err);
-        showError('No se pudo eliminar el rol.');
+        showError(err.message || 'No se pudo eliminar el rol.');
     } finally {
         hideLoading();
     }

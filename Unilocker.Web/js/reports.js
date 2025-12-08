@@ -1,7 +1,24 @@
-﻿import { API_BASE_URL, authFetch } from './api.js';
+﻿import { authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError } from './ui.js';
 
 let reportsCache = [];
+
+function formatDateTime(isoString) {
+    if (!isoString) return '-';
+    const d = new Date(isoString);
+    if (isNaN(d)) return '-';
+    return d.toLocaleString();
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'Pending': '<span class="badge bg-warning text-dark">Pendiente</span>',
+        'InReview': '<span class="badge bg-info">En Revisión</span>',
+        'Resolved': '<span class="badge bg-success">Resuelto</span>',
+        'Rejected': '<span class="badge bg-danger">Rechazado</span>'
+    };
+    return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+}
 
 function renderReports(items) {
     const tbody = document.getElementById('reportsTableBody');
@@ -10,13 +27,19 @@ function renderReports(items) {
 
     items.forEach(r => {
         const tr = document.createElement('tr');
+        tr.dataset.reportId = r.id; // Guardar el ID en el data attribute
+        tr.style.cursor = 'pointer';
         tr.innerHTML = `
-            <td>${r.id}</td>
-            <td>${r.date ?? '-'}</td>
+            <td>${formatDateTime(r.reportDate)}</td>
             <td>${r.userName ?? '-'}</td>
             <td>${r.computerName ?? '-'}</td>
             <td>${r.problemTypeName ?? '-'}</td>
-            <td>${r.summary ?? '-'}</td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-info" style="pointer-events: none;">
+                    <i class="fa-solid fa-eye"></i> Ver detalles
+                </button>
+            </td>
+            <td>${getStatusBadge(r.reportStatus)}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -25,21 +48,24 @@ function renderReports(items) {
 function getFilters() {
     const startInput = document.getElementById('reportStartDate');
     const endInput = document.getElementById('reportEndDate');
+    const statusInput = document.getElementById('reportStatusFilter');
     const startDate = startInput?.value || null;
     const endDate = endInput?.value || null;
-    return { startDate, endDate };
+    const status = statusInput?.value || null;
+    return { startDate, endDate, status };
 }
 
 export async function loadReports() {
-    const { startDate, endDate } = getFilters();
+    const { startDate, endDate, status } = getFilters();
 
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
+    if (status) params.append('status', status);
 
     const url = params.toString()
-        ? `${API_BASE_URL}/api/reports?${params.toString()}`
-        : `${API_BASE_URL}/api/reports`;
+        ? `/api/reports?${params.toString()}`
+        : `/api/reports`;
 
     showLoading('Cargando reportes...');
     try {
@@ -62,8 +88,10 @@ export async function loadReports() {
 function clearFilters() {
     const startInput = document.getElementById('reportStartDate');
     const endInput = document.getElementById('reportEndDate');
+    const statusInput = document.getElementById('reportStatusFilter');
     if (startInput) startInput.value = '';
     if (endInput) endInput.value = '';
+    if (statusInput) statusInput.value = '';
 }
 
 function setupEvents() {
@@ -89,11 +117,9 @@ function setupEvents() {
         tbody.addEventListener('click', (e) => {
             const tr = e.target.closest('tr');
             if (!tr) return;
-            const idCell = tr.firstElementChild;
-            const id = idCell?.textContent?.trim();
-            if (!id) return;
-            // Por ejemplo, clic en cualquier fila abre detalle
-            window.location.href = `report-detail.html?id=${encodeURIComponent(id)}`;
+            const reportId = tr.dataset.reportId; // Obtener el ID del data attribute
+            if (!reportId) return;
+            window.location.href = `report-detail.html?id=${reportId}`;
         });
     }
 }

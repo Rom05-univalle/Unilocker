@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using Unilocker.Client.Helpers;
 using Unilocker.Client.Models;
 using Unilocker.Client.Services;
 
@@ -16,6 +17,7 @@ public partial class RegisterWindow : Window
     private Guid _machineUuid;
     private HardwareInfo _hardwareInfo;
     private List<ClassroomInfo> _classrooms;
+    private bool _registrationCompleted = false;
 
     public RegisterWindow()
     {
@@ -66,14 +68,13 @@ public partial class RegisterWindow : Window
                 ShowStatus("⚠️ No se puede conectar con el servidor. Verifica que la API esté corriendo.", true);
                 BtnRegister.IsEnabled = false;
                 System.Diagnostics.Debug.WriteLine("ERROR: No se pudo conectar a la API");
-                MessageBox.Show(
+                ModernDialog.Show(
                     $"No se puede conectar al servidor en:\n{_configService.GetApiBaseUrl()}\n\n" +
                     "Verifica que:\n" +
                     "1. La API esté corriendo\n" +
                     "2. El puerto sea correcto en appsettings.json",
                     "Error de Conexión",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    ModernDialog.DialogType.Error);
                 return;
             }
 
@@ -92,19 +93,18 @@ public partial class RegisterWindow : Window
                 {
                     debug += $"- {aula.BranchName} / {aula.BlockName} / {aula.Name}\n";
                 }
-                MessageBox.Show(debug, "DEBUG - Aulas", MessageBoxButton.OK, MessageBoxImage.Information);
+                // DEBUG deshabilitado - ModernDialog.Show(debug, "DEBUG - Aulas", ModernDialog.DialogType.Information);
             }
 
             if (_classrooms == null || _classrooms.Count == 0)
             {
                 ShowStatus("⚠️ No hay aulas disponibles. Contacta al administrador.", true);
                 BtnRegister.IsEnabled = false;
-                MessageBox.Show(
+                ModernDialog.Show(
                     "No se encontraron aulas disponibles en el sistema.\n\n" +
                     "Contacta al administrador para crear aulas.",
                     "Sin Aulas",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    ModernDialog.DialogType.Warning);
                 return;
             }
 
@@ -117,9 +117,6 @@ public partial class RegisterWindow : Window
 
             CmbClassroom.ItemsSource = classroomItems;
             System.Diagnostics.Debug.WriteLine($"ComboBox cargado con {classroomItems.Count} items");
-
-            // DEBUG: Verificar que el ComboBox tiene items
-            MessageBox.Show($"Items en ComboBox: {CmbClassroom.Items.Count}", "DEBUG - ComboBox", MessageBoxButton.OK, MessageBoxImage.Information);
 
             ShowStatus("✓ Listo para registrar", false);
             System.Diagnostics.Debug.WriteLine("=== CARGA COMPLETADA ===");
@@ -181,26 +178,47 @@ public partial class RegisterWindow : Window
             // Marcar como registrado
             _configService.MarkAsRegistered(response.Id);
 
+            // Guardar el Computer ID para usar en sesiones
+            _configService.SaveComputerId(response.Id);
+
             HideProgress();
 
-            // Mostrar mensaje de éxito
+            // Mostrar mensaje de éxito en la misma ventana
             string message = response.IsNewRegistration
                 ? $"✓ Equipo registrado exitosamente!\n\n" +
                   $"ID: {response.Id}\n" +
                   $"Nombre: {response.Name}\n" +
                   $"Aula: {response.ClassroomInfo?.Name}\n\n" +
-                  $"Esta computadora ya está lista para usar el sistema."
+                  $"Esta computadora ya está lista para usar el sistema.\n\n" +
+                  $"⏱️ Esta ventana se cerrará automáticamente en 4 segundos..."
                 : $"ℹ️ Este equipo ya estaba registrado.\n\n" +
                   $"ID: {response.Id}\n" +
                   $"Nombre: {response.Name}\n" +
                   $"Aula: {response.ClassroomInfo?.Name}\n\n" +
-                  $"No es necesario volver a registrarlo.";
+                  $"No es necesario volver a registrarlo.\n\n" +
+                  $"⏱️ Esta ventana se cerrará automáticamente en 4 segundos...";
 
-            MessageBox.Show(message, "Registro Completado",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            _registrationCompleted = true;
 
-            // Cerrar ventana
-            Close();
+            // Deshabilitar controles
+            BtnRegister.IsEnabled = false;
+            TxtComputerName.IsEnabled = false;
+            CmbClassroom.IsEnabled = false;
+
+            // Mostrar mensaje de éxito en el StatusBorder
+            ShowStatus(message, false);
+
+            // Cerrar automáticamente después de 4 segundos
+            var timer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(4)
+            };
+            timer.Tick += (s, args) =>
+            {
+                timer.Stop();
+                Close();
+            };
+            timer.Start();
         }
         catch (Exception ex)
         {
@@ -217,10 +235,27 @@ public partial class RegisterWindow : Window
     private void ShowStatus(string message, bool isError)
     {
         TxtStatus.Text = message;
-        TxtStatus.Foreground = isError
-            ? System.Windows.Media.Brushes.Red
-            : System.Windows.Media.Brushes.Green;
-        TxtStatus.Visibility = Visibility.Visible;
+        
+        if (isError)
+        {
+            StatusBorder.Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(255, 235, 238)); // Rojo claro
+            StatusBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(244, 67, 54)); // Rojo
+            TxtStatus.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(198, 40, 40)); // Rojo oscuro
+        }
+        else
+        {
+            StatusBorder.Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(232, 245, 233)); // Verde claro
+            StatusBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(76, 175, 80)); // Verde
+            TxtStatus.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(46, 125, 50)); // Verde oscuro
+        }
+        
+        StatusBorder.Visibility = Visibility.Visible;
     }
 
     private void HideStatus()
