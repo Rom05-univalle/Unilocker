@@ -1,0 +1,201 @@
+<Window x:Class="Unilocker.Client.Views.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Unilocker - Configuración Inicial" 
+        Width="600" 
+        Height="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="SingleBorderWindow"
+        Background="#F5F5F5">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#800020" Padding="25">
+            <StackPanel>
+                <TextBlock Text="🔧 CONFIGURACIÓN INICIAL" 
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           Foreground="White"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Instalador de Unilocker Client" 
+                           FontSize="12" 
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0"
+                           Opacity="0.9"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Border Grid.Row="1" Margin="30" Background="White" CornerRadius="10" Padding="30">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.2" Color="#424242"/>
+            </Border.Effect>
+
+            <StackPanel>
+                <TextBlock Text="🌐 Configuración del Servidor API" 
+                           FontSize="18" 
+                           FontWeight="Bold"
+                           Foreground="#424242"
+                           Margin="0,0,0,15"/>
+
+                <TextBlock Text="Ingresa la dirección del servidor donde está instalada la API de Unilocker:" 
+                           FontSize="12" 
+                           Foreground="#757575"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,20"/>
+
+                <!-- API URL -->
+                <TextBlock Text="URL de la API:" 
+                           FontWeight="SemiBold"
+                           Foreground="#424242"
+                           FontSize="13"
+                           Margin="0,0,0,8"/>
+                
+                <Border BorderBrush="#800020" 
+                        BorderThickness="2" 
+                        CornerRadius="8"
+                        Margin="0,0,0,8">
+                    <TextBox x:Name="TxtApiUrl" 
+                             Height="40"
+                             FontSize="14"
+                             Padding="12,10"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             Text="http://localhost:5013"/>
+                </Border>
+
+                <TextBlock Text="💡 Ejemplos:" 
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="#757575"
+                           Margin="0,5,0,5"/>
+
+                <TextBlock FontSize="10" Foreground="#999" Margin="0,0,0,20">
+                    • Servidor local: http://localhost:5013<LineBreak/>
+                    • Servidor en la red: http://192.168.0.100:5013<LineBreak/>
+                    • Con HTTPS: https://api.unilocker.com
+                </TextBlock>
+
+                <!-- Test Connection -->
+                <Button x:Name="BtnTestConnection" 
+                        Content="🔍 Probar Conexión"
+                        Height="38"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Background="#2196F3"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="BtnTestConnection_Click"
+                        Margin="0,0,0,15">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#2196F3"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="8"
+                                                Padding="12,8">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#1976D2"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#BDBDBD"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Status Message -->
+                <Border x:Name="StatusBorder"
+                        Background="#E8F5E9"
+                        BorderBrush="#4CAF50"
+                        BorderThickness="2"
+                        CornerRadius="8"
+                        Padding="15"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="TxtStatus" 
+                               Text="" 
+                               FontSize="12"
+                               Foreground="#2E7D32"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"/>
+                </Border>
+
+                <!-- Progress -->
+                <ProgressBar x:Name="ProgressBar" 
+                             Height="5"
+                             IsIndeterminate="True"
+                             Margin="0,15,0,0"
+                             Foreground="#800020"
+                             Visibility="Collapsed"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="White" Padding="20" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <Grid>
+                <Button x:Name="BtnSave" 
+                        Content="💾 Guardar y Continuar"
+                        Height="40"
+                        Width="180"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Background="#800020"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        HorizontalAlignment="Right"
+                        IsEnabled="False"
+                        Click="BtnSave_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#800020"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="8"
+                                                Padding="12,8">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#600018"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#BDBDBD"/>
+                                    <Setter Property="Foreground" Value="#757575"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

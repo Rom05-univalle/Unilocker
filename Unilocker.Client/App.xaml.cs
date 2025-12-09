@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.IO;
 using Unilocker.Client.Helpers;
 using Unilocker.Client.Services;
 using Unilocker.Client.Views;
@@ -32,7 +33,21 @@ public partial class App : Application
             return;
         }
 
-        // PASO 2: El equipo ya está registrado
+        // PASO 2: Habilitar inicio automático si no está habilitado
+        if (!configService.IsStartupEnabled())
+        {
+            bool enabled = configService.SetStartupEnabled(true);
+            if (enabled)
+            {
+                System.Diagnostics.Debug.WriteLine("✓ Inicio automático habilitado");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("⚠ No se pudo habilitar el inicio automático");
+            }
+        }
+
+        // PASO 3: El equipo ya está registrado
         // SIEMPRE mostrar LoginWindow (no restaurar sesión automáticamente)
         // Esto permite que múltiples usuarios usen el mismo equipo
         var loginWindow = new LoginWindow();

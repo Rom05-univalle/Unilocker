@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 
 namespace Unilocker.Client.Services;
@@ -247,6 +248,75 @@ public class ConfigService
         catch
         {
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Registra la aplicación para inicio automático en Windows
+    /// </summary>
+    public bool SetStartupEnabled(bool enable)
+    {
+        try
+        {
+            const string appName = "UnilockerClient";
+            string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName 
+                ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
+
+            // Si es un archivo .dll (dotnet run en desarrollo), obtener la ruta del exe
+            if (exePath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            {
+                exePath = exePath.Replace(".dll", ".exe");
+            }
+
+            using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
+            {
+                if (key == null)
+                    return false;
+
+                if (enable)
+                {
+                    // Agregar al inicio
+                    key.SetValue(appName, $"\"{exePath}\"");
+                }
+                else
+                {
+                    // Remover del inicio
+                    if (key.GetValue(appName) != null)
+                    {
+                        key.DeleteValue(appName);
+                    }
+                }
+
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error al configurar inicio automático: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Verifica si el inicio automático está habilitado
+    /// </summary>
+    public bool IsStartupEnabled()
+    {
+        try
+        {
+            const string appName = "UnilockerClient";
+
+            using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false))
+            {
+                if (key == null)
+                    return false;
+
+                return key.GetValue(appName) != null;
+            }
+        }
+        catch
+        {
+            return false;
         }
     }
 }

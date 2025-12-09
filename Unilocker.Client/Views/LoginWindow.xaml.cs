@@ -409,7 +409,7 @@ public partial class LoginWindow : Window
     }
 
     /// <summary>
-    /// Prevenir cierre de la ventana excepto cuando el login es exitoso
+    /// MODO KIOSCO: Prevenir cierre de la ventana excepto cuando el login es exitoso
     /// </summary>
     private void Window_Closing(object sender, CancelEventArgs e)
     {
@@ -418,11 +418,13 @@ public partial class LoginWindow : Window
         {
             e.Cancel = true;
             MessageBox.Show(
-                "⚠️ No puedes cerrar esta ventana.\n\n" +
-                "Debes iniciar sesión para usar esta computadora.",
-                "Acceso Restringido",
+                "⚠️ NO PUEDES CERRAR ESTA VENTANA\n\n" +
+                "Esta computadora está en modo de laboratorio.\n" +
+                "Debes iniciar sesión para usar este equipo.\n\n" +
+                "Si necesitas cerrar el sistema, contacta al administrador.",
+                "⛔ Acceso Restringido - Modo Kiosco",
                 MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                MessageBoxImage.Stop);
         }
     }
 
