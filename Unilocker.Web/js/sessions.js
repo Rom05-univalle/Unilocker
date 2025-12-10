@@ -2,7 +2,6 @@
 import { showLoading, hideLoading, showToast, showError, showConfirm } from './ui.js';
 
 let sessionsCache = [];
-let usersOptions = [];
 
 function formatDateTime(isoString) {
     if (!isoString) return '-';
@@ -15,6 +14,11 @@ function renderSessions(items) {
     const tbody = document.getElementById('sessionsTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
+
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No se encontraron sesiones</td></tr>';
+        return;
+    }
 
     items.forEach(s => {
         const statusBadge = s.isActive
@@ -33,61 +37,25 @@ function renderSessions(items) {
     });
 }
 
-function applyFilter() {
-    const filterUser = document.getElementById('filterUser');
-    const userId = filterUser ? parseInt(filterUser.value || '0', 10) : 0;
-
-    let filtered = [...sessionsCache];
-    if (userId > 0) {
-        filtered = filtered.filter(s => s.userId === userId);
-    }
-    renderSessions(filtered);
-}
-
-async function loadUsers() {
-    try {
-        const resp = await authFetch('/api/users');
-        const data = await resp.json();
-
-        usersOptions = data.map(u => ({
-            id: u.id,
-            username: u.username,
-            fullName: `${u.firstName || ''} ${u.lastName || ''}`.trim()
-        }));
-
-        populateUserFilter();
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-function populateUserFilter() {
-    const filterUser = document.getElementById('filterUser');
-    if (!filterUser) return;
-
-    filterUser.innerHTML = '<option value="">Todos los usuarios</option>';
-    usersOptions.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.id;
-        opt.textContent = `${u.username} - ${u.fullName || u.username}`;
-        filterUser.appendChild(opt);
-    });
-}
-
-export async function loadRecords() {
+export async function loadRecords(username = '') {
     showLoading('Cargando sesiones...');
     try {
-        const res = await authFetch('/api/sessions');
+        let url = '/api/sessions';
+        if (username && username.trim() !== '') {
+            url += `?username=${encodeURIComponent(username.trim())}`;
+        }
+
+        const res = await authFetch(url);
         if (!res.ok) {
             showError('Error cargando sesiones.');
             return;
         }
         const data = await res.json();
         sessionsCache = data;
-        applyFilter();
+        renderSessions(sessionsCache);
     } catch (err) {
         console.error(err);
-        showError(err);
+        showError(err.message || 'Error al cargar sesiones');
     } finally {
         hideLoading();
     }
@@ -121,9 +89,30 @@ function askCloseSession(id) {
 }
 
 function setupEvents() {
-    const filterUser = document.getElementById('filterUser');
-    if (filterUser) {
-        filterUser.addEventListener('change', applyFilter);
+    const btnFilter = document.getElementById('btnFilterSessions');
+    const btnClear = document.getElementById('btnClearFilter');
+    const filterInput = document.getElementById('filterUsername');
+
+    if (btnFilter) {
+        btnFilter.addEventListener('click', async () => {
+            const username = filterInput?.value || '';
+            await loadRecords(username);
+        });
+    }
+
+    if (btnClear) {
+        btnClear.addEventListener('click', async () => {
+            if (filterInput) filterInput.value = '';
+            await loadRecords('');
+        });
+    }
+
+    if (filterInput) {
+        filterInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                await loadRecords(filterInput.value || '');
+            }
+        });
     }
 
     const tbody = document.getElementById('sessionsTableBody');
@@ -143,7 +132,6 @@ function setupEvents() {
 
 async function init() {
     setupEvents();
-    await loadUsers();
     await loadRecords();
 }
 

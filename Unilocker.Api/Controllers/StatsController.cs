@@ -30,19 +30,23 @@ public class StatsController : ControllerBase
             var today = DateTime.Today;
             var tomorrow = today.AddDays(1);
 
-            // Count de sesiones de hoy
+            // Count de sesiones de hoy (solo computadoras activas)
             var totalSessionsToday = await _context.Sessions
-                .Where(s => s.StartDateTime >= today && s.StartDateTime < tomorrow)
+                .Include(s => s.Computer)
+                .Where(s => s.StartDateTime >= today && s.StartDateTime < tomorrow && s.Computer.Status)
                 .CountAsync();
 
-            // Count de sesiones activas
+            // Count de sesiones activas (solo computadoras registradas)
             var activeSessions = await _context.Sessions
-                .Where(s => s.IsActive)
+                .Include(s => s.Computer)
+                .Where(s => s.IsActive && s.Computer.Status)
                 .CountAsync();
 
-            // Count de reportes pendientes
+            // Count de reportes pendientes (solo de computadoras activas)
             var pendingReports = await _context.Reports
-                .Where(r => r.ReportStatus == "Pending")
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.Computer)
+                .Where(r => r.ReportStatus == "Pending" && r.Session.Computer.Status)
                 .CountAsync();
 
             // Count total de computadoras
@@ -82,6 +86,7 @@ public class StatsController : ControllerBase
                 .Include(r => r.Session)
                     .ThenInclude(s => s.Computer)
                         .ThenInclude(c => c.Classroom)
+                .Where(r => r.Session.Computer.Status == true)
                 .GroupBy(r => new
                 {
                     ComputerId = r.Session.Computer.Id,
@@ -128,7 +133,8 @@ public class StatsController : ControllerBase
             var startDate = DateTime.Today.AddDays(-days + 1);
 
             var sessionsByDate = await _context.Sessions
-                .Where(s => s.StartDateTime >= startDate)
+                .Include(s => s.Computer)
+                .Where(s => s.StartDateTime >= startDate && s.Computer.Status)
                 .GroupBy(s => s.StartDateTime.Date)
                 .Select(g => new
                 {
@@ -167,6 +173,9 @@ public class StatsController : ControllerBase
             _logger.LogInformation("Obteniendo distribución de reportes por estado");
 
             var reportsByStatus = await _context.Reports
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.Computer)
+                .Where(r => r.Session.Computer.Status == true)
                 .GroupBy(r => r.ReportStatus)
                 .Select(g => new
                 {

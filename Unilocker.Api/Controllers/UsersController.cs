@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.Models;
+using Unilocker.Api.Helpers;
 
 namespace Unilocker.Api.Controllers;
 
@@ -100,34 +101,47 @@ public class UsersController : ControllerBase
         {
             _logger.LogInformation("CreateUser - Payload: {Payload}", dto.ToString());
 
-            var username = dto.TryGetProperty("username", out var usernameEl) ? usernameEl.GetString() : string.Empty;
-            var email = dto.TryGetProperty("email", out var emailEl) && emailEl.ValueKind != System.Text.Json.JsonValueKind.Null
+            // Extraer valores RAW
+            var usernameRaw = dto.TryGetProperty("username", out var usernameEl) ? usernameEl.GetString() : null;
+            var emailRaw = dto.TryGetProperty("email", out var emailEl) && emailEl.ValueKind != System.Text.Json.JsonValueKind.Null
                 ? emailEl.GetString() : null;
-            var phone = dto.TryGetProperty("phone", out var phoneEl) && phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null
+            var phoneRaw = dto.TryGetProperty("phone", out var phoneEl) && phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null
                 ? phoneEl.GetString() : null;
-            var firstName = dto.TryGetProperty("firstName", out var firstNameEl) ? firstNameEl.GetString() : string.Empty;
-            var lastName = dto.TryGetProperty("lastName", out var lastNameEl) ? lastNameEl.GetString() : string.Empty;
-            var passwordHash = dto.TryGetProperty("passwordHash", out var passwordEl) ? passwordEl.GetString() : null;
+            var firstNameRaw = dto.TryGetProperty("firstName", out var firstNameEl) ? firstNameEl.GetString() : null;
+            var lastNameRaw = dto.TryGetProperty("lastName", out var lastNameEl) ? lastNameEl.GetString() : null;
+            var secondLastNameRaw = dto.TryGetProperty("secondLastName", out var secondLastNameEl) && secondLastNameEl.ValueKind != System.Text.Json.JsonValueKind.Null
+                ? secondLastNameEl.GetString() : null;
+            var passwordRaw = dto.TryGetProperty("passwordHash", out var passwordEl) ? passwordEl.GetString() : null;
             var roleId = dto.TryGetProperty("roleId", out var roleEl) ? roleEl.GetInt32() : 0;
             var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
 
-            if (string.IsNullOrEmpty(username))
+            // NORMALIZAR todos los campos de texto
+            var username = StringNormalizer.NormalizeUsername(usernameRaw);
+            var email = StringNormalizer.NormalizeEmail(emailRaw);
+            var phone = StringNormalizer.NormalizePhone(phoneRaw);
+            var firstName = StringNormalizer.Normalize(firstNameRaw);
+            var lastName = StringNormalizer.Normalize(lastNameRaw);
+            var secondLastName = StringNormalizer.Normalize(secondLastNameRaw);
+            var password = passwordRaw?.Trim(); // Contraseñas no normalizar espacios internos
+
+            // Validaciones DESPUÉS de normalizar
+            if (string.IsNullOrWhiteSpace(username))
             {
                 return BadRequest(new { message = "El username es obligatorio" });
             }
-            if (string.IsNullOrEmpty(firstName))
+            if (string.IsNullOrWhiteSpace(firstName))
             {
                 return BadRequest(new { message = "El nombre es obligatorio" });
             }
-            if (string.IsNullOrEmpty(lastName))
+            if (string.IsNullOrWhiteSpace(lastName))
             {
                 return BadRequest(new { message = "El apellido es obligatorio" });
             }
-            if (string.IsNullOrEmpty(passwordHash))
+            if (string.IsNullOrWhiteSpace(password))
             {
                 return BadRequest(new { message = "La contraseña es obligatoria" });
             }
-            if (passwordHash.Length < 6)
+            if (password.Length < 6)
             {
                 return BadRequest(new { message = "La contraseña debe tener al menos 6 caracteres" });
             }
@@ -138,12 +152,13 @@ public class UsersController : ControllerBase
 
             var user = new User
             {
-                Username = username,
+                Username = username!,
                 Email = email,
                 Phone = phone,
-                FirstName = firstName,
-                LastName = lastName,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordHash, 12),
+                FirstName = firstName!,
+                LastName = lastName!,
+                SecondLastName = secondLastName,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password, 12),
                 RoleId = roleId,
                 Status = status,
                 CreatedAt = DateTime.Now
@@ -232,23 +247,36 @@ public class UsersController : ControllerBase
 
             if (dto.TryGetProperty("username", out var usernameEl) && usernameEl.ValueKind == System.Text.Json.JsonValueKind.String)
             {
-                existingUser.Username = usernameEl.GetString() ?? existingUser.Username;
+                var normalizedUsername = StringNormalizer.NormalizeUsername(usernameEl.GetString());
+                if (!string.IsNullOrWhiteSpace(normalizedUsername))
+                    existingUser.Username = normalizedUsername;
             }
             if (dto.TryGetProperty("email", out var emailEl))
             {
-                existingUser.Email = emailEl.ValueKind != System.Text.Json.JsonValueKind.Null ? emailEl.GetString() : null;
+                existingUser.Email = StringNormalizer.NormalizeEmail(
+                    emailEl.ValueKind != System.Text.Json.JsonValueKind.Null ? emailEl.GetString() : null);
             }
             if (dto.TryGetProperty("phone", out var phoneEl))
             {
-                existingUser.Phone = phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null ? phoneEl.GetString() : null;
+                existingUser.Phone = StringNormalizer.NormalizePhone(
+                    phoneEl.ValueKind != System.Text.Json.JsonValueKind.Null ? phoneEl.GetString() : null);
             }
             if (dto.TryGetProperty("firstName", out var firstNameEl) && firstNameEl.ValueKind == System.Text.Json.JsonValueKind.String)
             {
-                existingUser.FirstName = firstNameEl.GetString() ?? existingUser.FirstName;
+                var normalizedFirstName = StringNormalizer.Normalize(firstNameEl.GetString());
+                if (!string.IsNullOrWhiteSpace(normalizedFirstName))
+                    existingUser.FirstName = normalizedFirstName;
             }
             if (dto.TryGetProperty("lastName", out var lastNameEl) && lastNameEl.ValueKind == System.Text.Json.JsonValueKind.String)
             {
-                existingUser.LastName = lastNameEl.GetString() ?? existingUser.LastName;
+                var normalizedLastName = StringNormalizer.Normalize(lastNameEl.GetString());
+                if (!string.IsNullOrWhiteSpace(normalizedLastName))
+                    existingUser.LastName = normalizedLastName;
+            }
+            if (dto.TryGetProperty("secondLastName", out var secondLastNameEl))
+            {
+                existingUser.SecondLastName = StringNormalizer.Normalize(
+                    secondLastNameEl.ValueKind != System.Text.Json.JsonValueKind.Null ? secondLastNameEl.GetString() : null);
             }
             if (newRoleId.HasValue && newRoleId.Value != existingUser.RoleId)
             {

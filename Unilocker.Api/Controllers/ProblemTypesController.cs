@@ -224,29 +224,29 @@ public class ProblemTypesController : ControllerBase
                 return NotFound(new { message = "Tipo de problema no encontrado" });
             }
 
-            // Verificar si hay reportes activos con este tipo de problema (Pending o In Progress)
+            // Verificar si hay reportes activos con este tipo de problema (Pending o InReview)
             var activeReportsCount = await _context.Reports
                 .CountAsync(r => r.ProblemTypeId == id && 
-                    (r.ReportStatus == "Pending" || r.ReportStatus == "In Progress"));
+                    (r.ReportStatus == "Pending" || r.ReportStatus == "InReview"));
 
             if (activeReportsCount > 0)
             {
                 return BadRequest(new { 
-                    message = $"No se puede eliminar el tipo de problema '{problemType.Name}' porque tiene {activeReportsCount} reporte(s) pendiente(s) o en progreso. Resuelva o cierre los reportes primero." 
+                    message = $"No se puede eliminar el tipo de problema porque tiene {activeReportsCount} reporte(s) pendiente(s) o en revisión. Resuelva o cierre los reportes primero." 
                 });
             }
 
-            // Eliminación lógica
+            // Eliminación lógica (soft delete)
             problemType.Status = false;
             problemType.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Tipo de problema eliminado lógicamente: {ProblemTypeId}", id);
+            _logger.LogInformation("Tipo de problema desactivado (soft delete): {ProblemTypeId} - {Name}", id, problemType.Name);
             return Ok(new { message = "Tipo de problema eliminado correctamente" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al eliminar tipo de problema");
+            _logger.LogError(ex, "Error al eliminar tipo de problema {ProblemTypeId}", id);
             return StatusCode(500, new { message = "Error al eliminar tipo de problema", error = ex.Message });
         }
     }

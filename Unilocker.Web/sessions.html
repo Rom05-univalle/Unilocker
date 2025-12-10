@@ -43,10 +43,19 @@
                 <div class="card-body">
                     <div class="row align-items-end">
                         <div class="col-md-4">
-                            <label for="filterUser" class="form-label">Filtrar por usuario</label>
-                            <select id="filterUser" class="form-select">
-                                <option value="">Todos los usuarios</option>
-                            </select>
+                            <label for="filterUsername" class="form-label">Buscar por usuario</label>
+                            <input type="text" id="filterUsername" class="form-control" 
+                                   placeholder="Nombre de usuario, nombre o apellido..." />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnFilterSessions" class="btn btn-primary w-100">
+                                <i class="fa-solid fa-search me-1"></i>Buscar
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnClearFilter" class="btn btn-outline-secondary w-100">
+                                <i class="fa-solid fa-times me-1"></i>Limpiar
+                            </button>
                         </div>
                     </div>
                 </div>

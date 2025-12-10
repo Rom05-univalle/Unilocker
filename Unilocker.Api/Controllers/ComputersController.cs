@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.DTOs;
 using Unilocker.Api.Models;
+using Unilocker.Api.Helpers;
 
 namespace Unilocker.Api.Controllers;
 
@@ -81,13 +82,13 @@ public class ComputersController : ControllerBase
                 return BadRequest(new { error = "El aula especificada no existe o está inactiva" });
             }
 
-            // 4. Crear nueva computadora
+            // 4. Crear nueva computadora (normalizar datos de entrada)
             var newComputer = new Computer
             {
-                Name = request.Name,
+                Name = StringNormalizer.Normalize(request.Name) ?? "PC-Sin-Nombre",
                 Uuid = request.Uuid,
-                SerialNumber = request.SerialNumber,
-                Model = request.Model,
+                SerialNumber = StringNormalizer.Normalize(request.SerialNumber),
+                Model = StringNormalizer.Normalize(request.Model),
                 ClassroomId = request.ClassroomId,
                 Status = true,
                 CreatedAt = DateTime.UtcNow

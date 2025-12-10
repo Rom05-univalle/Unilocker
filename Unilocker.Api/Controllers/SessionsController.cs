@@ -304,7 +304,7 @@ public class SessionsController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<object>>> GetSessions(
-        [FromQuery] int? userId = null,
+        [FromQuery] string? username = null,
         [FromQuery] int? computerId = null,
         [FromQuery] bool? isActive = null,
         [FromQuery] int page = 1,
@@ -312,11 +312,21 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var query = _context.Sessions.AsQueryable();
+            var query = _context.Sessions
+                .Include(s => s.Computer)
+                .Include(s => s.User)
+                .AsQueryable();
+
+            // FILTRO CRÍTICO: Excluir sesiones de computadoras desregistradas (Status = false)
+            query = query.Where(s => s.Computer.Status == true);
 
             // Aplicar filtros opcionales
-            if (userId.HasValue)
-                query = query.Where(s => s.UserId == userId.Value);
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                query = query.Where(s => s.User.Username.Contains(username) || 
+                                         s.User.FirstName.Contains(username) || 
+                                         s.User.LastName.Contains(username));
+            }
 
             if (computerId.HasValue)
                 query = query.Where(s => s.ComputerId == computerId.Value);
@@ -333,11 +343,11 @@ public class SessionsController : ControllerBase
                 {
                     Id = s.Id,
                     UserId = s.UserId,
-                    UserName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.Username).FirstOrDefault(),
-                    UserFullName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                    UserName = s.User.Username,
+                    UserFullName = s.User.FirstName + " " + s.User.LastName,
                     ComputerId = s.ComputerId,
-                    ComputerName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Name).FirstOrDefault(),
-                    ClassroomName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Classroom != null ? c.Classroom.Name : null).FirstOrDefault(),
+                    ComputerName = s.Computer.Name,
+                    ClassroomName = s.Computer.Classroom != null ? s.Computer.Classroom.Name : null,
                     BlockName = (string)null,
                     BranchName = (string)null,
                     StartTime = s.StartDateTime,

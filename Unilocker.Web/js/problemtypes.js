@@ -140,7 +140,7 @@ async function saveProblemType(e) {
 // ELIMINAR
 
 async function deleteProblemType(id) {
-    const ok = await showConfirm('¿Seguro que quieres eliminar este tipo de problema?\n\n(Se eliminarán todos los registros relacionados)');
+    const ok = await showConfirm('¿Seguro que quieres eliminar este tipo de problema?\n\nNota: Solo se puede eliminar si no tiene reportes pendientes o en revisión.');
     if (!ok) return;
 
     showLoading('Eliminando tipo de problema...');

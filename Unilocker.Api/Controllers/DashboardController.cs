@@ -39,19 +39,23 @@ public class DashboardController : ControllerBase
             var today = DateTime.Today;
             var tomorrow = today.AddDays(1);
 
-            // Sesiones de hoy
+            // Sesiones de hoy (solo de computadoras activas)
             var totalSessionsToday = await _context.Sessions
-                .Where(s => s.StartDateTime >= today && s.StartDateTime < tomorrow)
+                .Include(s => s.Computer)
+                .Where(s => s.StartDateTime >= today && s.StartDateTime < tomorrow && s.Computer.Status)
                 .CountAsync();
 
-            // Sesiones activas (computadoras con sesión activa)
+            // Sesiones activas (computadoras con sesión activa y registradas)
             var activeComputers = await _context.Sessions
-                .Where(s => s.IsActive)
+                .Include(s => s.Computer)
+                .Where(s => s.IsActive && s.Computer.Status)
                 .CountAsync();
 
-            // Reportes pendientes
+            // Reportes pendientes (solo de computadoras activas)
             var pendingReports = await _context.Reports
-                .Where(r => r.ReportStatus == "Pending")
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.Computer)
+                .Where(r => r.ReportStatus == "Pending" && r.Session.Computer.Status)
                 .CountAsync();
 
             // Total de computadoras registradas

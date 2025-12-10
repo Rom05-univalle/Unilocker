@@ -109,7 +109,13 @@ public class ReportsController : ControllerBase
             _logger.LogInformation("Obteniendo reportes con filtros - Status: {Status}, ProblemTypeId: {ProblemTypeId}, StartDate: {StartDate}, EndDate: {EndDate}",
                 status, problemTypeId, startDate, endDate);
 
-            var query = _context.Reports.AsQueryable();
+            var query = _context.Reports
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.Computer)
+                .AsQueryable();
+
+            // FILTRO CRÍTICO: Excluir reportes de computadoras desregistradas (Status = false)
+            query = query.Where(r => r.Session.Computer.Status == true);
 
             // Aplicar filtros
             if (!string.IsNullOrEmpty(status))
@@ -282,7 +288,7 @@ public class ReportsController : ControllerBase
                         .ThenInclude(c => c.Classroom)
                             .ThenInclude(cl => cl.Block)
                                 .ThenInclude(b => b.Branch)
-                .Where(r => r.ReportStatus == "Pending")
+                .Where(r => r.ReportStatus == "Pending" && r.Session.Computer.Status == true)
                 .OrderByDescending(r => r.ReportDate)
                 .ToListAsync();
 
