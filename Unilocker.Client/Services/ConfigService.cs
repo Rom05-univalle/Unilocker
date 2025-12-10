@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 
 namespace Unilocker.Client.Services;
@@ -106,7 +105,6 @@ public class ConfigService
     private readonly string _tokenFile = "auth_token.dat";
     private readonly string _computerIdFile = "computer.id";
     private readonly string _roleFile = "user_role.dat";
-    private readonly string _computerNameFile = "computer_name.dat";
 
     /// <summary>
     /// Guarda el token JWT de forma cifrada
@@ -188,34 +186,6 @@ public class ConfigService
     }
 
     /// <summary>
-    /// Guarda el nombre del equipo registrado
-    /// </summary>
-    public void SaveComputerName(string computerName)
-    {
-        string filePath = Path.Combine(_dataDirectory, _computerNameFile);
-        File.WriteAllText(filePath, computerName);
-    }
-
-    /// <summary>
-    /// Obtiene el nombre del equipo guardado
-    /// </summary>
-    public string? GetStoredComputerName()
-    {
-        string filePath = Path.Combine(_dataDirectory, _computerNameFile);
-        if (!File.Exists(filePath))
-            return null;
-
-        try
-        {
-            return File.ReadAllText(filePath);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
     /// Desregistra la computadora eliminando los archivos de configuración
     /// </summary>
     public bool UnregisterComputer()
@@ -224,7 +194,6 @@ public class ConfigService
         {
             string registeredFlagPath = Path.Combine(_dataDirectory, _registeredFlagFile);
             string computerIdPath = Path.Combine(_dataDirectory, _computerIdFile);
-            string computerNamePath = Path.Combine(_dataDirectory, _computerNameFile);
             string tokenPath = Path.Combine(_dataDirectory, _tokenFile);
             string machineIdPath = Path.Combine(_dataDirectory, _machineIdFile);
 
@@ -234,9 +203,6 @@ public class ConfigService
 
             if (File.Exists(computerIdPath))
                 File.Delete(computerIdPath);
-
-            if (File.Exists(computerNamePath))
-                File.Delete(computerNamePath);
 
             if (File.Exists(tokenPath))
                 File.Delete(tokenPath);
@@ -281,75 +247,6 @@ public class ConfigService
         catch
         {
             return null;
-        }
-    }
-
-    /// <summary>
-    /// Registra la aplicación para inicio automático en Windows
-    /// </summary>
-    public bool SetStartupEnabled(bool enable)
-    {
-        try
-        {
-            const string appName = "UnilockerClient";
-            string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName 
-                ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
-
-            // Si es un archivo .dll (dotnet run en desarrollo), obtener la ruta del exe
-            if (exePath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
-            {
-                exePath = exePath.Replace(".dll", ".exe");
-            }
-
-            using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
-            {
-                if (key == null)
-                    return false;
-
-                if (enable)
-                {
-                    // Agregar al inicio
-                    key.SetValue(appName, $"\"{exePath}\"");
-                }
-                else
-                {
-                    // Remover del inicio
-                    if (key.GetValue(appName) != null)
-                    {
-                        key.DeleteValue(appName);
-                    }
-                }
-
-                return true;
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error al configurar inicio automático: {ex.Message}");
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Verifica si el inicio automático está habilitado
-    /// </summary>
-    public bool IsStartupEnabled()
-    {
-        try
-        {
-            const string appName = "UnilockerClient";
-
-            using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false))
-            {
-                if (key == null)
-                    return false;
-
-                return key.GetValue(appName) != null;
-            }
-        }
-        catch
-        {
-            return false;
         }
     }
 }

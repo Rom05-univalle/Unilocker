@@ -1,227 +1,265 @@
-# 🔐 Unilocker - Sistema de Control de Acceso a Laboratorios
+# 🔒 UNILOCKER - Sistema de Gestión de Laboratorios
 
-Sistema integral para la gestión y control de acceso a laboratorios de cómputo en instituciones educativas.
+Sistema completo de registro y gestión de computadoras para laboratorios universitarios.
 
-## 📋 Descripción del Proyecto
+## 📋 Descripción
 
-Unilocker es un sistema de tres componentes que permite:
-- **Control de acceso** a computadoras en laboratorios mediante inicio de sesión
-- **Monitoreo en tiempo real** de sesiones activas
-- **Gestión de reportes** de problemas técnicos
-- **Auditoría completa** de todas las acciones del sistema
+Unilocker es un sistema que permite:
+- Registro automático de computadoras en laboratorios
+- Gestión de sesiones de uso
+- Sistema de reportes de problemas
+- Control de acceso por roles
 
-## 🏗️ Arquitectura del Sistema
-
-```
-┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│  Cliente WPF    │ ────▶│   API REST       │ ────▶│   SQL Server    │
-│  (.NET 8)       │      │   (.NET 8)       │      │   Database      │
-└─────────────────┘      └──────────────────┘      └─────────────────┘
-                                   ▲
-                                   │
-                         ┌─────────┴──────────┐
-                         │  Web Dashboard     │
-                         │  (HTML/CSS/JS)     │
-                         └────────────────────┘
-```
-
-## 📂 Estructura del Proyecto
+## 🏗️ Arquitectura del Proyecto
 
 ```
 UnilockerProyecto/
-├── Unilocker.Api/          # API REST Backend (.NET 8)
-├── Unilocker.Client/       # Cliente de escritorio WPF
-├── Unilocker.Web/          # Dashboard web para administración
-├── Database/               # Scripts SQL de base de datos
-├── installer/              # Instalador del cliente
-│   ├── UnilockerInstaller.iss
-│   └── UnilockerClientSetup_v1.0.0.exe
-└── README.md
+├── Unilocker.Api/          # Backend API REST (.NET 8)
+│   ├── Controllers/        # Endpoints de la API
+│   ├── Data/              # DbContext y configuración de BD
+│   ├── DTOs/              # Data Transfer Objects
+│   └── Models/            # Modelos de entidades
+│
+├── Unilocker.Client/       # Cliente Windows (WPF)
+│   ├── Models/            # Modelos del cliente
+│   ├── Services/          # Servicios (API, Hardware, Config)
+│   └── Views/             # Ventanas de la aplicación
+│
+└── Database/              # Scripts SQL (opcional)
+    └── schema.sql         # Script de creación de BD
 ```
 
-## 🚀 Componentes
+## 🚀 Tecnologías Utilizadas
 
-### 1. Cliente WPF (Unilocker.Client)
-Aplicación de escritorio que se ejecuta en cada computadora del laboratorio:
-- **Modo Kiosco**: Bloquea el equipo hasta iniciar sesión
-- **Auto-inicio**: Se ejecuta automáticamente al encender el equipo
-- **Registro de equipos**: Configuración inicial con UUID único
-- **Reportes**: Los usuarios pueden reportar problemas
-- **Heartbeat**: Mantiene sesión activa con verificaciones periódicas
+### Backend
+- **Framework:** ASP.NET Core 8.0 Web API
+- **ORM:** Entity Framework Core 8.0
+- **Base de Datos:** SQL Server Express 2022
+- **Documentación API:** Swagger/OpenAPI
 
-**Tecnologías:**
-- .NET 8 WPF
-- Material Design
-- BCrypt para seguridad
+### Cliente Windows
+- **Framework:** WPF (.NET 8)
+- **Detección Hardware:** System.Management
+- **HTTP Client:** HttpClient + System.Net.Http.Json
+- **Serialización:** Newtonsoft.Json
 
-### 2. API REST (Unilocker.Api)
-Backend que centraliza toda la lógica de negocio:
-- **Autenticación JWT** con 2FA opcional
-- **CRUD completo** para todas las entidades
-- **Control de sesiones** activas
-- **Gestión de reportes** de problemas
-- **Auditoría automática** de todas las operaciones
-- **Endpoints RESTful** documentados
+## ⚙️ Configuración e Instalación
 
-**Tecnologías:**
-- ASP.NET Core 8
-- Entity Framework Core
-- SQL Server
-- JWT Authentication
-- BCrypt
+### Prerrequisitos
 
-### 3. Dashboard Web (Unilocker.Web)
-Interfaz administrativa para gestión del sistema:
-- **Dashboard visual** con estadísticas en tiempo real
-- **Gestión de usuarios** y roles
-- **Administración de infraestructura** (Sedes, Bloques, Aulas)
-- **Monitoreo de sesiones** activas
-- **Gestión de reportes** y problemas
-- **Visualización de auditoría**
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [SQL Server Express 2022](https://www.microsoft.com/es-es/sql-server/sql-server-downloads)
+- [SQL Server Management Studio (SSMS)](https://aka.ms/ssmsfullsetup)
+- Visual Studio 2022 o VS Code (opcional)
 
-**Tecnologías:**
-- HTML5, CSS3, JavaScript (ES6+)
-- Bootstrap 5
-- Chart.js para gráficos
-- Fetch API
+---
 
-## 💾 Base de Datos
+## 🗄️ 1. Configurar la Base de Datos
 
-### Esquema Principal
-- **Roles**: Administrador, Usuario, Supervisor
-- **Users**: Usuarios del sistema con autenticación
-- **Branches**: Sedes universitarias
-- **Blocks**: Bloques/Edificios
-- **Classrooms**: Aulas/Laboratorios
-- **Computers**: Computadoras registradas
-- **Sessions**: Sesiones activas e históricas
-- **Reports**: Reportes de problemas
-- **ProblemTypes**: Categorías de problemas
-- **AuditLogs**: Registro de auditoría
+### Paso 1: Crear la base de datos
 
-Ver detalles en [Database/README.md](Database/README.md)
+Ejecuta el script SQL en SSMS (ubicado en `/Database/schema.sql` o el que usaste en Sprint 1)
 
-## 🔧 Instalación y Configuración
+### Paso 2: Configurar acceso remoto
 
-### Requisitos Previos
-- Windows 10/11
-- .NET 8 SDK
-- SQL Server 2019+
-- Visual Studio 2022 (opcional)
+```sql
+-- Crear login para la aplicación
+CREATE LOGIN Unilocker_Access WITH PASSWORD = 'Uni2025!SecurePass';
 
-### 1. Base de Datos
-```bash
-cd Database
-sqlcmd -S localhost -i 01_CREATE_DATABASE.sql
-sqlcmd -S localhost -i 02_INSERT_DATA.sql
+-- Dar permisos
+USE UnilockerDBV1;
+CREATE USER Unilocker_Access FOR LOGIN Unilocker_Access;
+ALTER ROLE db_datareader ADD MEMBER Unilocker_Access;
+ALTER ROLE db_datawriter ADD MEMBER Unilocker_Access;
 ```
 
-### 2. API Backend
-```bash
-cd Unilocker.Api
-# Configurar appsettings.json con cadena de conexión
-dotnet run
-```
-La API estará disponible en `http://localhost:5013`
+### Paso 3: Habilitar TCP/IP
 
-### 3. Cliente WPF
-**Opción A: Usar instalador**
+1. Abrir **SQL Server Configuration Manager**
+2. SQL Server Network Configuration → Protocols for SQLEXPRESS
+3. Habilitar **TCP/IP**
+4. Reiniciar servicio SQL Server
+
+---
+
+## 🌐 2. Configurar el Backend API
+
+### Paso 1: Clonar el repositorio
+
 ```bash
-cd installer
-.\UnilockerClientSetup_v1.0.0.exe
+git clone https://github.com/Rom05-univalle/unilocker.git
+cd unilocker/Unilocker.Api
 ```
 
-**Opción B: Compilar desde código**
+### Paso 2: Configurar connection string
+
+Crea un archivo `appsettings.json` (o copia `appsettings.example.json`):
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=TU_IP,1433;Database=UnilockerDBV1;User Id=Unilocker_Access;Password=Uni2025!SecurePass;TrustServerCertificate=True"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}
+```
+
+### Paso 3: Restaurar paquetes y ejecutar
+
 ```bash
-cd Unilocker.Client
+dotnet restore
+dotnet build
 dotnet run
 ```
 
-### 4. Dashboard Web
-Abrir `Unilocker.Web/index.html` con Live Server o cualquier servidor web local.
+La API estará disponible en: `http://localhost:5013/swagger`
 
-## 📦 Instalador
+---
 
-El instalador automático incluye:
-- ✅ Instalación del cliente en Program Files
-- ✅ Configuración de URL de API durante instalación
-- ✅ Auto-inicio de Windows (opcional)
-- ✅ Acceso directo en escritorio
-- ✅ Desinstalador completo
+## 💻 3. Configurar el Cliente Windows
 
-**Ubicación:** `installer/UnilockerClientSetup_v1.0.0.exe`
+### Paso 1: Ir a la carpeta del cliente
 
-## 👥 Usuarios de Prueba
+```bash
+cd ../Unilocker.Client
+```
 
-| Usuario | Contraseña | Rol |
-|---------|-----------|-----|
-| radmin | admin123 | Administrador |
-| usuario1 | password123 | Usuario |
-| usuario2 | password123 | Usuario |
+### Paso 2: Configurar URL de la API
 
-## 🔒 Seguridad
+Edita `appsettings.json`:
 
-- **Autenticación JWT** con tokens seguros
-- **Contraseñas hasheadas** con BCrypt
-- **2FA opcional** vía correo electrónico
-- **Auditoría completa** de todas las acciones
-- **Modo Kiosco** que previene bypass del sistema
-- **UUIDs únicos** para cada equipo
+```json
+{
+  "ApiSettings": {
+    "BaseUrl": "http://localhost:(puerto)"
+  },
+  "AppSettings": {
+    "DataDirectory": "C:\\ProgramData\\Unilocker",
+    "MachineIdFile": "machine.id",
+    "RegisteredFlagFile": "registered.flag"
+  }
+}
+```
 
-## 🎯 Características Principales
+### Paso 3: Compilar y ejecutar
 
-### Modo Kiosco
-- Bloquea el cierre de la aplicación hasta login exitoso
-- Permite cierre con Alt+F4 solo si hay problemas de conexión
-- Se minimiza después del login (no se puede cerrar)
+```bash
+dotnet restore
+dotnet build
+dotnet run
+```
 
-### Control de Sesiones
-- Inicio/fin automático de sesiones
-- Heartbeat cada 30 segundos para mantener sesión activa
-- Cierre automático de sesión al cerrar aplicación
-- Historial completo de sesiones
+---
 
-### Sistema de Reportes
-- Los usuarios pueden reportar problemas
-- Categorización por tipo de problema
-- Estados: Pendiente, En Proceso, Resuelto
-- Tracking completo con auditoría
+## 📦 Publicar el Cliente (Instalador)
 
-### Auditoría
-- Registro automático de todas las acciones
-- Información de usuario, IP, timestamp
-- Detalles de la operación realizada
-- Visualización en dashboard web
+Para crear un ejecutable portable:
 
-## 🛠️ Desarrollo
-
-### Compilar Cliente
 ```bash
 cd Unilocker.Client
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
-### Compilar API
-```bash
-cd Unilocker.Api
-dotnet publish -c Release
+El ejecutable estará en:
 ```
-
-### Generar Instalador
-Usar Inno Setup con el script `UnilockerInstaller.iss`
-
-## 📝 Licencia
-
-Proyecto académico - Universidad del Valle
-
-## 👨‍💻 Autor
-
-Rom05-univalle
-
-## 📧 Contacto
-
-ghr0034560@est.univalle.edu
+bin\Release\net8.0-windows\win-x64\publish\Unilocker.Client.exe
+```
 
 ---
 
-**Nota:** Este es un proyecto académico desarrollado como parte del curso de Sistemas de Información.
+## 🧪 Pruebas
+
+### Probar la API
+
+```bash
+# Health check
+curl http://localhost:(puerto)/api/health
+
+# Listar aulas
+curl http://localhost:(puerto)/api/computers/classrooms
+```
+
+### Probar el Cliente
+
+1. Ejecutar `Unilocker.Client.exe`
+2. Seleccionar un aula
+3. Registrar equipo
+4. Verificar en la BD que se creó el registro
+
+---
+
+## 📊 Endpoints de la API
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check de la API |
+| GET | `/api/computers/classrooms` | Lista de aulas disponibles |
+| POST | `/api/computers/register` | Registrar nueva computadora |
+| GET | `/api/computers/{id}` | Obtener computadora por ID |
+
+---
+
+## 🔐 Seguridad
+
+⚠️ **IMPORTANTE**: Este proyecto está en fase de desarrollo.
+
+**Para producción, implementar:**
+- [ ] Autenticación JWT
+- [ ] HTTPS obligatorio
+- [ ] Validación de inputs
+- [ ] Rate limiting
+- [ ] Logs de auditoría
+- [ ] Cifrado de datos sensibles
+
+---
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crea un Pull Request
+
+---
+
+## 📝 Roadmap
+
+### Sprint 1 ✅ (Completado)
+- [x] Infraestructura y Base de Datos
+- [x] Backend API REST básico
+- [x] Cliente Windows de registro
+
+### Sprint 2 🚧 (En progreso)
+- [ ] Sistema de autenticación
+- [ ] Gestión de sesiones
+- [ ] Dashboard web para administradores
+
+### Sprint 3 📅 (Planificado)
+- [ ] Sistema de reportes de problemas
+- [ ] Notificaciones en tiempo real
+- [ ] Estadísticas y métricas
+
+---
+
+## 👥 Equipo de Desarrollo
+
+- **Desarrollador Principal:** Rommel Rodirgo Gutierrez Herrera
+- **Repositorio:** https://github.com/Rom05-univalle/Unilocker
+
+---
+
+## 📄 Licencia
+
+Este proyecto es publico y de uso académico.
+
+---
+
+## 📞 Soporte
+
+Para reportar bugs o solicitar features, crear un Issue en GitHub.

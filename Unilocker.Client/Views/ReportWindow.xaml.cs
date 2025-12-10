@@ -153,25 +153,9 @@ public partial class ReportWindow : Window
     private void ShowStatus(string message, bool isError)
     {
         TxtStatus.Text = message;
-        
-        if (isError)
-        {
-            TxtStatus.Foreground = System.Windows.Media.Brushes.Red;
-            StatusMessageBorder.Background = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(255, 235, 238)); // Rojo claro
-            StatusMessageBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(244, 67, 54)); // Rojo
-        }
-        else
-        {
-            TxtStatus.Foreground = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(230, 81, 0)); // Naranja oscuro
-            StatusMessageBorder.Background = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(255, 243, 224)); // Naranja muy claro
-            StatusMessageBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(255, 152, 0)); // Naranja
-        }
-        
+        TxtStatus.Foreground = isError
+            ? System.Windows.Media.Brushes.Red
+            : System.Windows.Media.Brushes.Green;
         StatusMessageBorder.Visibility = Visibility.Visible;
     }
 

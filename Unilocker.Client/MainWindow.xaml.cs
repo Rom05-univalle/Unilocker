@@ -323,7 +323,7 @@ public partial class MainWindow : Window
         
         // Mostrar botón solo si el rol es "Administrador" (case-insensitive)
         if (!string.IsNullOrEmpty(userRole) && 
-            userRole.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+            userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
             BtnUnregister.Visibility = Visibility.Visible;
         }

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_unilocker
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Uni2025!SecurePass
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+      - ./Database/schema.sql:/docker-entrypoint-initdb.d/schema.sql  # Inicialización
+
+  unilockerapi:
+    build:
+      context: ./Unilocker.Api
+      dockerfile: Dockerfile
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=UnilockerDBV1;User Id=sa;Password=Uni2025!SecurePass;TrustServerCertificate=True
+    ports:
+      - "5000:8080"
+    restart: always
+
+  unilockerweb:
+    build:
+      context: ./Unilocker.Web
+      dockerfile: Dockerfile
+    depends_on:
+      - unilockerapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - API_URL=http://unilockerapi:80
+    ports:
+      - "5001:80"
+    restart: always
+
+volumes:
+  sql_data:
