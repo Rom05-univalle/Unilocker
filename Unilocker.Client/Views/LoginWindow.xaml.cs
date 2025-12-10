@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Unilocker.Client.Helpers;
 using Unilocker.Client.Services;
 
 namespace Unilocker.Client.Views;
@@ -21,6 +22,9 @@ public partial class LoginWindow : Window
     
     // Variable para permitir cierre solo cuando se completa login
     private bool _allowClose = false;
+    
+    // Variable para permitir cierre cuando hay problemas de conexión
+    private bool _hasConnectionIssue = false;
 
     public LoginWindow()
     {
@@ -36,7 +40,31 @@ public partial class LoginWindow : Window
         ShowComputerInfo();
 
         // Focus en el campo de usuario
-        Loaded += (s, e) => TxtUsername.Focus();
+        Loaded += async (s, e) => 
+        {
+            TxtUsername.Focus();
+            // Verificar conexión al inicio
+            await CheckInitialConnectionAsync();
+        };
+    }
+
+    private async System.Threading.Tasks.Task CheckInitialConnectionAsync()
+    {
+        try
+        {
+            bool isConnected = await _apiService.TestConnectionAsync();
+            
+            if (!isConnected)
+            {
+                _hasConnectionIssue = true;
+                ShowError("⚠️ No se puede conectar con el servidor. Presiona Alt+F4 para cerrar si necesitas salir.");
+            }
+        }
+        catch
+        {
+            _hasConnectionIssue = true;
+            ShowError("⚠️ Error al verificar conexión con el servidor. Presiona Alt+F4 para cerrar si necesitas salir.");
+        }
     }
 
     private void ShowComputerInfo()
@@ -46,7 +74,20 @@ public partial class LoginWindow : Window
             var hardwareInfo = _hardwareService.GetHardwareInfo();
             Guid machineId = _configService.GetOrCreateMachineId();
 
-            TxtComputerInfo.Text = $"Equipo: {hardwareInfo.ComputerName} | Marca: {hardwareInfo.Manufacturer ?? "N/A"} | ID: {machineId.ToString().Substring(0, 8)}...";
+            // Intentar obtener el nombre registrado del equipo
+            string computerDisplayName = hardwareInfo.ComputerName;
+            
+            // Si el equipo está registrado, mostrar el nombre personalizado guardado
+            if (_configService.IsComputerRegistered())
+            {
+                string? savedComputerName = _configService.GetStoredComputerName();
+                if (!string.IsNullOrEmpty(savedComputerName))
+                {
+                    computerDisplayName = savedComputerName;
+                }
+            }
+
+            TxtComputerInfo.Text = $"Equipo: {computerDisplayName} | Marca: {hardwareInfo.Manufacturer ?? "N/A"} | ID: {machineId.ToString().Substring(0, 8)}...";
         }
         catch
         {
@@ -157,7 +198,18 @@ public partial class LoginWindow : Window
         }
         catch (Exception ex)
         {
-            ShowError($"Error al iniciar sesión: {ex.Message}");
+            // Detectar errores de conexión
+            string errorMessage = ex.Message.ToLower();
+            if (errorMessage.Contains("conectar") || errorMessage.Contains("conexión") || 
+                errorMessage.Contains("servidor") || errorMessage.Contains("red"))
+            {
+                _hasConnectionIssue = true;
+                ShowError($"⚠️ {ex.Message}\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
+            }
+            else
+            {
+                ShowError($"Error al iniciar sesión: {ex.Message}");
+            }
         }
         finally
         {
@@ -409,22 +461,36 @@ public partial class LoginWindow : Window
     }
 
     /// <summary>
-    /// MODO KIOSCO: Prevenir cierre de la ventana excepto cuando el login es exitoso
+    /// MODO KIOSCO: Prevenir cierre de la ventana excepto cuando el login es exitoso o hay problemas de conexión
     /// </summary>
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-        // Solo permitir cerrar si se completó el login exitosamente
-        if (!_allowClose)
+        // Permitir cerrar si:
+        // 1. El login fue exitoso (_allowClose = true)
+        // 2. Hay problemas de conexión con el servidor (_hasConnectionIssue = true)
+        if (!_allowClose && !_hasConnectionIssue)
         {
             e.Cancel = true;
-            MessageBox.Show(
-                "⚠️ NO PUEDES CERRAR ESTA VENTANA\n\n" +
-                "Esta computadora está en modo de laboratorio.\n" +
-                "Debes iniciar sesión para usar este equipo.\n\n" +
-                "Si necesitas cerrar el sistema, contacta al administrador.",
-                "⛔ Acceso Restringido - Modo Kiosco",
-                MessageBoxButton.OK,
-                MessageBoxImage.Stop);
+            ModernDialog.Show(
+                "No puedes cerrar esta ventana.\n\n" +
+                "Debes iniciar sesión para continuar.",
+                "Acceso Restringido",
+                ModernDialog.DialogType.Warning);
+        }
+        else if (_hasConnectionIssue && !_allowClose)
+        {
+            // Confirmar cierre cuando hay problemas de conexión
+            bool shouldClose = ModernDialog.ShowConfirm(
+                "¿Estás seguro de que deseas cerrar la aplicación?\n\n" +
+                "No se puede conectar con el servidor. Si cierras ahora, " +
+                "la computadora quedará disponible sin restricciones hasta que se resuelva el problema de conexión.",
+                "Confirmar Cierre",
+                ModernDialog.DialogType.Warning);
+            
+            if (!shouldClose)
+            {
+                e.Cancel = true;
+            }
         }
     }
 

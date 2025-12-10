@@ -53,8 +53,9 @@ public partial class RegisterWindow : Window
             TxtSerial.Text = _hardwareInfo.SerialNumber ?? "No detectado";
             System.Diagnostics.Debug.WriteLine($"Hardware detectado: {_hardwareInfo.Manufacturer} {_hardwareInfo.Model}");
 
-            // 3. Pre-llenar nombre del equipo
-            TxtComputerName.Text = _hardwareInfo.ComputerName;
+            // 3. Dejar campo de nombre vacío para que el usuario lo ingrese
+            TxtComputerName.Text = "";
+            TxtComputerName.Focus(); // Poner el cursor en el campo de nombre
 
             // 4. Verificar conexión con el API
             System.Diagnostics.Debug.WriteLine($"Intentando conectar a: {_configService.GetApiBaseUrl()}");
@@ -128,12 +129,10 @@ public partial class RegisterWindow : Window
             ShowStatus($"❌ Error al inicializar: {ex.Message}", true);
             BtnRegister.IsEnabled = false;
 
-            MessageBox.Show(
-                $"Error al inicializar la aplicación:\n\n{ex.Message}\n\n" +
-                $"Detalles técnicos:\n{ex.GetType().Name}",
+            ModernDialog.Show(
+                $"Error al inicializar la aplicación:\n\n{ex.Message}",
                 "Error Crítico",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                ModernDialog.DialogType.Error);
         }
     }
 
@@ -180,6 +179,9 @@ public partial class RegisterWindow : Window
 
             // Guardar el Computer ID para usar en sesiones
             _configService.SaveComputerId(response.Id);
+
+            // Guardar el nombre del equipo
+            _configService.SaveComputerName(response.Name);
 
             HideProgress();
 

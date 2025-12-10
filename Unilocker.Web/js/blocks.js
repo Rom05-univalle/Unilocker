@@ -182,7 +182,7 @@ async function saveBlock(e) {
 }
 
 async function deleteBlock(id) {
-    const ok = await showConfirm('¿Seguro que deseas eliminar este bloque?');
+    const ok = await showConfirm('¿Seguro que deseas eliminar este bloque?\n\n(Se eliminarán todos los registros relacionados)');
     if (!ok) return;
 
     showLoading('Eliminando bloque...');

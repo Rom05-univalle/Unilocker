@@ -250,7 +250,7 @@ async function saveClassroom(e) {
 }
 
 async function deleteClassroom(id) {
-    const ok = await showConfirm('¿Seguro que deseas eliminar esta aula?');
+    const ok = await showConfirm('¿Seguro que deseas eliminar esta aula?\n\n(Se eliminarán todos los registros relacionados)');
     if (!ok) return;
 
     showLoading('Eliminando aula...');

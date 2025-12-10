@@ -57,15 +57,26 @@ public class ApiService
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Error al iniciar sesión: {response.StatusCode} - {errorContent}");
+                // Manejar errores de autenticación de forma amigable
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    throw new Exception("Usuario o contraseña incorrectos");
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    throw new Exception("Por favor verifica los datos ingresados");
+                }
+                else
+                {
+                    throw new Exception("No se pudo conectar con el servidor. Intenta nuevamente.");
+                }
             }
 
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
             if (result == null)
             {
-                throw new Exception("La respuesta del servidor está vacía");
+                throw new Exception("Error al procesar la respuesta del servidor");
             }
 
             // Configurar el token automáticamente
@@ -73,13 +84,20 @@ public class ApiService
 
             return result;
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            throw new Exception($"Error de conexión con el servidor: {ex.Message}", ex);
+            throw new Exception("No se pudo conectar con el servidor. Verifica tu conexión.");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex.Message.Contains("Usuario o contraseña") || 
+                                    ex.Message.Contains("datos ingresados") || 
+                                    ex.Message.Contains("conectar con el servidor"))
         {
-            throw new Exception($"Error al iniciar sesión: {ex.Message}", ex);
+            // Re-lanzar mensajes amigables sin modificar
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Ocurrió un error inesperado. Intenta nuevamente.");
         }
     }
 
@@ -231,24 +249,46 @@ public class ApiService
         try
         {
             var response = await _httpClient.PostAsJsonAsync("/api/computers/register", request);
-            response.EnsureSuccessStatusCode();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    throw new Exception("Datos incompletos o inválidos. Verifica la información.");
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    throw new Exception("Este equipo ya está registrado en el sistema.");
+                }
+                else
+                {
+                    throw new Exception("No se pudo completar el registro. Intenta nuevamente.");
+                }
+            }
 
             var result = await response.Content.ReadFromJsonAsync<ComputerResponse>();
 
             if (result == null)
             {
-                throw new Exception("La respuesta del servidor está vacía");
+                throw new Exception("Error al procesar la respuesta del servidor");
             }
 
             return result;
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            throw new Exception($"Error de conexión con el servidor: {ex.Message}", ex);
+            throw new Exception("No se pudo conectar con el servidor. Verifica tu conexión.");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex.Message.Contains("Datos incompletos") || 
+                                    ex.Message.Contains("ya está registrado") || 
+                                    ex.Message.Contains("completar el registro"))
         {
-            throw new Exception($"Error al registrar computadora: {ex.Message}", ex);
+            // Re-lanzar mensajes amigables sin modificar
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Ocurrió un error inesperado al registrar el equipo.");
         }
     }
 

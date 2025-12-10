@@ -37,20 +37,28 @@ public static class ModernDialog
             MinHeight = 250,
             MaxHeight = 500,
             SizeToContent = SizeToContent.Height,
-            WindowStartupLocation = Application.Current.MainWindow != null 
-                ? WindowStartupLocation.CenterOwner 
-                : WindowStartupLocation.CenterScreen,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
             ResizeMode = ResizeMode.NoResize,
             WindowStyle = WindowStyle.None,
             Background = new SolidColorBrush(Color.FromRgb(255, 255, 255)),
             BorderBrush = GetColorForType(type),
-            BorderThickness = new Thickness(2)
+            BorderThickness = new Thickness(2),
+            Topmost = true // Asegurar que aparezca al frente
         };
 
-        // Solo establecer Owner si hay una ventana principal disponible
-        if (Application.Current.MainWindow != null && Application.Current.MainWindow != window)
+        // Intentar establecer Owner si es posible
+        try
         {
-            window.Owner = Application.Current.MainWindow;
+            if (Application.Current.MainWindow != null && 
+                Application.Current.MainWindow != window &&
+                Application.Current.MainWindow.IsLoaded)
+            {
+                window.Owner = Application.Current.MainWindow;
+            }
+        }
+        catch
+        {
+            // Si falla, continuar sin Owner
         }
 
         var mainGrid = new Grid

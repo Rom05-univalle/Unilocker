@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Windows;
 using Newtonsoft.Json.Linq;
+using Unilocker.Client.Helpers;
 using Unilocker.Client.Services;
 
 namespace Unilocker.Client.Views;
@@ -151,13 +152,12 @@ public partial class SetupWindow : Window
             string updatedJson = settings.ToString(Newtonsoft.Json.Formatting.Indented);
             File.WriteAllText(_appSettingsPath, updatedJson);
 
-            MessageBox.Show(
-                $"✅ Configuración guardada exitosamente.\n\n" +
+            ModernDialog.Show(
+                $"Configuración guardada exitosamente.\n\n" +
                 $"URL de la API: {apiUrl}\n\n" +
                 "Ahora puedes continuar con el registro de este equipo.",
                 "Configuración Guardada",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                ModernDialog.DialogType.Success);
 
             DialogResult = true;
             Close();
