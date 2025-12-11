@@ -45,15 +45,15 @@ public class AuthController : ControllerBase
             _logger.LogInformation("===== INICIO LOGIN =====");
             _logger.LogInformation("Usuario recibido: {Username}", request.Username);
 
-            // 1. Buscar usuario con su rol
+            // 1. Buscar usuario ACTIVO con su rol (Status = 1)
             var user = await _context.Users
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Username == request.Username);
+                .FirstOrDefaultAsync(u => u.Username == request.Username && u.Status == true);
 
             if (user == null)
             {
-                _logger.LogWarning("❌ Usuario NO encontrado en BD");
-                return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
+                _logger.LogWarning("❌ Usuario NO encontrado en BD o está inactivo");
+                return Unauthorized(new { message = "Usuario no existente en el sistema" });
             }
 
             _logger.LogInformation("✅ Usuario encontrado: {Username} (ID: {Id})", user.Username, user.Id);
@@ -67,14 +67,7 @@ public class AuthController : ControllerBase
                 return StatusCode(403, new { message = "Usuario bloqueado. Contacte al administrador." });
             }
 
-            // 3. Verificar si el usuario está inactivo
-            if (!user.Status)
-            {
-                _logger.LogWarning("❌ Usuario inactivo");
-                return StatusCode(403, new { message = "Usuario inactivo. Contacte al administrador." });
-            }
-
-            // 4. Verificar contraseña con BCrypt
+            // 3. Verificar contraseña con BCrypt
             _logger.LogInformation("🔐 Verificando contraseña...");
             _logger.LogInformation("🔐 Hash almacenado: {Hash}", user.PasswordHash);
             _logger.LogInformation("🔐 Contraseña ingresada: {Password}", request.Password);

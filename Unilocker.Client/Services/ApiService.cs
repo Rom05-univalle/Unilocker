@@ -57,19 +57,37 @@ public class ApiService
 
             if (!response.IsSuccessStatusCode)
             {
-                // Manejar errores de autenticación de forma amigable
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                // Intentar leer el mensaje de error del servidor
+                string errorMessage = "Error desconocido";
+                
+                try
                 {
-                    throw new Exception("Usuario o contraseña incorrectos");
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    var errorJson = System.Text.Json.JsonDocument.Parse(errorContent);
+                    
+                    if (errorJson.RootElement.TryGetProperty("message", out var messageElement))
+                    {
+                        errorMessage = messageElement.GetString() ?? errorMessage;
+                    }
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                catch
                 {
-                    throw new Exception("Por favor verifica los datos ingresados");
+                    // Si no se puede parsear el JSON, usar mensajes por defecto
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        errorMessage = "Usuario o contraseña incorrectos";
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    {
+                        errorMessage = "Usuario bloqueado. Contacte al administrador.";
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        errorMessage = "Por favor verifica los datos ingresados";
+                    }
                 }
-                else
-                {
-                    throw new Exception("No se pudo conectar con el servidor. Intenta nuevamente.");
-                }
+
+                throw new Exception(errorMessage);
             }
 
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
@@ -84,15 +102,20 @@ public class ApiService
 
             return result;
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
-            throw new Exception("No se pudo conectar con el servidor. Verifica tu conexión.");
+            // Error de conexión con el servidor
+            string baseUrl = _httpClient.BaseAddress?.ToString() ?? "servidor desconocido";
+            throw new Exception($"No se pudo conectar con el servidor en: {baseUrl}\n\nVerifica tu conexión a internet o contacta al administrador.\n\nDetalle técnico: {ex.Message}");
         }
-        catch (Exception ex) when (ex.Message.Contains("Usuario o contraseña") || 
-                                    ex.Message.Contains("datos ingresados") || 
-                                    ex.Message.Contains("conectar con el servidor"))
+        catch (Exception ex) when (ex.Message.Contains("No se pudo conectar"))
         {
-            // Re-lanzar mensajes amigables sin modificar
+            // Re-lanzar errores de conexión sin modificar
+            throw;
+        }
+        catch (Exception ex) when (!string.IsNullOrEmpty(ex.Message))
+        {
+            // Re-lanzar otros mensajes específicos
             throw;
         }
         catch (Exception)
@@ -318,23 +341,25 @@ public class ApiService
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-
-                // Intentar extraer el mensaje de error
+                // Intentar leer el mensaje de error del servidor
+                string errorMessage = "Código inválido";
+                
                 try
                 {
+                    var errorContent = await response.Content.ReadAsStringAsync();
                     var errorJson = System.Text.Json.JsonDocument.Parse(errorContent);
+                    
                     if (errorJson.RootElement.TryGetProperty("message", out var messageElement))
                     {
-                        throw new Exception(messageElement.GetString() ?? "Código inválido");
+                        errorMessage = messageElement.GetString() ?? errorMessage;
                     }
                 }
-                catch (System.Text.Json.JsonException)
+                catch
                 {
-                    // Si no es JSON, usar el contenido completo
+                    // Si no se puede parsear el JSON, usar mensaje por defecto
                 }
 
-                throw new Exception($"Código inválido: {response.StatusCode}");
+                throw new Exception(errorMessage);
             }
 
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
@@ -351,11 +376,23 @@ public class ApiService
         }
         catch (HttpRequestException ex)
         {
-            throw new Exception($"Error de conexión con el servidor: {ex.Message}", ex);
+            // Error de conexión con el servidor
+            string baseUrl = _httpClient.BaseAddress?.ToString() ?? "servidor desconocido";
+            throw new Exception($"No se pudo conectar con el servidor en: {baseUrl}\n\nVerifica tu conexión a internet o contacta al administrador.\n\nDetalle técnico: {ex.Message}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex.Message.Contains("No se pudo conectar"))
         {
-            throw new Exception($"Error al verificar código: {ex.Message}", ex);
+            // Re-lanzar errores de conexión sin modificar
+            throw;
+        }
+        catch (Exception ex) when (!string.IsNullOrEmpty(ex.Message))
+        {
+            // Re-lanzar otros mensajes específicos
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Ocurrió un error inesperado al verificar el código.");
         }
     }
 

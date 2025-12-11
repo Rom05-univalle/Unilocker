@@ -52,11 +52,22 @@ export function getCurrentUser() {
  * Si responde { token, ... } se guarda token y se redirige.
  */
 export async function startLogin(username, password) {
-  const resp = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
-  });
+  let resp;
+  
+  try {
+    resp = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+  } catch (fetchError) {
+    // Error de conexión: servidor no accesible
+    const connectionError = new Error(
+      `No se pudo conectar con el servidor.\nVerifica que la API esté corriendo en: ${API_BASE_URL}`
+    );
+    connectionError.isConnectionError = true;
+    throw connectionError;
+  }
 
   if (!resp.ok) {
     // Intentar leer el mensaje específico del backend
@@ -69,7 +80,11 @@ export async function startLogin(username, password) {
     } catch (e) {
       // Si no se puede parsear el JSON, usar el mensaje por defecto
     }
-    throw new Error(errorMessage);
+    
+    // Diferenciar entre errores 401 (credenciales incorrectas) y 403 (usuario bloqueado/inactivo)
+    const error = new Error(errorMessage);
+    error.status = resp.status;
+    throw error;
   }
 
   const data = await resp.json();
@@ -101,11 +116,22 @@ export async function startLogin(username, password) {
  * Espera que la API /api/auth/verify-code reciba { userId, code } y devuelva { token }
  */
 export async function verifyCode(userId, code) {
-  const resp = await fetch(`${API_BASE_URL}/api/auth/verify-code`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, code })
-  });
+  let resp;
+  
+  try {
+    resp = await fetch(`${API_BASE_URL}/api/auth/verify-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, code })
+    });
+  } catch (fetchError) {
+    // Error de conexión
+    const connectionError = new Error(
+      `No se pudo conectar con el servidor.\nVerifica que la API esté corriendo en: ${API_BASE_URL}`
+    );
+    connectionError.isConnectionError = true;
+    throw connectionError;
+  }
 
   if (!resp.ok) {
     if (resp.status === 400 || resp.status === 401) {
@@ -131,11 +157,22 @@ export async function verifyCode(userId, code) {
  * Aquí se asume un endpoint /api/auth/resend-code con { userId }.
  */
 export async function resendCode(userId) {
-  const resp = await fetch(`${API_BASE_URL}/api/auth/resend-code`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId })
-  });
+  let resp;
+  
+  try {
+    resp = await fetch(`${API_BASE_URL}/api/auth/resend-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId })
+    });
+  } catch (fetchError) {
+    // Error de conexión
+    const connectionError = new Error(
+      `No se pudo conectar con el servidor.\nVerifica que la API esté corriendo en: ${API_BASE_URL}`
+    );
+    connectionError.isConnectionError = true;
+    throw connectionError;
+  }
 
   if (!resp.ok) {
     throw new Error("No se pudo reenviar el código");

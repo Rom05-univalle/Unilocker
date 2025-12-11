@@ -198,17 +198,17 @@ public partial class LoginWindow : Window
         }
         catch (Exception ex)
         {
-            // Detectar errores de conexión
-            string errorMessage = ex.Message.ToLower();
-            if (errorMessage.Contains("conectar") || errorMessage.Contains("conexión") || 
-                errorMessage.Contains("servidor") || errorMessage.Contains("red"))
+            // Detectar errores de conexión vs errores de autenticación
+            if (ex.Message.Contains("No se pudo conectar con el servidor"))
             {
+                // Error de conexión con el servidor
                 _hasConnectionIssue = true;
                 ShowError($"⚠️ {ex.Message}\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
             }
             else
             {
-                ShowError($"Error al iniciar sesión: {ex.Message}");
+                // Error de autenticación (usuario no existe, contraseña incorrecta, usuario inactivo/bloqueado)
+                ShowError(ex.Message);
             }
         }
         finally
@@ -375,7 +375,19 @@ public partial class LoginWindow : Window
         }
         catch (Exception ex)
         {
-            ShowErrorVerification(ex.Message);
+            // Detectar errores de conexión vs errores de verificación
+            if (ex.Message.Contains("No se pudo conectar con el servidor"))
+            {
+                // Error de conexión con el servidor
+                _hasConnectionIssue = true;
+                ShowErrorVerification($"⚠️ {ex.Message}\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
+            }
+            else
+            {
+                // Error de verificación (código incorrecto, expirado, etc.)
+                ShowErrorVerification(ex.Message);
+            }
+            
             TxtVerificationCode.SelectAll();
             TxtVerificationCode.Focus();
         }
