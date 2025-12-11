@@ -133,10 +133,16 @@
                             <option value="">Seleccione rol...</option>
                         </select>
                     </div>
-                    <div class="mb-3">
+                    <!-- NOTA: La contraseña se genera automáticamente y se envía por correo -->
+                    <div class="alert alert-info mb-3" id="passwordInfoAlert" style="display: none;">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Contraseña automática:</strong> Al crear un usuario, se generará una contraseña automáticamente y se enviará por correo electrónico.
+                    </div>
+                    <!-- Campo de contraseña solo para edición (cambio manual en emergencias) -->
+                    <div class="mb-3" id="passwordEditGroup" style="display: none;">
                         <label for="txtPassword" class="form-label">
-                            Contraseña
-                            <small class="text-muted d-block">(mínimo 6 caracteres; obligatoria solo al crear; en edición déjala vacía si no deseas cambiarla)</small>
+                            Nueva Contraseña
+                            <small class="text-muted d-block">(Opcional: déjala vacía si no deseas cambiarla. Mínimo 6 caracteres)</small>
                         </label>
                         <input type="password" class="form-control" id="txtPassword" minlength="6" />
                     </div>

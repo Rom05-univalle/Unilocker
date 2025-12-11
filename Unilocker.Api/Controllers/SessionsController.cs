@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.DTOs;
+using Unilocker.Api.Extensions;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;

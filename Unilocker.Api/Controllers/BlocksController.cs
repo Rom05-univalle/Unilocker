@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Extensions;
 using Unilocker.Api.Helpers;
 using Unilocker.Api.Models;
 
@@ -129,7 +130,8 @@ public class BlocksController : ControllerBase
                 Address = address,
                 BranchId = branchId,
                 Status = status,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                CreatedUpdatedBy = this.GetCurrentUserId()
             };
 
             _context.Blocks.Add(block);
@@ -178,6 +180,7 @@ public class BlocksController : ControllerBase
                 existingBlock.Status = statusEl.GetBoolean();
             }
             existingBlock.UpdatedAt = DateTime.Now;
+            existingBlock.CreatedUpdatedBy = this.GetCurrentUserId();
 
             await _context.SaveChangesAsync();
 
@@ -230,6 +233,7 @@ public class BlocksController : ControllerBase
             // Eliminación lógica
             block.Status = false;
             block.UpdatedAt = DateTime.Now;
+            block.CreatedUpdatedBy = this.GetCurrentUserId();
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Bloque eliminado lógicamente: {Id}", id);

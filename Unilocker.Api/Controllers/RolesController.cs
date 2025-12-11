@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Extensions;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
@@ -89,6 +90,7 @@ public class RolesController : ControllerBase
         try
         {
             role.CreatedAt = DateTime.Now;
+            role.CreatedUpdatedBy = this.GetCurrentUserId();
             role.Status = true;
             _context.Roles.Add(role);
             await _context.SaveChangesAsync();
@@ -130,6 +132,7 @@ public class RolesController : ControllerBase
             existingRole.Description = role.Description;
             existingRole.Status = role.Status;
             existingRole.UpdatedAt = DateTime.Now;
+            existingRole.CreatedUpdatedBy = this.GetCurrentUserId();
 
             await _context.SaveChangesAsync();
 
@@ -185,12 +188,14 @@ public class RolesController : ControllerBase
                 {
                     user.Status = false;
                     user.UpdatedAt = DateTime.Now;
+                    user.CreatedUpdatedBy = this.GetCurrentUserId();
                 }
             }
 
             // Eliminación lógica del rol
             role.Status = false;
             role.UpdatedAt = DateTime.Now;
+            role.CreatedUpdatedBy = this.GetCurrentUserId();
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Rol eliminado lógicamente en cascada: {RoleId}, Usuarios eliminados: {UserCount}", 

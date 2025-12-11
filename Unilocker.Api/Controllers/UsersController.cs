@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.Models;
 using Unilocker.Api.Helpers;
+using Unilocker.Api.Services;
+using Unilocker.Api.Extensions;
 
 namespace Unilocker.Api.Controllers;
 
@@ -14,11 +16,19 @@ public class UsersController : ControllerBase
 {
     private readonly UnilockerDbContext _context;
     private readonly ILogger<UsersController> _logger;
+    private readonly PasswordGeneratorService _passwordGenerator;
+    private readonly EmailService _emailService;
 
-    public UsersController(UnilockerDbContext context, ILogger<UsersController> logger)
+    public UsersController(
+        UnilockerDbContext context, 
+        ILogger<UsersController> logger,
+        PasswordGeneratorService passwordGenerator,
+        EmailService emailService)
     {
         _context = context;
         _logger = logger;
+        _passwordGenerator = passwordGenerator;
+        _emailService = emailService;
     }
 
     // GET: api/users
@@ -115,7 +125,6 @@ public class UsersController : ControllerBase
             var lastNameRaw = dto.TryGetProperty("lastName", out var lastNameEl) ? lastNameEl.GetString() : null;
             var secondLastNameRaw = dto.TryGetProperty("secondLastName", out var secondLastNameEl) && secondLastNameEl.ValueKind != System.Text.Json.JsonValueKind.Null
                 ? secondLastNameEl.GetString() : null;
-            var passwordRaw = dto.TryGetProperty("passwordHash", out var passwordEl) ? passwordEl.GetString() : null;
             var roleId = dto.TryGetProperty("roleId", out var roleEl) ? roleEl.GetInt32() : 0;
             var status = dto.TryGetProperty("status", out var statusEl) ? statusEl.GetBoolean() : true;
 
@@ -126,12 +135,15 @@ public class UsersController : ControllerBase
             var firstName = StringNormalizer.Normalize(firstNameRaw);
             var lastName = StringNormalizer.Normalize(lastNameRaw);
             var secondLastName = StringNormalizer.Normalize(secondLastNameRaw);
-            var password = passwordRaw?.Trim(); // Contraseñas no normalizar espacios internos
 
             // Validaciones DESPUÉS de normalizar
             if (string.IsNullOrWhiteSpace(username))
             {
                 return BadRequest(new { message = "El username es obligatorio" });
+            }
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest(new { message = "El email es obligatorio" });
             }
             if (string.IsNullOrWhiteSpace(firstName))
             {
@@ -141,18 +153,17 @@ public class UsersController : ControllerBase
             {
                 return BadRequest(new { message = "El apellido es obligatorio" });
             }
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                return BadRequest(new { message = "La contraseña es obligatoria" });
-            }
-            if (password.Length < 6)
-            {
-                return BadRequest(new { message = "La contraseña debe tener al menos 6 caracteres" });
-            }
             if (roleId == 0)
             {
                 return BadRequest(new { message = "RoleId es obligatorio" });
             }
+
+            // GENERAR CONTRASEÑA AUTOMÁTICAMENTE
+            var generatedPassword = _passwordGenerator.GeneratePassword(username!, firstName!, lastName!, secondLastName);
+            _logger.LogInformation("Contraseña generada para usuario: {Username}", username);
+
+            // Obtener usuario actual para auditoría
+            var currentUserId = this.GetCurrentUserId();
 
             var user = new User
             {
@@ -162,16 +173,38 @@ public class UsersController : ControllerBase
                 FirstName = firstName!,
                 LastName = lastName!,
                 SecondLastName = secondLastName,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password, 12),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(generatedPassword, 12),
                 RoleId = roleId,
                 Status = status,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                CreatedUpdatedBy = currentUserId
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Usuario creado exitosamente: {UserId}", user.Id);
+
+            // ENVIAR CONTRASEÑA POR EMAIL
+            var fullName = $"{firstName} {lastName}" + (!string.IsNullOrWhiteSpace(secondLastName) ? $" {secondLastName}" : "");
+            var emailSent = await _emailService.SendPasswordAsync(email!, username!, fullName, generatedPassword);
+
+            if (!emailSent)
+            {
+                _logger.LogWarning("No se pudo enviar el email con la contraseña al usuario: {Email}", email);
+                // No fallar la creación del usuario, pero avisar
+                return CreatedAtAction(nameof(GetUser), new { id = user.Id }, new
+                {
+                    user.Id,
+                    user.Username,
+                    user.Email,
+                    user.FirstName,
+                    user.LastName,
+                    user.RoleId,
+                    warning = "Usuario creado pero no se pudo enviar el email. Contacte al administrador."
+                });
+            }
+
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, new
             {
                 user.Id,
@@ -179,18 +212,38 @@ public class UsersController : ControllerBase
                 user.Email,
                 user.FirstName,
                 user.LastName,
-                user.RoleId
+                user.RoleId,
+                message = "Usuario creado exitosamente. La contraseña ha sido enviada por correo electrónico."
             });
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
         {
             _logger.LogError(ex, "Error de base de datos al crear usuario");
             
-            // Detectar errores de duplicación
-            if (ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ||
-                ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+            // Detectar errores de duplicación en índices filtrados
+            var errorMessage = ex.InnerException?.Message ?? ex.Message;
+            
+            if (errorMessage.Contains("UQ_User_Username_Active", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage.Contains("Username", StringComparison.OrdinalIgnoreCase) && 
+                (errorMessage.Contains("duplicate", StringComparison.OrdinalIgnoreCase) || 
+                 errorMessage.Contains("unique", StringComparison.OrdinalIgnoreCase)))
             {
-                return BadRequest(new { message = "Ya existe un usuario con ese email o username" });
+                return BadRequest(new { message = "Error: Ya existe un usuario activo con ese nombre de usuario. Por favor elige otro." });
+            }
+            
+            if (errorMessage.Contains("UQ_User_Email_Active", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage.Contains("Email", StringComparison.OrdinalIgnoreCase) && 
+                (errorMessage.Contains("duplicate", StringComparison.OrdinalIgnoreCase) || 
+                 errorMessage.Contains("unique", StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest(new { message = "Error: Ya existe un usuario activo con ese correo electrónico. Por favor usa otro." });
+            }
+            
+            // Error genérico de duplicación
+            if (errorMessage.Contains("duplicate", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage.Contains("unique", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "Error: Ya existe un usuario activo con estas credenciales (usuario o email)." });
             }
             
             return StatusCode(500, new { message = "Error al crear usuario", error = ex.Message });
@@ -316,6 +369,7 @@ public class UsersController : ControllerBase
             }
             
             existingUser.UpdatedAt = DateTime.Now;
+            existingUser.CreatedUpdatedBy = currentUserId;
 
             _logger.LogInformation("Guardando cambios en base de datos para usuario {UserId}", existingUser.Id);
             await _context.SaveChangesAsync();
@@ -339,11 +393,30 @@ public class UsersController : ControllerBase
             _logger.LogError(ex, "DbUpdateException al actualizar usuario {UserId}. InnerException: {InnerException}", 
                 id, ex.InnerException?.Message ?? "null");
             
-            // Detectar errores de duplicación
-            if (ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ||
-                ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+            // Detectar errores de duplicación en índices filtrados
+            var errorMessage = ex.InnerException?.Message ?? ex.Message;
+            
+            if (errorMessage.Contains("UQ_User_Username_Active", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage.Contains("Username", StringComparison.OrdinalIgnoreCase) && 
+                (errorMessage.Contains("duplicate", StringComparison.OrdinalIgnoreCase) || 
+                 errorMessage.Contains("unique", StringComparison.OrdinalIgnoreCase)))
             {
-                return BadRequest(new { message = "Ya existe un usuario con ese email o username" });
+                return BadRequest(new { message = "Error: Ya existe otro usuario activo con ese nombre de usuario." });
+            }
+            
+            if (errorMessage.Contains("UQ_User_Email_Active", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage.Contains("Email", StringComparison.OrdinalIgnoreCase) && 
+                (errorMessage.Contains("duplicate", StringComparison.OrdinalIgnoreCase) || 
+                 errorMessage.Contains("unique", StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest(new { message = "Error: Ya existe otro usuario activo con ese correo electrónico." });
+            }
+            
+            // Error genérico de duplicación
+            if (errorMessage.Contains("duplicate", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage.Contains("unique", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "Error: Ya existe otro usuario activo con estas credenciales." });
             }
             
             return StatusCode(500, new { 
@@ -417,6 +490,7 @@ public class UsersController : ControllerBase
             // Eliminación lógica
             user.Status = false;
             user.UpdatedAt = DateTime.Now;
+            user.CreatedUpdatedBy = currentUserId;
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Usuario eliminado lógicamente: {UserId} por usuario {CurrentUserId}", id, currentUserId);

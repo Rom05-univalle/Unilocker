@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Extensions;
 using Unilocker.Api.Helpers;
 
 namespace Unilocker.Api.Controllers;
@@ -161,7 +162,8 @@ public class ProblemTypesController : ControllerBase
                 Name = name,
                 Description = description,
                 Status = status,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                CreatedUpdatedBy = this.GetCurrentUserId()
             };
 
             _context.ProblemTypes.Add(problemType);
@@ -206,6 +208,7 @@ public class ProblemTypesController : ControllerBase
                 existingProblemType.Status = statusEl.GetBoolean();
             }
             existingProblemType.UpdatedAt = DateTime.Now;
+            existingProblemType.CreatedUpdatedBy = this.GetCurrentUserId();
 
             await _context.SaveChangesAsync();
 
@@ -246,6 +249,7 @@ public class ProblemTypesController : ControllerBase
             // Eliminación lógica (soft delete)
             problemType.Status = false;
             problemType.UpdatedAt = DateTime.Now;
+            problemType.CreatedUpdatedBy = this.GetCurrentUserId();
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Tipo de problema desactivado (soft delete): {ProblemTypeId} - {Name}", id, problemType.Name);

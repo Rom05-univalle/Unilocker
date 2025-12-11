@@ -2,8 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.DTOs;
-using Unilocker.Api.Models;
+using Unilocker.Api.Extensions;
 using Unilocker.Api.Helpers;
+using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
 
@@ -91,7 +92,8 @@ public class ComputersController : ControllerBase
                 Model = StringNormalizer.Normalize(request.Model),
                 ClassroomId = request.ClassroomId,
                 Status = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedUpdatedBy = this.GetCurrentUserId()
             };
 
             _context.Computers.Add(newComputer);
@@ -302,6 +304,7 @@ public class ComputersController : ControllerBase
             // Borrado lógico: cambiar Status a false
             computer.Status = false;
             computer.UpdatedAt = DateTime.Now;
+            computer.CreatedUpdatedBy = this.GetCurrentUserId();
             await _context.SaveChangesAsync();
 
             await transaction.CommitAsync();

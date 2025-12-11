@@ -162,6 +162,12 @@ function openCreateModal() {
     const titleEl = document.getElementById('userModalTitle');
     if (titleEl) titleEl.textContent = 'Nuevo usuario';
 
+    // Mostrar alerta de contraseña automática y ocultar campo de contraseña
+    const passwordInfoAlert = document.getElementById('passwordInfoAlert');
+    const passwordEditGroup = document.getElementById('passwordEditGroup');
+    if (passwordInfoAlert) passwordInfoAlert.style.display = 'block';
+    if (passwordEditGroup) passwordEditGroup.style.display = 'none';
+
     userModal.show();
 }
 
@@ -194,6 +200,12 @@ function openEditModal(id) {
 
     const titleEl = document.getElementById('userModalTitle');
     if (titleEl) titleEl.textContent = 'Editar usuario';
+
+    // Ocultar alerta de contraseña automática y mostrar campo de contraseña para cambios manuales
+    const passwordInfoAlert = document.getElementById('passwordInfoAlert');
+    const passwordEditGroup = document.getElementById('passwordEditGroup');
+    if (passwordInfoAlert) passwordInfoAlert.style.display = 'none';
+    if (passwordEditGroup) passwordEditGroup.style.display = 'block';
 
     userModal.show();
 }
@@ -233,11 +245,8 @@ async function saveUser(e) {
         showError('El email es obligatorio.');
         return;
     }
-    if (!id && !password) {
-        showError('La contraseña es obligatoria para un usuario nuevo.');
-        return;
-    }
-    if (password && password.length < 6) {
+    // Validar contraseña solo en modo edición si se ingresó algo
+    if (id && password && password.length < 6) {
         showError('La contraseña debe tener al menos 6 caracteres.');
         return;
     }

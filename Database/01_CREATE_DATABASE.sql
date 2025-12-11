@@ -99,8 +99,8 @@ CREATE TABLE [User] (
     FirstName NVARCHAR(150) NOT NULL,
 	LastName NVARCHAR(150) NOT NULL,
 	SecondLastName NVARCHAR(150),
-    Username NVARCHAR(50) NOT NULL UNIQUE,
-    Email NVARCHAR(100) UNIQUE,
+    Username NVARCHAR(50) NOT NULL,
+    Email NVARCHAR(100),
     PasswordHash NVARCHAR(256) NOT NULL,
     Phone NVARCHAR(20),
     RoleId INT NOT NULL,
@@ -119,6 +119,16 @@ CREATE TABLE [User] (
     CONSTRAINT FK_User_Role FOREIGN KEY (RoleId) 
         REFERENCES Role(Id)
 );
+
+-- Índices únicos filtrados: Solo aplican a usuarios activos (Status=1)
+-- Esto permite reutilizar Username/Email de usuarios eliminados (Status=0)
+CREATE UNIQUE NONCLUSTERED INDEX UQ_User_Username_Active
+ON [User] (Username)
+WHERE Status = 1;
+
+CREATE UNIQUE NONCLUSTERED INDEX UQ_User_Email_Active
+ON [User] (Email)
+WHERE Status = 1 AND Email IS NOT NULL;
 
 -- ============================================================================
 -- 3. SESSIONS AND REPORTS

@@ -45,6 +45,8 @@ builder.Services.AddScoped<JwtService>();
 // Registrar servicio Email
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddSingleton<VerificationCodeService>();
+// Registrar servicio de generación de contraseñas
+builder.Services.AddScoped<PasswordGeneratorService>();
 
 // Configurar CORS (para frontend web)
 builder.Services.AddCors(options =>

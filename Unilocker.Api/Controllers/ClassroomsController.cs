@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Extensions;
 using Unilocker.Api.Helpers;
 using Unilocker.Api.Models;
 
@@ -133,7 +134,8 @@ public class ClassroomsController : ControllerBase
                 Capacity = capacity,
                 BlockId = blockId,
                 Status = status,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                CreatedUpdatedBy = this.GetCurrentUserId()
             };
 
             _context.Classrooms.Add(classroom);
@@ -185,6 +187,7 @@ public class ClassroomsController : ControllerBase
                 existingClassroom.Status = statusEl.GetBoolean();
             }
             existingClassroom.UpdatedAt = DateTime.Now;
+            existingClassroom.CreatedUpdatedBy = this.GetCurrentUserId();
 
             await _context.SaveChangesAsync();
 
@@ -224,6 +227,7 @@ public class ClassroomsController : ControllerBase
             // Eliminación lógica
             classroom.Status = false;
             classroom.UpdatedAt = DateTime.Now;
+            classroom.CreatedUpdatedBy = this.GetCurrentUserId();
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Aula eliminada lógicamente: {Id}", id);

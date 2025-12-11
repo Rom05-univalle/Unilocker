@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.Helpers;
 using Unilocker.Api.Models;
+using Unilocker.Api.Extensions;
 
 namespace Unilocker.Api.Controllers;
 
@@ -99,6 +100,7 @@ public class BranchesController : ControllerBase
             branch.Code = StringNormalizer.Normalize(branch.Code);
 
             branch.CreatedAt = DateTime.Now;
+            branch.CreatedUpdatedBy = this.GetCurrentUserId();
             branch.Status = true;
             _context.Branches.Add(branch);
             await _context.SaveChangesAsync();
@@ -192,6 +194,7 @@ public class BranchesController : ControllerBase
             {
                 classroom.Status = false;
                 classroom.UpdatedAt = DateTime.Now;
+                classroom.CreatedUpdatedBy = this.GetCurrentUserId();
             }
 
             // 2. Eliminar lógicamente todos los bloques
@@ -199,11 +202,13 @@ public class BranchesController : ControllerBase
             {
                 block.Status = false;
                 block.UpdatedAt = DateTime.Now;
+                block.CreatedUpdatedBy = this.GetCurrentUserId();
             }
 
             // 3. Eliminar lógicamente la sede
             branch.Status = false;
             branch.UpdatedAt = DateTime.Now;
+            branch.CreatedUpdatedBy = this.GetCurrentUserId();
 
             await _context.SaveChangesAsync();
 
