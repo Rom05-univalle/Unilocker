@@ -1,4 +1,4 @@
-ï»¿// js/dashboard.js
+// js/dashboard.js
 
 // Requiere que api.js defina API_BASE_URL y authFetch en global.
 
@@ -15,7 +15,7 @@ function buildDateQuery() {
   return qs ? `?${qs}` : '';
 }
 
-// ----------------- Dashboard stats numÃ©ricos -----------------
+// ----------------- Dashboard stats numéricos -----------------
 
 async function loadDashboardStats() {
   try {
@@ -74,7 +74,7 @@ function getPieColors(count) {
   return colors;
 }
 
-// ----------------- GrÃ¡fico: Sesiones por dÃ­a -----------------
+// ----------------- Gráfico: Sesiones por día -----------------
 
 async function loadSessionsChart() {
   try {
@@ -138,11 +138,11 @@ async function loadSessionsChart() {
       }
     });
   } catch (err) {
-    console.error('Error cargando sesiones por dÃ­a', err);
+    console.error('Error cargando sesiones por día', err);
   }
 }
 
-// ----------------- GrÃ¡fico: Reportes por tipo -----------------
+// ----------------- Gráfico: Reportes por tipo -----------------
 
 async function loadReportsChart() {
   try {
@@ -197,7 +197,7 @@ async function loadReportsChart() {
   }
 }
 
-// ----------------- GrÃ¡fico: Top equipos -----------------
+// ----------------- Gráfico: Top equipos -----------------
 
 async function loadTopComputersChart() {
   try {
@@ -262,7 +262,7 @@ async function loadTopComputersChart() {
   }
 }
 
-// ----------------- GrÃ¡fico: Top usuarios -----------------
+// ----------------- Gráfico: Top usuarios -----------------
 
 async function loadTopUsersChart() {
   try {
@@ -352,7 +352,7 @@ async function exportToCSV() {
 
     let csv = '';
 
-    csv += 'Sesiones por dÃ­a\n';
+    csv += 'Sesiones por día\n';
     csv += 'Fecha,Cantidad\n';
     sessions.forEach(row => {
       csv += `${row.date},${row.count}\n`;
@@ -366,14 +366,14 @@ async function exportToCSV() {
     });
     csv += '\n';
 
-    csv += 'Top 5 equipos con mÃ¡s reportes\n';
+    csv += 'Top 5 equipos con más reportes\n';
     csv += 'Equipo,Reportes\n';
     computers.forEach(row => {
       csv += `${row.computerName},${row.reportCount}\n`;
     });
     csv += '\n';
 
-    csv += 'Top 5 usuarios mÃ¡s activos\n';
+    csv += 'Top 5 usuarios más activos\n';
     csv += 'Usuario,MinutosTotales\n';
     users.forEach(row => {
       const name = row.fullName || row.username;

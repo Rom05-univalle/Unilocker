@@ -94,8 +94,7 @@ async function loadUsers(searchTerm = '') {
 
         renderUsers(filteredUsers);
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar usuarios.');
+        window.handleApiError(err, 'Error al cargar usuarios.');
     } finally {
         hideLoading();
     }
@@ -117,8 +116,7 @@ async function loadRoles() {
 
         populateRolesSelect();
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar roles.');
+        window.handleApiError(err, 'Error al cargar roles.');
     }
 }
 
@@ -338,8 +336,7 @@ async function deleteUser(id) {
         showToast(data.message || 'Usuario eliminado correctamente.');
         await loadUsers();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo eliminar el usuario.');
+        window.handleApiError(err, err.message || 'No se pudo eliminar el usuario.');
     } finally {
         hideLoading();
     }

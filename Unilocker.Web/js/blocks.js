@@ -60,8 +60,7 @@ async function loadBranchesForSelect() {
             select.appendChild(opt);
         });
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar sucursales.');
+        window.handleApiError(err, 'Error al cargar sucursales.');
     }
 }
 
@@ -86,8 +85,7 @@ async function loadBlocks() {
 
         applyFilter();
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar bloques.');
+        window.handleApiError(err, 'Error al cargar bloques.');
     } finally {
         hideLoading();
     }
@@ -174,8 +172,7 @@ async function saveBlock(e) {
         blockModal.hide();
         await loadBlocks();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo guardar el bloque.');
+        window.handleApiError(err, err.message || 'No se pudo guardar el bloque.');
     } finally {
         hideLoading();
     }
@@ -193,8 +190,7 @@ async function deleteBlock(id) {
         showToast(data.message || 'Bloque eliminado correctamente.', 'success');
         await loadBlocks();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo eliminar el bloque.');
+        window.handleApiError(err, err.message || 'No se pudo eliminar el bloque.');
     } finally {
         hideLoading();
     }

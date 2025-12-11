@@ -110,8 +110,7 @@ async function loadComputers() {
 
         applyFilter();
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar computadoras.');
+        window.handleApiError(err, 'Error al cargar computadoras.');
     } finally {
         hideLoading();
     }
@@ -211,8 +210,7 @@ async function confirmUnregister(id, name) {
         showToast(data.message || 'Computadora desregistrada correctamente.');
         await loadComputers();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo desregistrar la computadora.');
+        window.handleApiError(err, err.message || 'No se pudo desregistrar la computadora.');
     } finally {
         hideLoading();
     }

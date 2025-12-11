@@ -63,8 +63,7 @@ async function loadBranchesForSelect() {
             select.appendChild(opt);
         });
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar sucursales.');
+        window.handleApiError(err, 'Error al cargar sucursales.');
     }
 }
 
@@ -97,8 +96,7 @@ async function loadBlocksForSelect(branchId) {
             select.appendChild(opt);
         });
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar bloques.');
+        window.handleApiError(err, 'Error al cargar bloques.');
     }
 }
 
@@ -126,8 +124,7 @@ async function loadClassrooms() {
 
         applyFilter();
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar aulas.');
+        window.handleApiError(err, 'Error al cargar aulas.');
     } finally {
         hideLoading();
     }
@@ -242,8 +239,7 @@ async function saveClassroom(e) {
         classroomModal.hide();
         await loadClassrooms();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo guardar el aula.');
+        window.handleApiError(err, err.message || 'No se pudo guardar el aula.');
     } finally {
         hideLoading();
     }
@@ -261,8 +257,7 @@ async function deleteClassroom(id) {
         showToast(data.message || 'Aula eliminada correctamente.', 'success');
         await loadClassrooms();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo eliminar el aula.');
+        window.handleApiError(err, err.message || 'No se pudo eliminar el aula.');
     } finally {
         hideLoading();
     }

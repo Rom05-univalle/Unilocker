@@ -1,4 +1,4 @@
-锘縤mport { authFetch } from './api.js';
+import { authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError, showConfirm } from './ui.js';
 
 let sessionsCache = [];
@@ -54,14 +54,13 @@ export async function loadRecords(username = '') {
         sessionsCache = data;
         renderSessions(sessionsCache);
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'Error al cargar sesiones');
+        window.handleApiError(err, err.message || 'Error al cargar sesiones');
     } finally {
         hideLoading();
     }
 }
 
-// Ejemplo de acci贸n sobre sesiones (si tienes endpoint para cerrar sesi贸n desde el admin)
+// Ejemplo de acci髇 sobre sesiones (si tienes endpoint para cerrar sesi髇 desde el admin)
 export async function closeSession(id) {
     return authFetch(`/api/sessions/${id}/close`, {
         method: 'PUT'
@@ -69,19 +68,18 @@ export async function closeSession(id) {
 }
 
 function askCloseSession(id) {
-    showConfirm('驴Seguro que quieres cerrar esta sesi贸n?', async () => {
-        showLoading('Cerrando sesi贸n...');
+    showConfirm('縎eguro que quieres cerrar esta sesi髇?', async () => {
+        showLoading('Cerrando sesi髇...');
         try {
             const res = await closeSession(id);
             if (!res.ok) {
-                showError('No se pudo cerrar la sesi贸n.');
+                showError('No se pudo cerrar la sesi髇.');
                 return;
             }
             await loadRecords();
-            showToast('Sesi贸n cerrada correctamente', 'success');
+            showToast('Sesi髇 cerrada correctamente', 'success');
         } catch (err) {
-            console.error(err);
-            showError(err);
+            window.handleApiError(err, err);
         } finally {
             hideLoading();
         }
@@ -118,7 +116,7 @@ function setupEvents() {
     const tbody = document.getElementById('sessionsTableBody');
     if (!tbody) return;
 
-    // Solo si agregas botones de acci贸n en la tabla de sesiones
+    // Solo si agregas botones de acci髇 en la tabla de sesiones
     tbody.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (!btn) return;

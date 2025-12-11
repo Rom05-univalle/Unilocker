@@ -46,8 +46,7 @@ async function loadProblemTypes() {
 
         renderProblemTypes(problemTypesCache);
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar tipos de problema.');
+        window.handleApiError(err, 'Error al cargar tipos de problema.');
     } finally {
         hideLoading();
     }
@@ -130,8 +129,7 @@ async function saveProblemType(e) {
         problemTypeModal.hide();
         await loadProblemTypes();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo guardar el tipo de problema.');
+        window.handleApiError(err, err.message || 'No se pudo guardar el tipo de problema.');
     } finally {
         hideLoading();
     }
@@ -151,8 +149,7 @@ async function deleteProblemType(id) {
         showToast(data.message || 'Tipo de problema eliminado correctamente.');
         await loadProblemTypes();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo eliminar el tipo de problema.');
+        window.handleApiError(err, err.message || 'No se pudo eliminar el tipo de problema.');
     } finally {
         hideLoading();
     }

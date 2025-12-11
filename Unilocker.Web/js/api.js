@@ -16,13 +16,24 @@ export async function authFetch(relativeEndpoint, options = {}) {
     headers["Authorization"] = "Bearer " + token;
   }
 
-  const resp = await fetch(endpoint, {
-    method: options.method || "GET",
-    headers,
-    body: options.body
-      ? (typeof options.body === "string" ? options.body : JSON.stringify(options.body))
-      : undefined,
-  });
+  let resp;
+  try {
+    resp = await fetch(endpoint, {
+      method: options.method || "GET",
+      headers,
+      body: options.body
+        ? (typeof options.body === "string" ? options.body : JSON.stringify(options.body))
+        : undefined,
+    });
+  } catch (fetchError) {
+    // Error de red: servidor no accesible, CORS, timeout, etc.
+    console.error("Error de conexión:", fetchError);
+    const connectionError = new Error(
+      `No se pudo conectar con el servidor.\nVerifica que la API esté corriendo en: ${API_BASE_URL}`
+    );
+    connectionError.isConnectionError = true;
+    throw connectionError;
+  }
 
   // 1) Si NO hay token y el backend responde 401 → sesión vencida, redirigir al login.
   if (resp.status === 401 && !token) {
@@ -64,13 +75,28 @@ window.showToast = function (msg, type = "info") {
   toast.role = "alert";
   toast.innerHTML = `
     <div class="d-flex">
-      <div class="toast-body">${msg}</div>
+      <div class="toast-body" style="white-space: pre-line;">${msg}</div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto"
               data-bs-dismiss="toast" aria-label="Cerrar"></button>
     </div>
   `;
   document.body.appendChild(toast);
-  const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+  const bsToast = new bootstrap.Toast(toast, { delay: 5000 }); // 5 segundos para mensajes de error
   bsToast.show();
   bsToast._element.addEventListener("hidden.bs.toast", () => toast.remove());
+};
+
+// Función global para manejar errores de API de forma consistente
+window.handleApiError = function (error, defaultMessage = "Ocurrió un error") {
+  console.error("Error de API:", error);
+  
+  // Si es un error de conexión, mostrar mensaje específico
+  if (error.isConnectionError) {
+    window.showToast(error.message, "danger");
+    return;
+  }
+  
+  // Si el error tiene un mensaje, usarlo
+  const errorMessage = error.message || defaultMessage;
+  window.showToast(errorMessage, "danger");
 };

@@ -77,8 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // Si no requiere verificación, startLogin ya redirigió a dashboard.html
         } catch (err) {
-            console.error(err);
-            showLoginError(err.message || 'Usuario o contraseña incorrectos');
+            // Para login, mostrar mensaje genérico de credenciales o conexión
+            if (err.isConnectionError) {
+                showLoginError(err.message);
+            } else {
+                showLoginError(err.message || 'Usuario o contraseña incorrectos');
+            }
         }
     });
 
@@ -100,8 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await verifyCode(currentUserId, code);
             // verifyCode guarda el token y redirige a dashboard.html
         } catch (err) {
-            console.error(err);
-            showVerificationError(err.message || 'Código inválido o expirado.');
+            if (err.isConnectionError) {
+                showVerificationError(err.message);
+            } else {
+                showVerificationError(err.message || 'Código inválido o expirado.');
+            }
         }
     });
 
@@ -113,8 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await resendCode(currentUserId);
             startTimer();
         } catch (err) {
-            console.error(err);
-            showVerificationError(err.message || 'No se pudo reenviar el código.');
+            if (err.isConnectionError) {
+                showVerificationError(err.message);
+            } else {
+                showVerificationError(err.message || 'No se pudo reenviar el código.');
+            }
         }
     });
 });

@@ -1,4 +1,4 @@
-﻿import { authFetch } from './api.js';
+import { authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError } from './ui.js';
 
 let reportsCache = [];
@@ -13,7 +13,7 @@ function formatDateTime(isoString) {
 function getStatusBadge(status) {
     const badges = {
         'Pending': '<span class="badge bg-warning text-dark">Pendiente</span>',
-        'InReview': '<span class="badge bg-info">En Revisión</span>',
+        'InReview': '<span class="badge bg-info">En Revisi�n</span>',
         'Resolved': '<span class="badge bg-success">Resuelto</span>',
         'Rejected': '<span class="badge bg-danger">Rechazado</span>'
     };
@@ -78,8 +78,7 @@ export async function loadReports() {
         reportsCache = data;
         renderReports(data);
     } catch (err) {
-        console.error(err);
-        showError(err);
+        window.handleApiError(err, err);
     } finally {
         hideLoading();
     }

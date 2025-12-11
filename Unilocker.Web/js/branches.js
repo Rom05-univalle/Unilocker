@@ -54,8 +54,7 @@ async function loadBranches() {
 
         applyFilter();  // esto llama a renderBranches(...)
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar sucursales.');
+        window.handleApiError(err, 'Error al cargar sucursales');
     } finally {
         hideLoading();
     }
@@ -148,8 +147,7 @@ async function saveBranch(e) {
         branchModal.hide();
         await loadBranches();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo guardar la sucursal.');
+        window.handleApiError(err, 'No se pudo guardar la sucursal');
     } finally {
         hideLoading();
     }
@@ -167,8 +165,7 @@ async function deleteBranch(id) {
         showToast(data.message || 'Sucursal eliminada correctamente.');
         await loadBranches();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo eliminar la sucursal.');
+        window.handleApiError(err, 'No se pudo eliminar la sucursal');
     } finally {
         hideLoading();
     }

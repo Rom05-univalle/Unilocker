@@ -46,8 +46,7 @@ async function loadRoles() {
 
         renderRoles(rolesCache);
     } catch (err) {
-        console.error(err);
-        showError('Error al cargar roles.');
+        window.handleApiError(err, 'Error al cargar roles.');
     } finally {
         hideLoading();
     }
@@ -137,8 +136,7 @@ async function saveRole(e) {
         roleModal.hide();
         await loadRoles();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo guardar el rol.');
+        window.handleApiError(err, err.message || 'No se pudo guardar el rol.');
     } finally {
         hideLoading();
     }
@@ -171,8 +169,7 @@ async function deleteRole(id) {
         showToast(data.message || 'Rol eliminado correctamente.');
         await loadRoles();
     } catch (err) {
-        console.error(err);
-        showError(err.message || 'No se pudo eliminar el rol.');
+        window.handleApiError(err, err.message || 'No se pudo eliminar el rol.');
     } finally {
         hideLoading();
     }
