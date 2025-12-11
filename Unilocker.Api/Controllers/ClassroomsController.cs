@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Helpers;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
@@ -123,6 +124,9 @@ public class ClassroomsController : ControllerBase
                 return BadRequest(new { message = "BlockId es obligatorio" });
             }
 
+            // Normalizar campos de texto
+            name = StringNormalizer.Normalize(name);
+
             var classroom = new Classroom
             {
                 Name = name,
@@ -161,7 +165,7 @@ public class ClassroomsController : ControllerBase
 
             if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
             {
-                existingClassroom.Name = nameEl.GetString() ?? existingClassroom.Name;
+                existingClassroom.Name = StringNormalizer.Normalize(nameEl.GetString() ?? existingClassroom.Name);
             }
             if (dto.TryGetProperty("capacity", out var capacityEl))
             {

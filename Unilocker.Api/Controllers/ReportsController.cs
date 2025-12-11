@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
 using Unilocker.Api.DTOs;
+using Unilocker.Api.Helpers;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
@@ -55,12 +56,15 @@ public class ReportsController : ControllerBase
                 return BadRequest(new { message = $"Tipo de problema con ID {request.ProblemTypeId} no encontrado o inactivo" });
             }
 
+            // Normalizar descripción
+            var normalizedDescription = StringNormalizer.Normalize(request.Description);
+
             // Crear el reporte
             var report = new Report
             {
                 SessionId = request.SessionId,
                 ProblemTypeId = request.ProblemTypeId,
-                Description = request.Description,
+                Description = normalizedDescription,
                 ReportDate = DateTime.Now,
                 ReportStatus = "Pending",
                 CreatedAt = DateTime.Now
@@ -159,6 +163,7 @@ public class ReportsController : ControllerBase
                     CreatedAt = r.CreatedAt,
                     UpdatedAt = r.UpdatedAt,
                     UserName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.User != null ? s.User.Username : null).FirstOrDefault(),
+                    UserFullName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.User != null ? s.User.FirstName + " " + s.User.LastName + (s.User.SecondLastName != null ? " " + s.User.SecondLastName : "") : null).FirstOrDefault(),
                     ComputerName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.Computer != null ? s.Computer.Name : null).FirstOrDefault(),
                     ClassroomName = _context.Sessions.Where(s => s.Id == r.SessionId).Select(s => s.Computer != null && s.Computer.Classroom != null ? s.Computer.Classroom.Name : null).FirstOrDefault()
                 })
@@ -319,7 +324,7 @@ public class ReportsController : ControllerBase
             ReportStatus = report.ReportStatus,
             ResolutionDate = report.ResolutionDate,
             UserName = report.Session.User.Username,
-            UserFullName = $"{report.Session.User.FirstName} {report.Session.User.LastName}".Trim(),
+            UserFullName = $"{report.Session.User.FirstName} {report.Session.User.LastName}{(report.Session.User.SecondLastName != null ? " " + report.Session.User.SecondLastName : "")}".Trim(),
             ComputerName = report.Session.Computer.Name,
             ClassroomName = report.Session.Computer.Classroom.Name,
             BlockName = report.Session.Computer.Classroom.Block.Name,

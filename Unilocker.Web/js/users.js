@@ -17,7 +17,7 @@ function renderUsers(items) {
         const statusBadge = u.status ? 'Activo' : 'Inactivo';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${u.username}</td>
+            <td>${u.fullName || u.username}</td>
             <td>${u.email}</td>
             <td>${u.phone ?? ''}</td>
             <td>${u.roleName ?? ''}</td>
@@ -41,7 +41,7 @@ function renderUsers(items) {
 
 // CARGA USERS
 
-async function loadUsers() {
+async function loadUsers(searchTerm = '') {
     showLoading('Cargando usuarios...');
     try {
         // Cargar usuarios
@@ -64,6 +64,8 @@ async function loadUsers() {
             username: u.username,
             firstName: u.firstName,
             lastName: u.lastName,
+            secondLastName: u.secondLastName,
+            fullName: u.fullName,
             email: u.email,
             phone: u.phone,
             status: activeUserIds.has(u.id), // Estado basado en si tiene sesión activa
@@ -71,7 +73,26 @@ async function loadUsers() {
             roleName: u.roleName
         }));
 
-        renderUsers(usersCache);
+        // Filtrar si hay término de búsqueda
+        let filteredUsers = usersCache;
+        if (searchTerm && searchTerm.trim() !== '') {
+            const term = searchTerm.toLowerCase().trim();
+            filteredUsers = usersCache.filter(u => {
+                const fullName = (u.fullName || '').toLowerCase();
+                const username = (u.username || '').toLowerCase();
+                const firstName = (u.firstName || '').toLowerCase();
+                const lastName = (u.lastName || '').toLowerCase();
+                const secondLastName = (u.secondLastName || '').toLowerCase();
+                
+                return fullName.includes(term) || 
+                       username.includes(term) || 
+                       firstName.includes(term) || 
+                       lastName.includes(term) || 
+                       secondLastName.includes(term);
+            });
+        }
+
+        renderUsers(filteredUsers);
     } catch (err) {
         console.error(err);
         showError('Error al cargar usuarios.');
@@ -131,6 +152,7 @@ function openCreateModal() {
     document.getElementById('txtUsername').value = '';
     document.getElementById('txtFirstName').value = '';
     document.getElementById('txtLastName').value = '';
+    document.getElementById('txtSecondLastName').value = '';
     document.getElementById('txtEmail').value = '';
     document.getElementById('txtPhone').value = '';
     document.getElementById('txtPassword').value = '';
@@ -163,6 +185,7 @@ function openEditModal(id) {
     document.getElementById('txtUsername').value = u.username ?? '';
     document.getElementById('txtFirstName').value = u.firstName ?? u.username ?? '';
     document.getElementById('txtLastName').value = u.lastName ?? u.username ?? '';
+    document.getElementById('txtSecondLastName').value = u.secondLastName ?? '';
     document.getElementById('txtEmail').value = u.email ?? '';
     document.getElementById('txtPhone').value = u.phone ?? '';
     document.getElementById('txtPassword').value = ''; // vacío: solo cambia si escribe algo
@@ -186,6 +209,7 @@ async function saveUser(e) {
     const username = document.getElementById('txtUsername').value.trim();
     const firstName = document.getElementById('txtFirstName').value.trim();
     const lastName = document.getElementById('txtLastName').value.trim();
+    const secondLastName = document.getElementById('txtSecondLastName').value.trim() || null;
     const email = document.getElementById('txtEmail').value.trim();
     const phone = document.getElementById('txtPhone').value.trim();
     const password = document.getElementById('txtPassword').value;
@@ -228,6 +252,7 @@ async function saveUser(e) {
         phone: phone || null,
         firstName,
         lastName,
+        secondLastName,
         passwordHash: password || null,
         status: true,
         roleId
@@ -252,7 +277,8 @@ async function saveUser(e) {
         await loadUsers();
     } catch (err) {
         console.error(err);
-        showError(err.message || 'No se pudo guardar el usuario.');
+        // Mostrar el mensaje específico del servidor
+        showError(err.message || (isNew ? 'No se pudo crear el usuario.' : 'No se pudo actualizar el usuario.'));
     } finally {
         hideLoading();
     }
@@ -315,6 +341,33 @@ async function deleteUser(id) {
 function attachEvents() {
     const btnNew = document.getElementById('btnNewUser');
     if (btnNew) btnNew.addEventListener('click', openCreateModal);
+
+    // Búsqueda de usuarios
+    const btnSearch = document.getElementById('btnSearchUsers');
+    const btnClear = document.getElementById('btnClearSearch');
+    const searchInput = document.getElementById('searchUsers');
+
+    if (btnSearch) {
+        btnSearch.addEventListener('click', async () => {
+            const searchTerm = searchInput?.value || '';
+            await loadUsers(searchTerm);
+        });
+    }
+
+    if (btnClear) {
+        btnClear.addEventListener('click', async () => {
+            if (searchInput) searchInput.value = '';
+            await loadUsers('');
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                await loadUsers(searchInput.value || '');
+            }
+        });
+    }
 
     const form = document.getElementById('userForm');
     if (form) form.addEventListener('submit', saveUser);

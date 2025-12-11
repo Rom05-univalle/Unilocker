@@ -274,7 +274,9 @@ public class SessionsController : ControllerBase
                     Id = s.Id,
                     UserId = s.UserId,
                     UserName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.Username).FirstOrDefault(),
-                    UserFullName = _context.Users.Where(u => u.Id == s.UserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault(),
+                    UserFullName = _context.Users.Where(u => u.Id == s.UserId).Select(u => 
+                        u.FirstName + " " + u.LastName + (u.SecondLastName != null ? " " + u.SecondLastName : "")
+                    ).FirstOrDefault(),
                     ComputerId = s.ComputerId,
                     ComputerName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Name).FirstOrDefault(),
                     ClassroomName = _context.Computers.Where(c => c.Id == s.ComputerId).Select(c => c.Classroom != null ? c.Classroom.Name : null).FirstOrDefault(),
@@ -344,7 +346,8 @@ public class SessionsController : ControllerBase
                     Id = s.Id,
                     UserId = s.UserId,
                     UserName = s.User.Username,
-                    UserFullName = s.User.FirstName + " " + s.User.LastName,
+                    UserFullName = s.User.FirstName + " " + s.User.LastName + 
+                        (s.User.SecondLastName != null ? " " + s.User.SecondLastName : ""),
                     ComputerId = s.ComputerId,
                     ComputerName = s.Computer.Name,
                     ClassroomName = s.Computer.Classroom != null ? s.Computer.Classroom.Name : null,
@@ -402,7 +405,7 @@ public class SessionsController : ControllerBase
             Id = session.Id,
             UserId = session.UserId,
             UserName = session.User.Username,
-            UserFullName = $"{session.User.FirstName} {session.User.LastName}",
+            UserFullName = $"{session.User.FirstName} {session.User.LastName}{(session.User.SecondLastName != null ? " " + session.User.SecondLastName : "")}",
             ComputerId = session.ComputerId,
             ComputerName = session.Computer.Name ?? "Sin nombre",
             ClassroomName = session.Computer.Classroom?.Name ?? "Sin aula",

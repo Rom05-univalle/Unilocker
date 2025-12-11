@@ -27,7 +27,7 @@ function renderSessions(items) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${s.userName ?? '-'}</td>
+            <td>${s.userFullName ?? s.userName ?? '-'}</td>
             <td>${s.computerName ?? '-'}</td>
             <td>${formatDateTime(s.startTime)}</td>
             <td>${formatDateTime(s.endTime)}</td>

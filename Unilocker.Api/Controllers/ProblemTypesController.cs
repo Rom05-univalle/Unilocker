@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Helpers;
 
 namespace Unilocker.Api.Controllers;
 
@@ -151,6 +152,10 @@ public class ProblemTypesController : ControllerBase
                 return BadRequest(new { message = "El nombre es obligatorio" });
             }
 
+            // Normalizar campos de texto
+            name = StringNormalizer.Normalize(name);
+            description = StringNormalizer.Normalize(description);
+
             var problemType = new Models.ProblemType
             {
                 Name = name,
@@ -188,11 +193,13 @@ public class ProblemTypesController : ControllerBase
 
             if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
             {
-                existingProblemType.Name = nameEl.GetString() ?? existingProblemType.Name;
+                existingProblemType.Name = StringNormalizer.Normalize(nameEl.GetString() ?? existingProblemType.Name);
             }
             if (dto.TryGetProperty("description", out var descEl))
             {
-                existingProblemType.Description = descEl.ValueKind != System.Text.Json.JsonValueKind.Null ? descEl.GetString() : null;
+                existingProblemType.Description = descEl.ValueKind != System.Text.Json.JsonValueKind.Null 
+                    ? StringNormalizer.Normalize(descEl.GetString()) 
+                    : null;
             }
             if (dto.TryGetProperty("status", out var statusEl))
             {

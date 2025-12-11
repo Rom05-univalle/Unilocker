@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Helpers;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
@@ -92,6 +93,11 @@ public class BranchesController : ControllerBase
     {
         try
         {
+            // Normalizar campos de texto
+            branch.Name = StringNormalizer.Normalize(branch.Name);
+            branch.Address = StringNormalizer.Normalize(branch.Address);
+            branch.Code = StringNormalizer.Normalize(branch.Code);
+
             branch.CreatedAt = DateTime.Now;
             branch.Status = true;
             _context.Branches.Add(branch);
@@ -123,9 +129,9 @@ public class BranchesController : ControllerBase
                 return NotFound(new { message = "Sede no encontrada" });
             }
 
-            existingBranch.Name = branch.Name;
-            existingBranch.Address = branch.Address;
-            existingBranch.Code = branch.Code;
+            existingBranch.Name = StringNormalizer.Normalize(branch.Name);
+            existingBranch.Address = StringNormalizer.Normalize(branch.Address);
+            existingBranch.Code = StringNormalizer.Normalize(branch.Code);
             existingBranch.Status = branch.Status;
             existingBranch.UpdatedAt = DateTime.Now;
 

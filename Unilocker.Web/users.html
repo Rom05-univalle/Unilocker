@@ -41,13 +41,36 @@
                 </button>
             </div>
 
+            <!-- Barra de búsqueda -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-6">
+                            <label for="searchUsers" class="form-label">Buscar por nombre, apellidos o usuario</label>
+                            <input type="text" id="searchUsers" class="form-control" 
+                                   placeholder="Ej: Juan López, estuser, etc." />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnSearchUsers" class="btn btn-primary w-100">
+                                <i class="fa-solid fa-search me-1"></i>Buscar
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnClearSearch" class="btn btn-outline-secondary w-100">
+                                <i class="fa-solid fa-times me-1"></i>Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Usuario</th>
+                                    <th>Nombre Completo</th>
                                     <th>Email</th>
                                     <th>Teléfono</th>
                                     <th>Rol</th>
@@ -89,8 +112,12 @@
                         <input type="text" class="form-control" id="txtFirstName" required />
                     </div>
                     <div class="mb-3">
-                        <label for="txtLastName" class="form-label">Apellido</label>
+                        <label for="txtLastName" class="form-label">Apellido Paterno</label>
                         <input type="text" class="form-control" id="txtLastName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="txtSecondLastName" class="form-label">Apellido Materno <small class="text-muted">(opcional)</small></label>
+                        <input type="text" class="form-control" id="txtSecondLastName" />
                     </div>
                     <div class="mb-3">
                         <label for="txtEmail" class="form-label">Email</label>

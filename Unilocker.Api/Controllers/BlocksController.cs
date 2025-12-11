@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Unilocker.Api.Data;
+using Unilocker.Api.Helpers;
 using Unilocker.Api.Models;
 
 namespace Unilocker.Api.Controllers;
@@ -118,6 +119,10 @@ public class BlocksController : ControllerBase
                 return BadRequest(new { message = "BranchId es obligatorio" });
             }
 
+            // Normalizar campos de texto
+            name = StringNormalizer.Normalize(name);
+            address = StringNormalizer.Normalize(address);
+
             var block = new Block
             {
                 Name = name,
@@ -156,11 +161,13 @@ public class BlocksController : ControllerBase
 
             if (dto.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
             {
-                existingBlock.Name = nameEl.GetString() ?? existingBlock.Name;
+                existingBlock.Name = StringNormalizer.Normalize(nameEl.GetString() ?? existingBlock.Name);
             }
             if (dto.TryGetProperty("address", out var addressEl))
             {
-                existingBlock.Address = addressEl.ValueKind != System.Text.Json.JsonValueKind.Null ? addressEl.GetString() : null;
+                existingBlock.Address = addressEl.ValueKind != System.Text.Json.JsonValueKind.Null 
+                    ? StringNormalizer.Normalize(addressEl.GetString()) 
+                    : null;
             }
             if (dto.TryGetProperty("branchId", out var branchEl))
             {

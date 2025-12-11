@@ -31,7 +31,7 @@ function renderReports(items) {
         tr.style.cursor = 'pointer';
         tr.innerHTML = `
             <td>${formatDateTime(r.reportDate)}</td>
-            <td>${r.userName ?? '-'}</td>
+            <td>${r.userFullName ?? r.userName ?? '-'}</td>
             <td>${r.computerName ?? '-'}</td>
             <td>${r.problemTypeName ?? '-'}</td>
             <td class="text-center">

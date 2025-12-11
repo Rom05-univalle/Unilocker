@@ -38,6 +38,8 @@ public class UsersController : ControllerBase
                     u.Phone,
                     u.FirstName,
                     u.LastName,
+                    u.SecondLastName,
+                    FullName = u.FirstName + " " + u.LastName + (u.SecondLastName != null ? " " + u.SecondLastName : ""),
                     u.RoleId,
                     RoleName = _context.Roles.Where(r => r.Id == u.RoleId).Select(r => r.Name).FirstOrDefault(),
                     IsActive = u.Status,
@@ -71,6 +73,8 @@ public class UsersController : ControllerBase
                     u.Phone,
                     u.FirstName,
                     u.LastName,
+                    u.SecondLastName,
+                    FullName = u.FirstName + " " + u.LastName + (u.SecondLastName != null ? " " + u.SecondLastName : ""),
                     u.RoleId,
                     RoleName = _context.Roles.Where(r => r.Id == u.RoleId).Select(r => r.Name).FirstOrDefault(),
                     IsActive = u.Status,
@@ -227,19 +231,26 @@ public class UsersController : ControllerBase
             if (dto.TryGetProperty("roleId", out var roleIdEl))
             {
                 newRoleId = roleIdEl.GetInt32();
-                if (existingUser.Role != null && existingUser.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                if (existingUser.Role != null && existingUser.Role.Name == "Administrador")
                 {
                     // Verificar si el nuevo rol es diferente al actual
                     if (newRoleId != existingUser.RoleId)
                     {
-                        // Contar cuántos admins hay actualmente
-                        var adminCount = await _context.Users
+                        // Contar cuántos admins hay actualmente (usando ToListAsync para evaluación en cliente)
+                        var allUsers = await _context.Users
                             .Include(u => u.Role)
-                            .CountAsync(u => u.Role != null && u.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
+                            .Where(u => u.Status == true && u.Role != null)
+                            .ToListAsync();
+                        
+                        var adminCount = allUsers.Count(u => u.Role.Name == "Administrador");
 
                         if (adminCount <= 1)
                         {
                             return BadRequest(new { message = "No puedes cambiar el rol del único administrador del sistema" });
+                        }
+                        else
+                        {
+                            return BadRequest(new { message = "No puedes modificar el rol de un usuario administrador" });
                         }
                     }
                 }
@@ -318,6 +329,7 @@ public class UsersController : ControllerBase
                 existingUser.Email,
                 existingUser.FirstName,
                 existingUser.LastName,
+                existingUser.SecondLastName,
                 existingUser.RoleId,
                 existingUser.Status
             });
