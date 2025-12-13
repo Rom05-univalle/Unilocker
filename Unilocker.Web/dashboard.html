@@ -36,19 +36,157 @@
         </header>
 
         <main class="flex-grow-1 p-3" id="pageContent">
-            <!-- Ejemplo de contenido del dashboard -->
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title text-muted text-uppercase small">
-                                <i class="fa-solid fa-computer me-1"></i>Computadoras activas
-                            </h6>
-                            <p class="display-6 mb-0" id="dashComputersCount">0</p>
+            <div class="container-fluid">
+                <h4 class="mb-4"><i class="fa-solid fa-chart-line me-2"></i>Panel de Control</h4>
+                
+                <!-- KPIs Principales -->
+                <div class="row g-3 mb-4">
+                    <!-- KPI 1: Total de Infraestructuras -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-primary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title text-muted text-uppercase small mb-1">
+                                            <i class="fa-solid fa-building me-1"></i>Infraestructuras
+                                        </h6>
+                                        <p class="display-6 mb-0 fw-bold text-primary" id="totalBranches">0</p>
+                                        <small class="text-muted">Sucursales registradas</small>
+                                    </div>
+                                    <div class="text-primary opacity-25" style="font-size: 3rem;">
+                                        <i class="fa-solid fa-building"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2: Total de Laboratorios -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-success">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title text-muted text-uppercase small mb-1">
+                                            <i class="fa-solid fa-door-open me-1"></i>Laboratorios
+                                        </h6>
+                                        <p class="display-6 mb-0 fw-bold text-success" id="totalClassrooms">0</p>
+                                        <small class="text-muted">Centros de cómputo</small>
+                                    </div>
+                                    <div class="text-success opacity-25" style="font-size: 3rem;">
+                                        <i class="fa-solid fa-door-open"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3: Total de Computadoras -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-info">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title text-muted text-uppercase small mb-1">
+                                            <i class="fa-solid fa-computer me-1"></i>Computadoras
+                                        </h6>
+                                        <p class="display-6 mb-0 fw-bold text-info" id="totalComputers">0</p>
+                                        <small class="text-muted">Equipos registrados</small>
+                                    </div>
+                                    <div class="text-info opacity-25" style="font-size: 3rem;">
+                                        <i class="fa-solid fa-computer"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 4: % Computadoras Activas -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-warning">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title text-muted text-uppercase small mb-1">
+                                            <i class="fa-solid fa-power-off me-1"></i>Computadoras Activas
+                                        </h6>
+                                        <p class="display-6 mb-0 fw-bold text-warning" id="activeComputers">0</p>
+                                        <small class="text-muted">
+                                            <span id="activeComputersPercentage">0</span>% del total
+                                        </small>
+                                    </div>
+                                    <div class="text-warning opacity-25" style="font-size: 3rem;">
+                                        <i class="fa-solid fa-power-off"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 5: Horas Totales (Mes) -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-secondary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title text-muted text-uppercase small mb-1">
+                                            <i class="fa-solid fa-clock me-1"></i>Horas de Uso
+                                        </h6>
+                                        <p class="display-6 mb-0 fw-bold text-secondary" id="totalHoursThisMonth">0</p>
+                                        <small class="text-muted" id="currentMonth">Mes actual</small>
+                                    </div>
+                                    <div class="text-secondary opacity-25" style="font-size: 3rem;">
+                                        <i class="fa-solid fa-clock"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 6: Incidencias Abiertas -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-sm border-danger">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title text-muted text-uppercase small mb-1">
+                                            <i class="fa-solid fa-triangle-exclamation me-1"></i>Incidencias Abiertas
+                                        </h6>
+                                        <p class="display-6 mb-0 fw-bold text-danger" id="openIncidents">0</p>
+                                        <small class="text-muted">No resueltas</small>
+                                    </div>
+                                    <div class="text-danger opacity-25" style="font-size: 3rem;">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- Más cards/resúmenes aquí -->
+
+                <!-- Información adicional -->
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fa-solid fa-info-circle me-2"></i>Información del Sistema
+                                </h6>
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <p class="mb-1"><strong>Total de Usuarios:</strong> <span id="totalUsers">0</span></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-1"><strong>Total de Sesiones:</strong> <span id="totalSessions">0</span></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-1"><strong>Última actualización:</strong> <span id="lastUpdate">-</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -95,11 +233,34 @@
   async function loadDashboardStats() {
     try {
       const res = await authFetch('/api/dashboard/stats');
-      if (!res.ok) return;
+      if (!res.ok) {
+        window.handleApiError(new Error('Error al cargar estadísticas'), 'No se pudieron cargar las estadísticas del dashboard');
+        return;
+      }
       const data = await res.json();
-      document.getElementById('dashComputersCount').innerText = data.activeComputers ?? 0;
+      
+      // KPIs principales
+      document.getElementById('totalBranches').innerText = data.totalBranches ?? 0;
+      document.getElementById('totalClassrooms').innerText = data.totalClassrooms ?? 0;
+      document.getElementById('totalComputers').innerText = data.totalComputers ?? 0;
+      document.getElementById('activeComputers').innerText = data.activeComputers ?? 0;
+      document.getElementById('activeComputersPercentage').innerText = data.activeComputersPercentage ?? 0;
+      document.getElementById('totalHoursThisMonth').innerText = data.totalHoursThisMonth ?? 0;
+      document.getElementById('openIncidents').innerText = data.openIncidents ?? 0;
+      
+      // Información adicional
+      document.getElementById('totalUsers').innerText = data.totalUsers ?? 0;
+      document.getElementById('totalSessions').innerText = data.totalSessions ?? 0;
+      document.getElementById('currentMonth').innerText = data.currentMonth ?? 'Mes actual';
+      document.getElementById('lastUpdate').innerText = new Date().toLocaleString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
     } catch (err) {
-      console.error('Error cargando stats del dashboard', err);
+      window.handleApiError(err, 'Error cargando estadísticas del dashboard');
     }
   }
 

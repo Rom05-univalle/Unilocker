@@ -24,7 +24,7 @@ public class DashboardController : ControllerBase
     }
 
     /// <summary>
-    /// Obtener estadísticas para el dashboard web
+    /// Obtener estadísticas para el dashboard web con KPIs principales
     /// GET: api/dashboard/stats
     /// </summary>
     [HttpGet("stats")]
@@ -37,43 +37,90 @@ public class DashboardController : ControllerBase
             _logger.LogInformation("Obteniendo estadísticas para dashboard web");
 
             var today = DateTime.Today;
-            var tomorrow = today.AddDays(1);
+            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+            var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
-            // Sesiones de hoy (solo de computadoras activas)
-            var totalSessionsToday = await _context.Sessions
-                .Include(s => s.Computer)
-                .Where(s => s.StartDateTime >= today && s.StartDateTime < tomorrow && s.Computer.Status)
+            // KPI 1: Total de infraestructuras (sucursales/branches)
+            var totalBranches = await _context.Branches
+                .Where(b => b.Status)
                 .CountAsync();
 
-            // Sesiones activas (computadoras con sesión activa y registradas)
+            // KPI 2: Total de laboratorios (aulas/classrooms)
+            var totalClassrooms = await _context.Classrooms
+                .Where(c => c.Status)
+                .CountAsync();
+
+            // KPI 3: Total de computadoras registradas
+            var totalComputers = await _context.Computers
+                .Where(c => c.Status)
+                .CountAsync();
+
+            // KPI 4: Computadoras activas (con sesión activa en este momento)
             var activeComputers = await _context.Sessions
                 .Include(s => s.Computer)
                 .Where(s => s.IsActive && s.Computer.Status)
                 .CountAsync();
 
-            // Reportes pendientes (solo de computadoras activas)
-            var pendingReports = await _context.Reports
+            // Calcular % de computadoras activas
+            var activeComputersPercentage = totalComputers > 0 
+                ? Math.Round((double)activeComputers / totalComputers * 100, 2)
+                : 0;
+
+            // KPI 5: Horas totales de uso (mes actual)
+            var sessionsThisMonth = await _context.Sessions
+                .Include(s => s.Computer)
+                .Where(s => s.StartDateTime >= firstDayOfMonth 
+                         && s.StartDateTime <= lastDayOfMonth 
+                         && s.Computer.Status)
+                .ToListAsync();
+
+            // Calcular horas totales considerando sesiones cerradas y activas
+            double totalHoursThisMonth = 0;
+            foreach (var session in sessionsThisMonth)
+            {
+                if (session.EndDateTime.HasValue)
+                {
+                    // Sesión cerrada: calcular tiempo real
+                    totalHoursThisMonth += (session.EndDateTime.Value - session.StartDateTime).TotalHours;
+                }
+                else if (session.IsActive)
+                {
+                    // Sesión activa: calcular tiempo hasta ahora
+                    totalHoursThisMonth += (DateTime.Now - session.StartDateTime).TotalHours;
+                }
+            }
+            totalHoursThisMonth = Math.Round(totalHoursThisMonth, 2);
+
+            // KPI 6: Incidencias abiertas (reportes pendientes o en revisión)
+            var openIncidents = await _context.Reports
                 .Include(r => r.Session)
                     .ThenInclude(s => s.Computer)
-                .Where(r => r.ReportStatus == "Pending" && r.Session.Computer.Status)
-                .CountAsync();
-
-            // Total de computadoras registradas
-            var registeredComputers = await _context.Computers
-                .Where(c => c.Status)
+                .Where(r => (r.ReportStatus == "Pending" || r.ReportStatus == "InReview") 
+                         && r.Session.Computer.Status)
                 .CountAsync();
 
             var stats = new
             {
+                // KPIs principales
+                totalBranches,
+                totalClassrooms,
+                totalComputers,
+                activeComputers,
+                activeComputersPercentage,
+                totalHoursThisMonth,
+                openIncidents,
+
+                // Datos adicionales
                 totalUsers = await _context.Users.Where(u => u.Status).CountAsync(),
                 totalSessions = await _context.Sessions.CountAsync(),
-                totalReports = await _context.Reports.CountAsync(),
-                activeComputers
+                currentMonth = today.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES"))
             };
 
             _logger.LogInformation(
-                "Dashboard stats: Usuarios activos={Users}, Total sesiones={Sessions}, Total reportes={Reports}, PCs activas={Active}",
-                stats.totalUsers, stats.totalSessions, stats.totalReports, activeComputers);
+                "Dashboard KPIs: Sucursales={Branches}, Laboratorios={Labs}, Computadoras={Computers}, " +
+                "Activas={Active} ({Percentage}%), Horas mes={Hours}, Incidencias={Incidents}",
+                stats.totalBranches, stats.totalClassrooms, stats.totalComputers, 
+                stats.activeComputers, stats.activeComputersPercentage, stats.totalHoursThisMonth, stats.openIncidents);
 
             return Ok(stats);
         }

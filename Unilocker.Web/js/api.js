@@ -1,7 +1,7 @@
 import { getToken, logout } from './auth.js';
 
 // Para red local: cambiar localhost por la IP del servidor (ej: "http://192.168.0.5:5013")
-export const API_BASE_URL = "http://192.168.0.7:5013";
+export const API_BASE_URL = "http://192.168.0.4:5013";
 
 export async function authFetch(relativeEndpoint, options = {}) {
   const endpoint = `${API_BASE_URL}${relativeEndpoint}`;
