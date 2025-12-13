@@ -46,6 +46,70 @@ public partial class LoginWindow : Window
             // Verificar conexión al inicio
             await CheckInitialConnectionAsync();
         };
+
+        // Agregar atajo de teclado para desregistrar: Ctrl+Shift+U (Unregister)
+        this.KeyDown += LoginWindow_KeyDown;
+    }
+
+    private void LoginWindow_KeyDown(object sender, KeyEventArgs e)
+    {
+        // Ctrl+Shift+U para desregistrar la computadora
+        if (e.Key == Key.U && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+        {
+            UnregisterComputer();
+        }
+    }
+
+    private void UnregisterComputer()
+    {
+        var result = ModernDialog.ShowConfirm(
+            "⚠️ DESREGISTRAR COMPUTADORA\n\n" +
+            "Esta acción eliminará TODOS los datos locales:\n" +
+            "• ID de máquina\n" +
+            "• Registro en el servidor\n" +
+            "• Tokens de sesión\n" +
+            "• Configuración guardada\n\n" +
+            "Deberás registrar nuevamente el equipo.\n\n" +
+            "¿Estás seguro de continuar?",
+            "Confirmación de Desregistro",
+            ModernDialog.DialogType.Warning);
+
+        if (result)
+        {
+            try
+            {
+                // Desregistrar localmente
+                bool success = _configService.UnregisterComputer();
+
+                if (success)
+                {
+                    ModernDialog.Show(
+                        "✅ Computadora desregistrada exitosamente.\n\n" +
+                        "La aplicación se cerrará. Vuelve a abrirla para registrar el equipo nuevamente.",
+                        "Desregistro Exitoso",
+                        ModernDialog.DialogType.Success);
+
+                    // Permitir cerrar y cerrar la aplicación
+                    _allowClose = true;
+                    Application.Current.Shutdown();
+                }
+                else
+                {
+                    ModernDialog.Show(
+                        "❌ Error al desregistrar la computadora.\n\n" +
+                        "Puede que no tengas permisos suficientes o los archivos estén en uso.",
+                        "Error de Desregistro",
+                        ModernDialog.DialogType.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModernDialog.Show(
+                    $"❌ Error inesperado al desregistrar:\n\n{ex.Message}",
+                    "Error",
+                    ModernDialog.DialogType.Error);
+            }
+        }
     }
 
     private async System.Threading.Tasks.Task CheckInitialConnectionAsync()

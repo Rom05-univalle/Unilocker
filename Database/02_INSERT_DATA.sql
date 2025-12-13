@@ -88,70 +88,70 @@ VALUES
 ('H-202', 25, 6, 1, GETDATE());
 
 -- 5. Computadoras (Computers)
-INSERT INTO [dbo].[Computer] ([Name], [SerialNumber], [Model], [ClassroomId], [Status], [CreatedAt])
+INSERT INTO [dbo].[Computer] ([Name], [SerialNumber], [Model], [OperatingSystem], [ComputerStatus], [ClassroomId], [Status], [CreatedAt])
 VALUES 
 -- Computadoras A-101 (ClassroomId = 1)
-('A101-1', 'SN001A101', 'Dell OptiPlex 7090', 1, 1, GETDATE()),
-('A101-2', 'SN002A101', 'Dell OptiPlex 7090', 1, 1, GETDATE()),
-('A101-3', 'SN003A101', 'Dell OptiPlex 7090', 1, 1, GETDATE()),
-('A101-4', 'SN004A101', 'HP ProDesk 400', 1, 1, GETDATE()),
-('A101-5', 'SN005A101', 'HP ProDesk 400', 1, 1, GETDATE()),
+('A101-1', 'SN001A101', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 1, 1, GETDATE()),
+('A101-2', 'SN002A101', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 1, 1, GETDATE()),
+('A101-3', 'SN003A101', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 1, 1, GETDATE()),
+('A101-4', 'SN004A101', 'HP ProDesk 400', 'Windows 10 Pro', 'Active', 1, 1, GETDATE()),
+('A101-5', 'SN005A101', 'HP ProDesk 400', 'Windows 10 Pro', 'Maintenance', 1, 1, GETDATE()),
 -- Computadoras A-102 (ClassroomId = 2)
-('A102-1', 'SN001A102', 'Lenovo ThinkCentre M90', 2, 1, GETDATE()),
-('A102-2', 'SN002A102', 'Lenovo ThinkCentre M90', 2, 1, GETDATE()),
-('A102-3', 'SN003A102', 'Dell OptiPlex 7090', 2, 1, GETDATE()),
-('A102-4', 'SN004A102', 'Dell OptiPlex 7090', 2, 1, GETDATE()),
+('A102-1', 'SN001A102', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 2, 1, GETDATE()),
+('A102-2', 'SN002A102', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 2, 1, GETDATE()),
+('A102-3', 'SN003A102', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Active', 2, 1, GETDATE()),
+('A102-4', 'SN004A102', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Active', 2, 1, GETDATE()),
 -- Computadoras A-103 (ClassroomId = 3)
-('A103-1', 'SN001A103', 'HP ProDesk 600', 3, 1, GETDATE()),
-('A103-2', 'SN002A103', 'HP ProDesk 600', 3, 1, GETDATE()),
-('A103-3', 'SN003A103', 'HP ProDesk 600', 3, 1, GETDATE()),
-('A103-4', 'SN004A103', 'Lenovo ThinkCentre M90', 3, 1, GETDATE()),
-('A103-5', 'SN005A103', 'Lenovo ThinkCentre M90', 3, 1, GETDATE()),
+('A103-1', 'SN001A103', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 3, 1, GETDATE()),
+('A103-2', 'SN002A103', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 3, 1, GETDATE()),
+('A103-3', 'SN003A103', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 3, 1, GETDATE()),
+('A103-4', 'SN004A103', 'Lenovo ThinkCentre M90', 'Windows 10 Pro', 'Active', 3, 1, GETDATE()),
+('A103-5', 'SN005A103', 'Lenovo ThinkCentre M90', 'Windows 10 Pro', 'Decommissioned', 3, 1, GETDATE()),
 -- Computadoras B-201 (ClassroomId = 4)
-('B201-1', 'SN001B201', 'Dell OptiPlex 7090', 4, 1, GETDATE()),
-('B201-2', 'SN002B201', 'Dell OptiPlex 7090', 4, 1, GETDATE()),
-('B201-3', 'SN003B201', 'HP ProDesk 400', 4, 1, GETDATE()),
-('B201-4', 'SN004B201', 'HP ProDesk 400', 4, 1, GETDATE()),
+('B201-1', 'SN001B201', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 4, 1, GETDATE()),
+('B201-2', 'SN002B201', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 4, 1, GETDATE()),
+('B201-3', 'SN003B201', 'HP ProDesk 400', 'Windows 10 Pro', 'Active', 4, 1, GETDATE()),
+('B201-4', 'SN004B201', 'HP ProDesk 400', 'Windows 10 Pro', 'Active', 4, 1, GETDATE()),
 -- Computadoras B-202 (ClassroomId = 5)
-('B202-1', 'SN001B202', 'Lenovo ThinkCentre M90', 5, 1, GETDATE()),
-('B202-2', 'SN002B202', 'Lenovo ThinkCentre M90', 5, 1, GETDATE()),
-('B202-3', 'SN003B202', 'Dell OptiPlex 7090', 5, 1, GETDATE()),
-('B202-4', 'SN004B202', 'Dell OptiPlex 7090', 5, 1, GETDATE()),
+('B202-1', 'SN001B202', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 5, 1, GETDATE()),
+('B202-2', 'SN002B202', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 5, 1, GETDATE()),
+('B202-3', 'SN003B202', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Active', 5, 1, GETDATE()),
+('B202-4', 'SN004B202', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Maintenance', 5, 1, GETDATE()),
 -- Computadoras T-100 (ClassroomId = 6)
-('T100-1', 'SN001T100', 'HP ProDesk 600', 6, 1, GETDATE()),
-('T100-2', 'SN002T100', 'HP ProDesk 600', 6, 1, GETDATE()),
-('T100-3', 'SN003T100', 'Lenovo ThinkCentre M90', 6, 1, GETDATE()),
-('T100-4', 'SN004T100', 'Lenovo ThinkCentre M90', 6, 1, GETDATE()),
+('T100-1', 'SN001T100', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 6, 1, GETDATE()),
+('T100-2', 'SN002T100', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 6, 1, GETDATE()),
+('T100-3', 'SN003T100', 'Lenovo ThinkCentre M90', 'Windows 10 Pro', 'Active', 6, 1, GETDATE()),
+('T100-4', 'SN004T100', 'Lenovo ThinkCentre M90', 'Windows 10 Pro', 'Active', 6, 1, GETDATE()),
 -- Computadoras T-8 (ClassroomId = 7)
-('T8-1', 'SN001T8', 'Dell OptiPlex 7090', 7, 1, GETDATE()),
-('T8-2', 'SN002T8', 'Dell OptiPlex 7090', 7, 1, GETDATE()),
-('T8-3', 'SN003T8', 'HP ProDesk 400', 7, 1, GETDATE()),
-('T8-4', 'SN004T8', 'HP ProDesk 400', 7, 1, GETDATE()),
+('T8-1', 'SN001T8', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 7, 1, GETDATE()),
+('T8-2', 'SN002T8', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 7, 1, GETDATE()),
+('T8-3', 'SN003T8', 'HP ProDesk 400', 'Windows 10 Pro', 'Active', 7, 1, GETDATE()),
+('T8-4', 'SN004T8', 'HP ProDesk 400', 'Windows 10 Pro', 'Active', 7, 1, GETDATE()),
 -- Computadoras S-100 (ClassroomId = 8)
-('S100-1', 'SN001S100', 'Lenovo ThinkCentre M90', 8, 1, GETDATE()),
-('S100-2', 'SN002S100', 'Lenovo ThinkCentre M90', 8, 1, GETDATE()),
-('S100-3', 'SN003S100', 'Dell OptiPlex 7090', 8, 1, GETDATE()),
+('S100-1', 'SN001S100', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 8, 1, GETDATE()),
+('S100-2', 'SN002S100', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 8, 1, GETDATE()),
+('S100-3', 'SN003S100', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Active', 8, 1, GETDATE()),
 -- Computadoras S-200 (ClassroomId = 9)
-('S200-1', 'SN001S200', 'HP ProDesk 600', 9, 1, GETDATE()),
-('S200-2', 'SN002S200', 'HP ProDesk 600', 9, 1, GETDATE()),
-('S200-3', 'SN003S200', 'Dell OptiPlex 7090', 9, 1, GETDATE()),
+('S200-1', 'SN001S200', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 9, 1, GETDATE()),
+('S200-2', 'SN002S200', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 9, 1, GETDATE()),
+('S200-3', 'SN003S200', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Active', 9, 1, GETDATE()),
 -- Computadoras F-13 (ClassroomId = 10)
-('F13-1', 'SN001F13', 'HP ProDesk 600', 10, 1, GETDATE()),
-('F13-2', 'SN002F13', 'HP ProDesk 600', 10, 1, GETDATE()),
-('F13-3', 'SN003F13', 'Lenovo ThinkCentre M90', 10, 1, GETDATE()),
-('F13-4', 'SN004F13', 'Lenovo ThinkCentre M90', 10, 1, GETDATE()),
+('F13-1', 'SN001F13', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 10, 1, GETDATE()),
+('F13-2', 'SN002F13', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 10, 1, GETDATE()),
+('F13-3', 'SN003F13', 'Lenovo ThinkCentre M90', 'Windows 10 Pro', 'Active', 10, 1, GETDATE()),
+('F13-4', 'SN004F13', 'Lenovo ThinkCentre M90', 'Windows 10 Pro', 'Active', 10, 1, GETDATE()),
 -- Computadoras F-103 (ClassroomId = 11)
-('F103-1', 'SN001F103', 'Dell OptiPlex 7090', 11, 1, GETDATE()),
-('F103-2', 'SN002F103', 'Dell OptiPlex 7090', 11, 1, GETDATE()),
-('F103-3', 'SN003F103', 'HP ProDesk 400', 11, 1, GETDATE()),
+('F103-1', 'SN001F103', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 11, 1, GETDATE()),
+('F103-2', 'SN002F103', 'Dell OptiPlex 7090', 'Windows 11 Pro', 'Active', 11, 1, GETDATE()),
+('F103-3', 'SN003F103', 'HP ProDesk 400', 'Windows 10 Pro', 'Active', 11, 1, GETDATE()),
 -- Computadoras H-9 (ClassroomId = 12)
-('H9-1', 'SN001H9', 'Lenovo ThinkCentre M90', 12, 1, GETDATE()),
-('H9-2', 'SN002H9', 'Lenovo ThinkCentre M90', 12, 1, GETDATE()),
-('H9-3', 'SN003H9', 'Dell OptiPlex 7090', 12, 1, GETDATE()),
+('H9-1', 'SN001H9', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 12, 1, GETDATE()),
+('H9-2', 'SN002H9', 'Lenovo ThinkCentre M90', 'Windows 11 Pro', 'Active', 12, 1, GETDATE()),
+('H9-3', 'SN003H9', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Active', 12, 1, GETDATE()),
 -- Computadoras H-202 (ClassroomId = 13)
-('H202-1', 'SN001H202', 'HP ProDesk 600', 13, 1, GETDATE()),
-('H202-2', 'SN002H202', 'HP ProDesk 600', 13, 1, GETDATE()),
-('H202-3', 'SN003H202', 'Dell OptiPlex 7090', 13, 1, GETDATE());
+('H202-1', 'SN001H202', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 13, 1, GETDATE()),
+('H202-2', 'SN002H202', 'HP ProDesk 600', 'Windows 11 Pro', 'Active', 13, 1, GETDATE()),
+('H202-3', 'SN003H202', 'Dell OptiPlex 7090', 'Windows 10 Pro', 'Active', 13, 1, GETDATE());
 
 -- 6. Tipos de Problemas (ProblemTypes)
 INSERT INTO [dbo].[ProblemType] ([Name], [Description], [Status], [CreatedAt])

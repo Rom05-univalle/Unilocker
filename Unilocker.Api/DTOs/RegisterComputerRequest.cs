@@ -17,6 +17,9 @@ public class RegisterComputerRequest
     [StringLength(100)]
     public string? Model { get; set; }
 
+    [StringLength(50)]
+    public string? OperatingSystem { get; set; }
+
     [Required(ErrorMessage = "El ID del aula es requerido")]
     [Range(1, int.MaxValue, ErrorMessage = "El ID del aula debe ser mayor a 0")]
     public int ClassroomId { get; set; }

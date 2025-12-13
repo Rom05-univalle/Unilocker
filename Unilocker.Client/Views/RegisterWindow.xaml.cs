@@ -161,13 +161,14 @@ public partial class RegisterWindow : Window
             CmbClassroom.IsEnabled = false;
             ShowProgress("Registrando equipo...");
 
-            // Crear request
+            // Crear request con detección automática del sistema operativo
             var request = new RegisterComputerRequest
             {
                 Name = TxtComputerName.Text.Trim(),
                 Uuid = _machineUuid,
                 SerialNumber = _hardwareInfo.SerialNumber,
                 Model = _hardwareInfo.Model,
+                OperatingSystem = _hardwareInfo.OperatingSystem,
                 ClassroomId = (int)CmbClassroom.SelectedValue
             };
 

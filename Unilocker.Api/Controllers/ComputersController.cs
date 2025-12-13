@@ -90,6 +90,8 @@ public class ComputersController : ControllerBase
                 Uuid = request.Uuid,
                 SerialNumber = StringNormalizer.Normalize(request.SerialNumber),
                 Model = StringNormalizer.Normalize(request.Model),
+                OperatingSystem = StringNormalizer.Normalize(request.OperatingSystem),
+                ComputerStatus = "Active",
                 ClassroomId = request.ClassroomId,
                 Status = true,
                 CreatedAt = DateTime.UtcNow,

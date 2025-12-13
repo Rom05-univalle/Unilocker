@@ -12,5 +12,6 @@ public class HardwareInfo
     public string? Manufacturer { get; set; }
     public string? Model { get; set; }
     public string? SerialNumber { get; set; }
+    public string? OperatingSystem { get; set; }
 }
 

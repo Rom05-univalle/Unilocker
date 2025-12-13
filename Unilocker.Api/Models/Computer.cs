@@ -25,6 +25,12 @@ public partial class Computer
     [StringLength(50)]
     public string? Model { get; set; }
 
+    [StringLength(50)]
+    public string? OperatingSystem { get; set; }
+
+    [StringLength(20)]
+    public string ComputerStatus { get; set; } = "Active";
+
     public int ClassroomId { get; set; }
 
     public bool Status { get; set; }

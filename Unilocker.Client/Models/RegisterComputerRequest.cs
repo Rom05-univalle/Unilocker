@@ -12,6 +12,7 @@ namespace Unilocker.Client.Models
         public Guid Uuid { get; set; }
         public string? SerialNumber { get; set; }
         public string? Model { get; set; }
+        public string? OperatingSystem { get; set; }
         public int ClassroomId { get; set; }
     }
 }

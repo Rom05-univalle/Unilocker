@@ -62,8 +62,9 @@ CREATE TABLE Computer (
     Name NVARCHAR(50) NOT NULL,
     UUID UNIQUEIDENTIFIER NOT NULL UNIQUE DEFAULT NEWID(),
     SerialNumber NVARCHAR(100),
-    Brand NVARCHAR(50),
     Model NVARCHAR(50),
+    OperatingSystem NVARCHAR(50),
+    ComputerStatus NVARCHAR(20) NOT NULL DEFAULT 'Active',
     ClassroomId INT NOT NULL,
     
     -- Standard CRUD fields
@@ -73,7 +74,10 @@ CREATE TABLE Computer (
     CreatedUpdatedBy INT,
     
     CONSTRAINT FK_Computer_Classroom FOREIGN KEY (ClassroomId) 
-        REFERENCES Classroom(Id) ON DELETE CASCADE
+        REFERENCES Classroom(Id) ON DELETE CASCADE,
+    CONSTRAINT CK_Computer_Status CHECK (
+        ComputerStatus IN ('Active', 'Decommissioned', 'Maintenance')
+    )
 );
 
 -- ============================================================================

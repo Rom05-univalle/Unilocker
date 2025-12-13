@@ -75,6 +75,33 @@ public class HardwareService
     }
 
     /// <summary>
+    /// Obtiene el sistema operativo completo (ej: "Windows 11 Pro", "Windows 10 Enterprise")
+    /// </summary>
+    public string GetOperatingSystem()
+    {
+        try
+        {
+            using var searcher = new ManagementObjectSearcher("SELECT Caption FROM Win32_OperatingSystem");
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                string? caption = obj["Caption"]?.ToString();
+                if (!string.IsNullOrEmpty(caption))
+                {
+                    // Limpieza: Remover "Microsoft" del inicio si existe
+                    return caption.Replace("Microsoft ", "").Trim();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error obteniendo sistema operativo: {ex.Message}");
+        }
+        
+        // Fallback usando Environment si WMI falla
+        return Environment.OSVersion.VersionString;
+    }
+
+    /// <summary>
     /// Obtiene toda la información del hardware en un solo método
     /// </summary>
     public HardwareInfo GetHardwareInfo()
@@ -84,7 +111,8 @@ public class HardwareService
             ComputerName = GetComputerName(),
             Manufacturer = GetManufacturer(),
             Model = GetModel(),
-            SerialNumber = GetSerialNumber()
+            SerialNumber = GetSerialNumber(),
+            OperatingSystem = GetOperatingSystem()
         };
     }
 }
