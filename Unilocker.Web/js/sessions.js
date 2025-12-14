@@ -10,13 +10,23 @@ function formatDateTime(isoString) {
     return d.toLocaleString();
 }
 
+function formatDuration(minutes) {
+    if (!minutes || minutes < 0) return '-';
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    if (hours > 0) {
+        return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+}
+
 function renderSessions(items) {
     const tbody = document.getElementById('sessionsTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
     if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No se encontraron sesiones</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No se encontraron sesiones</td></tr>';
         return;
     }
 
@@ -31,6 +41,7 @@ function renderSessions(items) {
             <td>${s.computerName ?? '-'}</td>
             <td>${formatDateTime(s.startTime)}</td>
             <td>${formatDateTime(s.endTime)}</td>
+            <td>${formatDuration(s.durationMinutes)}</td>
             <td>${statusBadge}</td>
         `;
         tbody.appendChild(tr);
@@ -60,7 +71,7 @@ export async function loadRecords(username = '') {
     }
 }
 
-// Ejemplo de acción sobre sesiones (si tienes endpoint para cerrar sesión desde el admin)
+// Ejemplo de acciï¿½n sobre sesiones (si tienes endpoint para cerrar sesiï¿½n desde el admin)
 export async function closeSession(id) {
     return authFetch(`/api/sessions/${id}/close`, {
         method: 'PUT'
@@ -68,16 +79,16 @@ export async function closeSession(id) {
 }
 
 function askCloseSession(id) {
-    showConfirm('¿Seguro que quieres cerrar esta sesión?', async () => {
-        showLoading('Cerrando sesión...');
+    showConfirm('ï¿½Seguro que quieres cerrar esta sesiï¿½n?', async () => {
+        showLoading('Cerrando sesiï¿½n...');
         try {
             const res = await closeSession(id);
             if (!res.ok) {
-                showError('No se pudo cerrar la sesión.');
+                showError('No se pudo cerrar la sesiï¿½n.');
                 return;
             }
             await loadRecords();
-            showToast('Sesión cerrada correctamente', 'success');
+            showToast('Sesiï¿½n cerrada correctamente', 'success');
         } catch (err) {
             window.handleApiError(err, err);
         } finally {
@@ -116,7 +127,7 @@ function setupEvents() {
     const tbody = document.getElementById('sessionsTableBody');
     if (!tbody) return;
 
-    // Solo si agregas botones de acción en la tabla de sesiones
+    // Solo si agregas botones de acciï¿½n en la tabla de sesiones
     tbody.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (!btn) return;

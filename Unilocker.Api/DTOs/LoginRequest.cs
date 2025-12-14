@@ -11,4 +11,6 @@ public class LoginRequest
     [Required(ErrorMessage = "La contraseña es requerida")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
     public string Password { get; set; } = null!;
+
+    public int? ComputerId { get; set; }
 }

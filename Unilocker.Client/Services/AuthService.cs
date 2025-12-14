@@ -35,7 +35,8 @@ public class AuthService
         var request = new LoginRequest
         {
             Username = username,
-            Password = password
+            Password = password,
+            ComputerId = _configService.GetStoredComputerId()
         };
 
         var response = await _apiService.LoginAsync(request);

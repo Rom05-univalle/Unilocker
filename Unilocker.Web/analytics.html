@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>UniLocker - Analíticas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="css/styles.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+<div class="d-flex">
+    <div id="sidebar-placeholder"></div>
+
+    <div class="flex-grow-1 d-flex flex-column min-vh-100">
+        <header class="border-bottom bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm d-md-none" id="sidebarToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 small">
+                        <li class="breadcrumb-item"><a href="dashboard.html">Inicio</a></li>
+                        <li class="breadcrumb-item active">Analíticas</li>
+                    </ol>
+                </nav>
+            </div>
+        </header>
+
+        <main class="flex-grow-1 p-3">
+            <h3 class="mb-4"><i class="fa-solid fa-chart-line me-2"></i>Analíticas y Reportes</h3>
+
+            <!-- Tarjetas de problemas y fallas -->
+            <div class="row g-3 mb-4">
+                <!-- Problema más reportado -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fa-solid fa-exclamation-triangle me-1"></i>Problema Más Reportado
+                            </h6>
+                            <h4 class="card-title mb-1" id="topProblemName">-</h4>
+                            <p class="mb-0">
+                                <span class="badge bg-danger" id="topProblemTotal">0</span> reportes totales<br>
+                                <small class="text-muted">
+                                    <span id="topProblemPending">0</span> pendientes | 
+                                    <span id="topProblemSolved">0</span> resueltos
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equipo con más fallas -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fa-solid fa-desktop me-1"></i>Equipo con Más Fallas (Año Actual)
+                            </h6>
+                            <h4 class="card-title mb-1" id="topComputerName">-</h4>
+                            <p class="mb-0">
+                                <small class="text-muted"><i class="fa-solid fa-door-open me-1"></i><span id="topComputerClassroom">-</span></small><br>
+                                <span class="badge bg-warning text-dark" id="topComputerTotal">0</span> fallas
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Laboratorio con más fallas -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fa-solid fa-door-open me-1"></i>Laboratorio con Más Fallas (Año Actual)
+                            </h6>
+                            <h4 class="card-title mb-1" id="topClassroomName">-</h4>
+                            <p class="mb-0">
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-building me-1"></i><span id="topClassroomBranch">-</span>
+                                </small><br>
+                                <span class="badge bg-danger" id="topClassroomTotal">0</span> fallas | 
+                                <span id="topClassroomComputers">0</span> equipos afectados
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de promedio de uso por computadora -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fa-solid fa-clock me-2"></i>Top 10 - Uso Promedio por Computadora</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Computadora</th>
+                                    <th>Laboratorio</th>
+                                    <th>Total Sesiones</th>
+                                    <th>Promedio por Sesión</th>
+                                    <th>Total Horas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="avgComputerTableBody">
+                                <tr><td colspan="5" class="text-center text-muted py-3">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de promedio de uso por laboratorio -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fa-solid fa-door-open me-2"></i>Top 10 - Uso por Laboratorio</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Laboratorio</th>
+                                    <th>Bloque</th>
+                                    <th>Sucursal</th>
+                                    <th>Total Sesiones</th>
+                                    <th>Equipos</th>
+                                    <th>Promedio por Sesión</th>
+                                    <th>Total Horas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="avgClassroomTableBody">
+                                <tr><td colspan="7" class="text-center text-muted py-3">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horas pico -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Horas Pico de Utilización</h5>
+                </div>
+                <div class="card-body">
+                    <div id="peakHoursChart" style="height: 300px;">
+                        <p class="text-center text-muted">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-dark text-center text-light py-2 small mt-auto">
+            <span>2025 UniLocker - Univalle para toda la vida</span>
+        </footer>
+    </div>
+</div>
+
+<!-- Toast global -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="mainToast" class="toast align-items-center text-bg-primary border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="mainToastBody">Mensaje.</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Loader global -->
+<div id="globalLoader" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background-color: rgba(0,0,0,0.35); z-index: 2000;">
+    <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-light mb-2" role="status"></div>
+            <div class="loader-message">Cargando...</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+  import { initUI } from './js/ui.js';
+  import './js/auth.js';
+  import './js/analytics.js';
+
+  const CURRENT_PAGE = 'analytics';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const placeholder = document.getElementById('sidebar-placeholder');
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        placeholder.outerHTML = html;
+        const link = document.querySelector(`#sidebar a[data-page="${CURRENT_PAGE}"]`);
+        if (link) link.classList.add('active', 'bg-primary');
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+          document.getElementById('sidebar')?.classList.toggle('d-none');
+        });
+        initUI('Analíticas', 'Reportes');
+      });
+  });
+</script>
+</body>
+</html>

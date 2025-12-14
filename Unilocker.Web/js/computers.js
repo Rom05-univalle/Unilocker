@@ -1,11 +1,26 @@
 import { API_BASE_URL, authFetch } from './api.js';
 import { showLoading, hideLoading, showToast, showError, showConfirm } from './ui.js';
 
-let computerModal;
+let statusModal;
 let computersCache = [];
 let branchesCache = [];
 let blocksCache = [];
 let classroomsCache = [];
+
+function getStatusBadge(computerStatus) {
+    const badges = {
+        'Active': '<span class="badge bg-success">Activa</span>',
+        'Maintenance': '<span class="badge bg-warning text-dark">Mantenimiento</span>',
+        'Decommissioned': '<span class="badge bg-danger">Dada de Baja</span>'
+    };
+    return badges[computerStatus] || '<span class="badge bg-secondary">Desconocido</span>';
+}
+
+function getInUseBadge(inUse) {
+    return inUse 
+        ? '<span class="badge bg-primary"><i class="fa-solid fa-circle-check me-1"></i>En Uso</span>'
+        : '<span class="badge bg-secondary"><i class="fa-solid fa-circle me-1"></i>Disponible</span>';
+}
 
 function renderComputers(items) {
     const tbody = document.getElementById('computersTableBody');
@@ -13,27 +28,38 @@ function renderComputers(items) {
 
     tbody.innerHTML = '';
     items.forEach(pc => {
-        const statusBadge = pc.status ? 'Activa' : 'Inactiva';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${pc.branchName ?? ''}</td>
-            <td>${pc.blockName ?? ''}</td>
-            <td>${pc.classroomName ?? ''}</td>
+            <td>${pc.classroomInfo?.branchName ?? ''}</td>
+            <td>${pc.classroomInfo?.blockName ?? ''}</td>
+            <td>${pc.classroomInfo?.name ?? ''}</td>
             <td>${pc.name}</td>
-            <td>${pc.uuid ?? ''}</td>
+            <td><small class="text-muted">${pc.operatingSystem ?? 'N/A'}</small></td>
+            <td>${getInUseBadge(pc.inUse)}</td>
+            <td>${getStatusBadge(pc.computerStatus)}</td>
             <td>
-                <span class="badge ${pc.status ? 'bg-success' : 'bg-secondary'}">
-                    ${statusBadge}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-sm btn-danger" data-id="${pc.id}" data-name="${pc.name}" title="Desregistrar computadora">
+                <button class="btn btn-sm btn-primary me-1" data-action="status" data-id="${pc.id}" data-name="${pc.name}" data-status="${pc.computerStatus}" title="Cambiar estado">
+                    <i class="fa-solid fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" data-action="delete" data-id="${pc.id}" data-name="${pc.name}" title="Desregistrar">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </td>
         `;
         
-        const btnDelete = tr.querySelector('button[data-id]');
+        // Botón cambiar estado
+        const btnStatus = tr.querySelector('button[data-action="status"]');
+        if (btnStatus) {
+            btnStatus.addEventListener('click', () => {
+                const id = parseInt(btnStatus.getAttribute('data-id'), 10);
+                const name = btnStatus.getAttribute('data-name');
+                const status = btnStatus.getAttribute('data-status');
+                openStatusModal(id, name, status);
+            });
+        }
+        
+        // Botón desregistrar
+        const btnDelete = tr.querySelector('button[data-action="delete"]');
         if (btnDelete) {
             btnDelete.addEventListener('click', () => {
                 const id = parseInt(btnDelete.getAttribute('data-id'), 10);
@@ -50,28 +76,33 @@ function applyFilter() {
     const filterBranch = document.getElementById('filterBranch');
     const filterBlock = document.getElementById('filterBlock');
     const filterClassroom = document.getElementById('filterClassroom');
-    const filterStatus = document.getElementById('filterStatus');
+    const filterInUse = document.getElementById('filterInUse');
+    const filterComputerStatus = document.getElementById('filterComputerStatus');
 
     const branchId = filterBranch ? parseInt(filterBranch.value || '0', 10) : 0;
     const blockId = filterBlock ? parseInt(filterBlock.value || '0', 10) : 0;
     const classroomId = filterClassroom ? parseInt(filterClassroom.value || '0', 10) : 0;
-    const statusFilter = filterStatus ? filterStatus.value : '';
+    const inUseFilter = filterInUse ? filterInUse.value : '';
+    const statusFilter = filterComputerStatus ? filterComputerStatus.value : '';
 
     let filtered = [...computersCache];
     
     if (branchId > 0) {
-        filtered = filtered.filter(c => c.branchId === branchId);
+        filtered = filtered.filter(c => c.classroomInfo?.branchId === branchId);
     }
     if (blockId > 0) {
-        filtered = filtered.filter(c => c.blockId === blockId);
+        filtered = filtered.filter(c => c.classroomInfo?.blockId === blockId);
     }
     if (classroomId > 0) {
-        filtered = filtered.filter(c => c.classroomId === classroomId);
+        filtered = filtered.filter(c => c.classroomInfo?.id === classroomId);
     }
-    if (statusFilter === 'active') {
-        filtered = filtered.filter(c => c.status === true);
-    } else if (statusFilter === 'inactive') {
-        filtered = filtered.filter(c => c.status === false);
+    if (inUseFilter === 'true') {
+        filtered = filtered.filter(c => c.inUse === true);
+    } else if (inUseFilter === 'false') {
+        filtered = filtered.filter(c => c.inUse === false);
+    }
+    if (statusFilter) {
+        filtered = filtered.filter(c => c.computerStatus === statusFilter);
     }
     
     renderComputers(filtered);
@@ -80,34 +111,9 @@ function applyFilter() {
 async function loadComputers() {
     showLoading('Cargando computadoras...');
     try {
-        // Cargar computadoras
         const resp = await authFetch('/api/computers');
         const data = await resp.json();
-
-        // Cargar sesiones activas
-        const respSessions = await authFetch('/api/sessions');
-        const dataSessions = await respSessions.json();
-
-        // Crear un Set con los IDs de computadoras que tienen sesiones activas
-        const activeComputerIds = new Set(
-            dataSessions
-                .filter(s => s.isActive === true)
-                .map(s => s.computerId)
-        );
-
-        computersCache = data.map(c => ({
-            id: c.id,
-            name: c.name,
-            uuid: c.uuid,
-            status: activeComputerIds.has(c.id), // Estado basado en si tiene sesión activa
-            classroomId: c.classroomId,
-            classroomName: c.classroomName,
-            blockId: c.blockId,
-            blockName: c.blockName,
-            branchId: c.branchId,
-            branchName: c.branchName
-        }));
-
+        computersCache = data;
         applyFilter();
     } catch (err) {
         window.handleApiError(err, 'Error al cargar computadoras.');
@@ -197,6 +203,45 @@ function populateClassroomSelect(blockId) {
     }
 }
 
+// CAMBIAR ESTADO DE COMPUTADORA
+function openStatusModal(id, name, currentStatus) {
+    const modal = document.getElementById('statusModal');
+    if (!modal) return;
+
+    document.getElementById('statusComputerId').value = id;
+    document.getElementById('statusComputerName').textContent = name;
+    document.getElementById('selectComputerStatus').value = currentStatus;
+
+    if (!statusModal) {
+        statusModal = new bootstrap.Modal(modal);
+    }
+    statusModal.show();
+}
+
+async function updateComputerStatus() {
+    const id = document.getElementById('statusComputerId').value;
+    const newStatus = document.getElementById('selectComputerStatus').value;
+
+    showLoading('Actualizando estado...');
+    try {
+        const resp = await authFetch(`/api/computers/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ computerStatus: newStatus })
+        });
+        
+        const data = await resp.json();
+        showToast(data.message || 'Estado actualizado correctamente.');
+        
+        if (statusModal) statusModal.hide();
+        await loadComputers();
+    } catch (err) {
+        window.handleApiError(err, 'Error al actualizar el estado de la computadora.');
+    } finally {
+        hideLoading();
+    }
+}
+
 // ELIMINAR/DESREGISTRAR COMPUTADORA
 async function confirmUnregister(id, name) {
     const ok = await showConfirm(`¿Seguro que quieres desregistrar la computadora "${name}"? Se cerrarán las sesiones activas si las hay.`);
@@ -221,7 +266,9 @@ function attachEvents() {
     const filterBranch = document.getElementById('filterBranch');
     const filterBlock = document.getElementById('filterBlock');
     const filterClassroom = document.getElementById('filterClassroom');
-    const filterStatus = document.getElementById('filterStatus');
+    const filterInUse = document.getElementById('filterInUse');
+    const filterComputerStatus = document.getElementById('filterComputerStatus');
+    const statusForm = document.getElementById('statusForm');
 
     if (filterBranch) {
         filterBranch.addEventListener('change', () => {
@@ -244,8 +291,19 @@ function attachEvents() {
         filterClassroom.addEventListener('change', applyFilter);
     }
 
-    if (filterStatus) {
-        filterStatus.addEventListener('change', applyFilter);
+    if (filterInUse) {
+        filterInUse.addEventListener('change', applyFilter);
+    }
+
+    if (filterComputerStatus) {
+        filterComputerStatus.addEventListener('change', applyFilter);
+    }
+
+    if (statusForm) {
+        statusForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await updateComputerStatus();
+        });
     }
 }
 

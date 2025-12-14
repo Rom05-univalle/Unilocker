@@ -133,47 +133,6 @@ public class ComputersController : ControllerBase
     }
 
     /// <summary>
-    /// Obtiene todas las computadoras con su información completa
-    /// </summary>
-    [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<object>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<object>>> GetAllComputers()
-    {
-        try
-        {
-            var computers = await _context.Computers
-                .Where(c => c.Status == true) // Solo computadoras activas
-                .OrderBy(c => c.Name)
-                .Select(c => new
-                {
-                    c.Id,
-                    c.Name,
-                    c.Uuid,
-                    c.Model,
-                    c.SerialNumber,
-                    c.Status,
-                    c.ClassroomId,
-                    ClassroomName = _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.Name).FirstOrDefault(),
-                    BlockId = _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault(),
-                    BlockName = _context.Blocks.Where(b => b.Id == _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault()).Select(b => b.Name).FirstOrDefault(),
-                    BranchId = _context.Blocks.Where(b => b.Id == _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault()).Select(b => b.BranchId).FirstOrDefault(),
-                    BranchName = _context.Branches.Where(br => br.Id == _context.Blocks.Where(b => b.Id == _context.Classrooms.Where(cl => cl.Id == c.ClassroomId).Select(cl => cl.BlockId).FirstOrDefault()).Select(b => b.BranchId).FirstOrDefault()).Select(br => br.Name).FirstOrDefault(),
-                    c.CreatedAt,
-                    c.UpdatedAt
-                })
-                .ToListAsync();
-
-            _logger.LogInformation("Se obtuvieron {Count} computadoras activas", computers.Count);
-            return Ok(computers);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al obtener computadoras");
-            return StatusCode(500, new { error = "Error al obtener la lista de computadoras", message = ex.Message });
-        }
-    }
-
-    /// <summary>
     /// Obtiene la lista de aulas disponibles para registro
     /// </summary>
     /// <returns>Lista de aulas con información de ubicación</returns>
@@ -325,6 +284,92 @@ public class ComputersController : ControllerBase
             await transaction.RollbackAsync();
             _logger.LogError(ex, "Error al desregistrar computadora {Id}: {Message}", id, ex.Message);
             return StatusCode(500, new { error = "Error al desregistrar la computadora", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// GET api/computers - Obtiene lista de todas las computadoras con su estado
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ComputerResponse>>> GetComputers()
+    {
+        try
+        {
+            var computers = await _context.Computers
+                .Include(c => c.Classroom)
+                    .ThenInclude(cl => cl!.Block)
+                        .ThenInclude(b => b!.Branch)
+                .Where(c => c.Status == true)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            // Obtener sesiones activas para determinar qué computadoras están en uso
+            var activeSessions = await _context.Sessions
+                .Where(s => s.IsActive == true && s.EndDateTime == null)
+                .Select(s => s.ComputerId)
+                .ToListAsync();
+
+            var activeComputerIds = new HashSet<int>(activeSessions);
+
+            var response = computers.Select(c => new ComputerResponse
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Uuid = c.Uuid,
+                Model = c.Model,
+                SerialNumber = c.SerialNumber,
+                OperatingSystem = c.OperatingSystem,
+                ComputerStatus = c.ComputerStatus,
+                InUse = activeComputerIds.Contains(c.Id),
+                Status = c.Status,
+                CreatedAt = c.CreatedAt,
+                ClassroomInfo = c.Classroom != null ? new ClassroomInfo
+                {
+                    Id = c.Classroom.Id,
+                    Name = c.Classroom.Name,
+                    BlockName = c.Classroom.Block?.Name ?? "N/A",
+                    BranchName = c.Classroom.Block?.Branch?.Name ?? "N/A"
+                } : null
+            }).ToList();
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener lista de computadoras: {Message}", ex.Message);
+            return StatusCode(500, new { error = "Error al obtener la lista de computadoras", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// PUT api/computers/{id}/status - Actualiza el estado operativo de una computadora
+    /// </summary>
+    [HttpPut("{id}/status")]
+    public async Task<ActionResult> UpdateComputerStatus(int id, [FromBody] UpdateComputerStatusRequest request)
+    {
+        try
+        {
+            var computer = await _context.Computers.FindAsync(id);
+
+            if (computer == null || computer.Status == false)
+            {
+                return NotFound(new { error = "Computadora no encontrada" });
+            }
+
+            computer.ComputerStatus = request.ComputerStatus;
+            computer.UpdatedAt = DateTime.UtcNow;
+            computer.CreatedUpdatedBy = this.GetCurrentUserId();
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Estado de computadora actualizado: {Id} -> {Status}", id, request.ComputerStatus);
+
+            return Ok(new { message = "Estado de computadora actualizado correctamente" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar estado de computadora {Id}: {Message}", id, ex.Message);
+            return StatusCode(500, new { error = "Error al actualizar el estado de la computadora" });
         }
     }
 }

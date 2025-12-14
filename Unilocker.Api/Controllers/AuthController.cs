@@ -105,6 +105,35 @@ public class AuthController : ControllerBase
 
             _logger.LogInformation("✅ Contraseña válida");
 
+            // 4. Si el login viene desde un cliente WPF (tiene ComputerId), validar estado de la computadora
+            if (request.ComputerId.HasValue)
+            {
+                _logger.LogInformation("🖥️ Login desde cliente WPF - ComputerId: {ComputerId}", request.ComputerId.Value);
+                
+                var computer = await _context.Computers
+                    .FirstOrDefaultAsync(c => c.Id == request.ComputerId.Value);
+
+                if (computer == null || computer.Status == false)
+                {
+                    _logger.LogWarning("❌ Computadora no encontrada o desregistrada - ComputerId: {ComputerId}", request.ComputerId.Value);
+                    return StatusCode(403, new { message = "Esta computadora no está registrada en el sistema. Por favor, contacte al administrador." });
+                }
+
+                if (computer.ComputerStatus == "Maintenance")
+                {
+                    _logger.LogWarning("⚠️ Computadora en mantenimiento - ComputerId: {ComputerId}", request.ComputerId.Value);
+                    return StatusCode(403, new { message = "Esta computadora está en mantenimiento. No se puede iniciar sesión en este momento." });
+                }
+
+                if (computer.ComputerStatus == "Decommissioned")
+                {
+                    _logger.LogWarning("❌ Computadora dada de baja - ComputerId: {ComputerId}", request.ComputerId.Value);
+                    return StatusCode(403, new { message = "Esta computadora ha sido dada de baja y no puede utilizarse. Contacte al administrador." });
+                }
+
+                _logger.LogInformation("✅ Computadora validada correctamente - Estado: {Status}", computer.ComputerStatus);
+            }
+
             // 5. Verificar si el usuario tiene rol de Administrador (solo Admin puede acceder a la web)
             _logger.LogInformation("🔍 Verificando rol del usuario...");
             _logger.LogInformation("📋 user.Role es null: {IsNull}", user.Role == null);

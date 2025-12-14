@@ -7,6 +7,10 @@ public class ComputerResponse
     public Guid Uuid { get; set; }
     public string? Model { get; set; }
     public string? SerialNumber { get; set; }
+    public string? OperatingSystem { get; set; }
+    public string ComputerStatus { get; set; } = "Active";
+    public bool InUse { get; set; }
+    public bool Status { get; set; }
     public bool IsNewRegistration { get; set; }
     public ClassroomInfo? ClassroomInfo { get; set; }
     public DateTime CreatedAt { get; set; }
