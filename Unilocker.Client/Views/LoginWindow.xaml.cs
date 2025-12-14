@@ -265,9 +265,9 @@ public partial class LoginWindow : Window
             // Detectar errores de conexión vs errores de autenticación
             if (ex.Message.Contains("No se pudo conectar con el servidor"))
             {
-                // Error de conexión con el servidor
+                // Error de conexión con el servidor (el mensaje ya incluye Alt+F4)
                 _hasConnectionIssue = true;
-                ShowError($"⚠️ {ex.Message}\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
+                ShowError($"⚠️ {ex.Message}");
             }
             else
             {
@@ -442,9 +442,9 @@ public partial class LoginWindow : Window
             // Detectar errores de conexión vs errores de verificación
             if (ex.Message.Contains("No se pudo conectar con el servidor"))
             {
-                // Error de conexión con el servidor
+                // Error de conexión con el servidor (el mensaje ya incluye Alt+F4)
                 _hasConnectionIssue = true;
-                ShowErrorVerification($"⚠️ {ex.Message}\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
+                ShowErrorVerification($"⚠️ {ex.Message}");
             }
             else
             {

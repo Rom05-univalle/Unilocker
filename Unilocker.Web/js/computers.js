@@ -54,7 +54,7 @@ function renderComputers(items) {
                 const id = parseInt(btnStatus.getAttribute('data-id'), 10);
                 const name = btnStatus.getAttribute('data-name');
                 const status = btnStatus.getAttribute('data-status');
-                openStatusModal(id, name, status);
+                openStatusModal(id, name, status, pc.inUse);
             });
         }
         
@@ -204,13 +204,28 @@ function populateClassroomSelect(blockId) {
 }
 
 // CAMBIAR ESTADO DE COMPUTADORA
-function openStatusModal(id, name, currentStatus) {
+function openStatusModal(id, name, currentStatus, inUse) {
     const modal = document.getElementById('statusModal');
     if (!modal) return;
 
     document.getElementById('statusComputerId').value = id;
     document.getElementById('statusComputerName').textContent = name;
     document.getElementById('selectComputerStatus').value = currentStatus;
+
+    // Mostrar/ocultar advertencia y deshabilitar select si está en uso
+    const warningDiv = document.getElementById('statusWarningInUse');
+    const selectStatus = document.getElementById('selectComputerStatus');
+    const submitBtn = modal.querySelector('button[type="submit"]');
+    
+    if (inUse) {
+        if (warningDiv) warningDiv.classList.remove('d-none');
+        if (selectStatus) selectStatus.disabled = true;
+        if (submitBtn) submitBtn.disabled = true;
+    } else {
+        if (warningDiv) warningDiv.classList.add('d-none');
+        if (selectStatus) selectStatus.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+    }
 
     if (!statusModal) {
         statusModal = new bootstrap.Modal(modal);
@@ -244,7 +259,11 @@ async function updateComputerStatus() {
 
 // ELIMINAR/DESREGISTRAR COMPUTADORA
 async function confirmUnregister(id, name) {
-    const ok = await showConfirm(`¿Seguro que quieres desregistrar la computadora "${name}"? Se cerrarán las sesiones activas si las hay.`);
+    const ok = await showConfirm(
+        `¿Seguro que quieres desregistrar la computadora "${name}"?\n\n` +
+        `Se cerrarán las sesiones activas si las hay.\n\n` +
+        `<br>Solo se debe desregistrar desde la web si no tienes acceso físico al equipo`
+    );
     if (!ok) return;
 
     showLoading('Desregistrando computadora...');

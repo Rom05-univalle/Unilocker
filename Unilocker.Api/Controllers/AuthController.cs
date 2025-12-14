@@ -134,24 +134,32 @@ public class AuthController : ControllerBase
                 _logger.LogInformation("✅ Computadora validada correctamente - Estado: {Status}", computer.ComputerStatus);
             }
 
-            // 5. Verificar si el usuario tiene rol de Administrador (solo Admin puede acceder a la web)
-            _logger.LogInformation("🔍 Verificando rol del usuario...");
-            _logger.LogInformation("📋 user.Role es null: {IsNull}", user.Role == null);
-            
-            if (user.Role != null)
+            // 5. Verificar rol de Administrador SOLO si el login es desde la WEB (sin ComputerId)
+            // En el cliente WPF, todos los usuarios pueden iniciar sesión
+            if (!request.ComputerId.HasValue)
             {
-                _logger.LogInformation("📋 Nombre del rol: '{RoleName}'", user.Role.Name);
-                _logger.LogInformation("📋 Comparación con 'Administrador': {IsAdmin}", user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
-            }
+                _logger.LogInformation("🌐 Login desde WEB - Verificando rol de administrador...");
+                _logger.LogInformation("📋 user.Role es null: {IsNull}", user.Role == null);
+                
+                if (user.Role != null)
+                {
+                    _logger.LogInformation("📋 Nombre del rol: '{RoleName}'", user.Role.Name);
+                    _logger.LogInformation("📋 Comparación con 'Administrador': {IsAdmin}", user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
+                }
 
-            if (user.Role == null || !user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                if (user.Role == null || !user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}, RoleId: {RoleId}", 
+                        user.Role?.Name ?? "Sin rol", user.RoleId);
+                    return StatusCode(403, new { message = "Acceso denegado. Solo usuarios con rol de Administrador pueden acceder a la plataforma web." });
+                }
+
+                _logger.LogInformation("✅ Usuario tiene rol de Administrador");
+            }
+            else
             {
-                _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}, RoleId: {RoleId}", 
-                    user.Role?.Name ?? "Sin rol", user.RoleId);
-                return StatusCode(403, new { message = "Acceso denegado. Solo usuarios con rol de Administrador pueden acceder a la plataforma web." });
+                _logger.LogInformation("🖥️ Login desde cliente WPF - Todos los roles permitidos. Rol actual: {RoleName}", user.Role?.Name ?? "Sin rol");
             }
-
-            _logger.LogInformation("✅ Usuario tiene rol de Administrador");
 
             // 6. Verificar si tiene email configurado
             if (string.IsNullOrEmpty(user.Email))
@@ -272,11 +280,22 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Usuario no encontrado" });
             }
 
-            // 3. Verificar que el usuario tenga rol de Administrador
-            if (user.Role == null || !user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+            // 3. Verificar rol de Administrador SOLO si el login es desde la WEB (sin ComputerId)
+            if (!request.ComputerId.HasValue)
             {
-                _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}", user.Role?.Name ?? "Sin rol");
-                return StatusCode(403, new { message = "Acceso denegado. Solo usuarios con rol de Administrador pueden acceder a la plataforma web." });
+                _logger.LogInformation("🌐 Verificación 2FA desde WEB - Validando rol de administrador...");
+                
+                if (user.Role == null || !user.Role.Name.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("❌ Usuario sin permisos de administrador - Rol: {RoleName}", user.Role?.Name ?? "Sin rol");
+                    return StatusCode(403, new { message = "Acceso denegado. Solo usuarios con rol de Administrador pueden acceder a la plataforma web." });
+                }
+                
+                _logger.LogInformation("✅ Usuario tiene rol de Administrador");
+            }
+            else
+            {
+                _logger.LogInformation("🖥️ Verificación 2FA desde cliente WPF - Todos los roles permitidos. Rol actual: {RoleName}", user.Role?.Name ?? "Sin rol");
             }
 
             // 4. Generar token JWT

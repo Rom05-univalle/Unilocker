@@ -105,8 +105,7 @@ public class ApiService
         catch (HttpRequestException ex)
         {
             // Error de conexión con el servidor
-            string baseUrl = _httpClient.BaseAddress?.ToString() ?? "servidor desconocido";
-            throw new Exception($"No se pudo conectar con el servidor en: {baseUrl}\n\nVerifica tu conexión a internet o contacta al administrador.\n\nDetalle técnico: {ex.Message}");
+            throw new Exception("No se pudo conectar con el servidor.\n\nVerifica tu conexión a internet o contacta al administrador.\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
         }
         catch (Exception ex) when (ex.Message.Contains("No se pudo conectar"))
         {
@@ -300,7 +299,7 @@ public class ApiService
         }
         catch (HttpRequestException)
         {
-            throw new Exception("No se pudo conectar con el servidor. Verifica tu conexión.");
+            throw new Exception("No se pudo conectar con el servidor.\n\nVerifica tu conexión a internet o contacta al administrador.\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
         }
         catch (Exception ex) when (ex.Message.Contains("Datos incompletos") || 
                                     ex.Message.Contains("ya está registrado") || 
@@ -377,8 +376,7 @@ public class ApiService
         catch (HttpRequestException ex)
         {
             // Error de conexión con el servidor
-            string baseUrl = _httpClient.BaseAddress?.ToString() ?? "servidor desconocido";
-            throw new Exception($"No se pudo conectar con el servidor en: {baseUrl}\n\nVerifica tu conexión a internet o contacta al administrador.\n\nDetalle técnico: {ex.Message}");
+            throw new Exception("No se pudo conectar con el servidor.\n\nVerifica tu conexión a internet o contacta al administrador.\n\nPresiona Alt+F4 para cerrar si necesitas salir.");
         }
         catch (Exception ex) when (ex.Message.Contains("No se pudo conectar"))
         {

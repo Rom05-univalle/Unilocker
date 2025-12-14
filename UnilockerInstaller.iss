@@ -43,13 +43,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "startupicon"; Description: "Ejecutar al iniciar Windows (Recomendado para modo laboratorio)"; GroupDescription: "Opciones de inicio:"
 
 [Files]
-; Archivos de la aplicación
-Source: "installer\Unilocker.Client.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "installer\D3DCompiler_47_cor3.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "installer\PenImc_cor3.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "installer\PresentationNative_cor3.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "installer\vcruntime140_cor3.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "installer\wpfgfx_cor3.dll"; DestDir: "{app}"; Flags: ignoreversion
+; Archivos de la aplicación (todos los archivos de la carpeta installer excepto appsettings.json)
+Source: "installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
 ; NO copiar appsettings.json - se creará dinámicamente con la URL configurada por el usuario
 
 [Icons]

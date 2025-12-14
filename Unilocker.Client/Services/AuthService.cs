@@ -65,7 +65,8 @@ public class AuthService
         var request = new VerifyCodeRequest
         {
             UserId = userId,
-            Code = code
+            Code = code,
+            ComputerId = _configService.GetStoredComputerId() // Incluir ComputerId para que el API sepa que viene del cliente
         };
 
         var response = await _apiService.VerifyCodeAsync(request);

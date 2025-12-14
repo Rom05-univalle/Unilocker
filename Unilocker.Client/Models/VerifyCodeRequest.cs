@@ -10,4 +10,5 @@ public class VerifyCodeRequest
 {
     public int UserId { get; set; }
     public string Code { get; set; } = null!;
+    public int? ComputerId { get; set; }
 }
