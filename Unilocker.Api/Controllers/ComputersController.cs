@@ -62,7 +62,9 @@ public class ComputersController : ControllerBase
                     {
                         Id = existingComputer.Classroom.Id,
                         Name = existingComputer.Classroom.Name,
+                        BlockId = existingComputer.Classroom.BlockId,
                         BlockName = existingComputer.Classroom.Block?.Name ?? "N/A",
+                        BranchId = existingComputer.Classroom.Block?.BranchId ?? 0,
                         BranchName = existingComputer.Classroom.Block?.Branch?.Name ?? "N/A",
                         Capacity = existingComputer.Classroom.Capacity
                     } : null
@@ -117,7 +119,9 @@ public class ComputersController : ControllerBase
                 {
                     Id = classroom.Id,
                     Name = classroom.Name,
+                    BlockId = classroom.BlockId,
                     BlockName = classroom.Block?.Name ?? "N/A",
+                    BranchId = classroom.Block?.BranchId ?? 0,
                     BranchName = classroom.Block?.Branch?.Name ?? "N/A",
                     Capacity = classroom.Capacity
                 }
@@ -153,7 +157,9 @@ public class ComputersController : ControllerBase
                 {
                     Id = c.Id,
                     Name = c.Name,
+                    BlockId = c.BlockId,
                     BlockName = c.Block.Name,
+                    BranchId = c.Block.BranchId,
                     BranchName = c.Block.Branch.Name,
                     Capacity = c.Capacity
                 })
@@ -206,7 +212,9 @@ public class ComputersController : ControllerBase
                 {
                     Id = computer.Classroom.Id,
                     Name = computer.Classroom.Name,
+                    BlockId = computer.Classroom.BlockId,
                     BlockName = computer.Classroom.Block?.Name ?? "N/A",
+                    BranchId = computer.Classroom.Block?.BranchId ?? 0,
                     BranchName = computer.Classroom.Block?.Branch?.Name ?? "N/A",
                     Capacity = computer.Classroom.Capacity
                 } : null
@@ -256,13 +264,15 @@ public class ComputersController : ControllerBase
                     session.Id, id);
             }
 
-            // Guardar cambios de sesiones primero
+            // Guardar cambios de sesiones activas primero
             if (sessionsClosed > 0)
             {
                 await _context.SaveChangesAsync();
             }
 
-            // Borrado lógico: cambiar Status a false
+            // Borrado lógico de la computadora: cambiar Status a false
+            // NOTA: Las sesiones y reportes NO se eliminan físicamente.
+            // Las analíticas filtrarán automáticamente por Computer.Status
             computer.Status = false;
             computer.UpdatedAt = DateTime.Now;
             computer.CreatedUpdatedBy = this.GetCurrentUserId();
@@ -271,10 +281,10 @@ public class ComputersController : ControllerBase
             await transaction.CommitAsync();
 
             var message = sessionsClosed > 0 
-                ? $"Computadora desregistrada correctamente. Se cerraron {sessionsClosed} sesión(es) activa(s)."
-                : "Computadora desregistrada correctamente";
+                ? $"Computadora desregistrada correctamente. Se cerraron {sessionsClosed} sesión(es) activa(s). Sus sesiones y reportes quedarán excluidos de las estadísticas."
+                : "Computadora desregistrada correctamente. Sus sesiones y reportes quedarán excluidos de las estadísticas.";
 
-            _logger.LogInformation("Computadora desregistrada (borrado lógico): {Id}, sesiones cerradas: {Count}", 
+            _logger.LogInformation("Computadora desregistrada (borrado lógico): {Id}, sesiones cerradas: {Closed}", 
                 id, sessionsClosed);
             
             return Ok(new { message });
@@ -327,7 +337,9 @@ public class ComputersController : ControllerBase
                 {
                     Id = c.Classroom.Id,
                     Name = c.Classroom.Name,
+                    BlockId = c.Classroom.BlockId,
                     BlockName = c.Classroom.Block?.Name ?? "N/A",
+                    BranchId = c.Classroom.Block?.BranchId ?? 0,
                     BranchName = c.Classroom.Block?.Branch?.Name ?? "N/A"
                 } : null
             }).ToList();

@@ -487,14 +487,19 @@ public class UsersController : ControllerBase
                 });
             }
 
-            // Eliminación lógica
+            // Eliminación lógica del usuario
+            // NOTA: Las sesiones y reportes NO se eliminan físicamente.
+            // Las analíticas filtrarán automáticamente por User.Status y Computer.Status
             user.Status = false;
             user.UpdatedAt = DateTime.Now;
             user.CreatedUpdatedBy = currentUserId;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Usuario eliminado lógicamente: {UserId} por usuario {CurrentUserId}", id, currentUserId);
-            return Ok(new { message = "Usuario eliminado correctamente" });
+            _logger.LogInformation("Usuario eliminado lógicamente: {UserId} por usuario {CurrentUserId}", 
+                id, currentUserId);
+            return Ok(new { 
+                message = "Usuario eliminado correctamente. Sus sesiones y reportes quedarán excluidos de las estadísticas."
+            });
         }
         catch (Exception ex)
         {

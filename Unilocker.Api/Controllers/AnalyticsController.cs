@@ -29,6 +29,13 @@ public class AnalyticsController : ControllerBase
         try
         {
             var topProblem = await _context.Reports
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.User)
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.Computer)
+                .Where(r => r.ProblemType.Status == true 
+                         && r.Session.User.Status == true 
+                         && r.Session.Computer.Status == true)
                 .GroupBy(r => new { r.ProblemTypeId, r.ProblemType.Name })
                 .Select(g => new
                 {
@@ -81,7 +88,12 @@ public class AnalyticsController : ControllerBase
                 .Include(r => r.Session)
                     .ThenInclude(s => s.Computer)
                         .ThenInclude(c => c.Classroom)
-                .Where(r => r.CreatedAt.Year == currentYear)
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.User)
+                .Where(r => r.CreatedAt.Year == currentYear 
+                         && r.ProblemType.Status == true
+                         && r.Session.User.Status == true
+                         && r.Session.Computer.Status == true)
                 .GroupBy(r => new
                 {
                     r.Session.ComputerId,
@@ -141,7 +153,12 @@ public class AnalyticsController : ControllerBase
                         .ThenInclude(c => c.Classroom)
                             .ThenInclude(cl => cl.Block)
                                 .ThenInclude(b => b.Branch)
-                .Where(r => r.CreatedAt.Year == currentYear)
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.User)
+                .Where(r => r.CreatedAt.Year == currentYear
+                         && r.ProblemType.Status == true
+                         && r.Session.User.Status == true
+                         && r.Session.Computer.Status == true)
                 .GroupBy(r => new
                 {
                     ClassroomId = r.Session.Computer.ClassroomId,
@@ -203,7 +220,11 @@ public class AnalyticsController : ControllerBase
             var averageUsage = await _context.Sessions
                 .Include(s => s.Computer)
                     .ThenInclude(c => c.Classroom)
-                .Where(s => s.IsActive == false && s.StartDateTime != null && s.EndDateTime != null)
+                .Include(s => s.User)
+                .Where(s => s.IsActive == false 
+                         && s.EndDateTime != null
+                         && s.User.Status == true
+                         && s.Computer.Status == true)
                 .GroupBy(s => new
                 {
                     s.ComputerId,
@@ -245,7 +266,11 @@ public class AnalyticsController : ControllerBase
                     .ThenInclude(c => c.Classroom)
                         .ThenInclude(cl => cl.Block)
                             .ThenInclude(b => b.Branch)
-                .Where(s => s.IsActive == false && s.StartDateTime != null && s.EndDateTime != null)
+                .Include(s => s.User)
+                .Where(s => s.IsActive == false 
+                         && s.EndDateTime != null
+                         && s.User.Status == true
+                         && s.Computer.Status == true)
                 .GroupBy(s => new
                 {
                     ClassroomId = s.Computer.ClassroomId,
@@ -286,7 +311,10 @@ public class AnalyticsController : ControllerBase
         try
         {
             var peakHours = await _context.Sessions
-                .Where(s => s.StartDateTime != null)
+                .Include(s => s.User)
+                .Include(s => s.Computer)
+                .Where(s => s.User.Status == true
+                         && s.Computer.Status == true)
                 .GroupBy(s => s.StartDateTime.Hour)
                 .Select(g => new
                 {
