@@ -261,7 +261,6 @@ public class EmailService
                                                     <ol style='margin: 5px 0 0 20px; padding: 0; color: #0c5460; font-size: 14px; line-height: 1.6;'>
                                                         <li>Ingresa al sistema con las credenciales proporcionadas</li>
                                                         <li>Se te solicitará un código de verificación en tu correo</li>
-                                                        <li>Una vez dentro, podrás cambiar tu contraseña si lo deseas</li>
                                                     </ol>
                                                 </div>
                                                 
@@ -272,7 +271,7 @@ public class EmailService
                                                             margin: 25px 0; 
                                                             border-radius: 5px;'>
                                                     <p style='margin: 0; color: #856404; font-size: 14px; line-height: 1.5;'>
-                                                        ⚠️ <strong>Importante:</strong> Guarda esta contraseña en un lugar seguro. Podrás cambiarla después de tu primer inicio de sesión.
+                                                        ⚠️ <strong>Importante:</strong> Guarda esta contraseña en un lugar seguro.
                                                     </p>
                                                 </div>
                                                 

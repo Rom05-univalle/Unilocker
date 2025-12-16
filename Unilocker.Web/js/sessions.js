@@ -11,7 +11,7 @@ function formatDateTime(isoString) {
 }
 
 function formatDuration(minutes) {
-    if (!minutes || minutes < 0) return '-';
+    if (minutes === null || minutes === undefined || minutes < 0) return '-';
     const hours = Math.floor(minutes / 60);
     const mins = Math.floor(minutes % 60);
     if (hours > 0) {
