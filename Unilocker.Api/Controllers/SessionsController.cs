@@ -330,7 +330,8 @@ public class SessionsController : ControllerBase
             {
                 query = query.Where(s => s.User.Username.Contains(username) || 
                                          s.User.FirstName.Contains(username) || 
-                                         s.User.LastName.Contains(username));
+                                         s.User.LastName.Contains(username) ||
+                                         s.Computer.Name.Contains(username));
             }
 
             if (computerId.HasValue)
