@@ -219,6 +219,11 @@ public partial class MainWindow : Window
         }
     }
 
+    private void BtnMinimize_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = WindowState.Minimized;
+    }
+
     private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
         // Si es cierre del sistema, ya se manejó en OnSystemSessionEnding
