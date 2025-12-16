@@ -13,7 +13,7 @@ function formatDateTime(isoString) {
 function getStatusBadge(status) {
     const badges = {
         'Pending': '<span class="badge bg-warning text-dark">Pendiente</span>',
-        'InReview': '<span class="badge bg-info">En Revisión</span>',
+        'InReview': '<span class="badge bg-info">En RevisiÃ³n</span>',
         'Resolved': '<span class="badge bg-success">Resuelto</span>',
         'Rejected': '<span class="badge bg-danger">Rechazado</span>'
     };

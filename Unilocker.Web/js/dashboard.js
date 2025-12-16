@@ -15,7 +15,7 @@ function buildDateQuery() {
   return qs ? `?${qs}` : '';
 }
 
-// ----------------- Dashboard stats numéricos -----------------
+// ----------------- Dashboard stats numï¿½ricos -----------------
 
 async function loadDashboardStats() {
   try {
@@ -23,10 +23,30 @@ async function loadDashboardStats() {
     const res = await authFetch(`/api/dashboard/stats${qs}`);
     const data = await res.json();
 
+    // KPIs principales
+    document.getElementById('totalBranches')?.innerText = data.totalBranches ?? 0;
+    document.getElementById('totalClassrooms')?.innerText = data.totalClassrooms ?? 0;
+    document.getElementById('totalComputers')?.innerText = data.totalComputers ?? 0;
+    document.getElementById('activeComputers')?.innerText = data.activeComputers ?? 0;
+    document.getElementById('activeComputersPercentage')?.innerText = data.activeComputersPercentage ?? 0;
+    document.getElementById('totalHoursThisMonth')?.innerText = data.totalHoursThisMonth ?? 0;
+    document.getElementById('openIncidents')?.innerText = data.openIncidents ?? 0;
+    document.getElementById('currentMonth')?.innerText = data.currentMonth ?? 'Mes actual';
+
+    // Lista de sucursales
+    if (data.branchNames && data.branchNames.length > 0) {
+      document.getElementById('branchNamesList').innerText = data.branchNames.join(', ');
+    }
+
+    // Desglose de incidencias - siempre mostrar el desglose
+    const pending = data.incidentsPending ?? 0;
+    const inReview = data.incidentsInReview ?? 0;
+    document.getElementById('incidentsBreakdown').innerText = `${pending} Pendientes, ${inReview} En RevisiÃ³n`;
+
+    // Datos adicionales
     document.getElementById('totalUsers')?.innerText = data.totalUsers ?? 0;
     document.getElementById('totalSessions')?.innerText = data.totalSessions ?? 0;
-    document.getElementById('totalReports')?.innerText = data.totalReports ?? 0;
-    document.getElementById('activeComputers')?.innerText = data.activeComputers ?? 0;
+    document.getElementById('lastUpdate')?.innerText = new Date().toLocaleString('es-ES');
   } catch (err) {
     console.error('Error cargando stats de dashboard', err);
   }
@@ -74,7 +94,7 @@ function getPieColors(count) {
   return colors;
 }
 
-// ----------------- Gráfico: Sesiones por día -----------------
+// ----------------- Grï¿½fico: Sesiones por dï¿½a -----------------
 
 async function loadSessionsChart() {
   try {
@@ -138,11 +158,11 @@ async function loadSessionsChart() {
       }
     });
   } catch (err) {
-    console.error('Error cargando sesiones por día', err);
+    console.error('Error cargando sesiones por dï¿½a', err);
   }
 }
 
-// ----------------- Gráfico: Reportes por tipo -----------------
+// ----------------- Grï¿½fico: Reportes por tipo -----------------
 
 async function loadReportsChart() {
   try {
@@ -197,7 +217,7 @@ async function loadReportsChart() {
   }
 }
 
-// ----------------- Gráfico: Top equipos -----------------
+// ----------------- Grï¿½fico: Top equipos -----------------
 
 async function loadTopComputersChart() {
   try {
@@ -262,7 +282,7 @@ async function loadTopComputersChart() {
   }
 }
 
-// ----------------- Gráfico: Top usuarios -----------------
+// ----------------- Grï¿½fico: Top usuarios -----------------
 
 async function loadTopUsersChart() {
   try {
@@ -352,7 +372,7 @@ async function exportToCSV() {
 
     let csv = '';
 
-    csv += 'Sesiones por día\n';
+    csv += 'Sesiones por dï¿½a\n';
     csv += 'Fecha,Cantidad\n';
     sessions.forEach(row => {
       csv += `${row.date},${row.count}\n`;
@@ -366,14 +386,14 @@ async function exportToCSV() {
     });
     csv += '\n';
 
-    csv += 'Top 5 equipos con más reportes\n';
+    csv += 'Top 5 equipos con mï¿½s reportes\n';
     csv += 'Equipo,Reportes\n';
     computers.forEach(row => {
       csv += `${row.computerName},${row.reportCount}\n`;
     });
     csv += '\n';
 
-    csv += 'Top 5 usuarios más activos\n';
+    csv += 'Top 5 usuarios mï¿½s activos\n';
     csv += 'Usuario,MinutosTotales\n';
     users.forEach(row => {
       const name = row.fullName || row.username;

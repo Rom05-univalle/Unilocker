@@ -99,16 +99,38 @@ public class DashboardController : ControllerBase
                          && r.Session.Computer.Status)
                 .CountAsync();
 
+            var incidentsPending = await _context.Reports
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.Computer)
+                .Where(r => r.ReportStatus == "Pending" && r.Session.Computer.Status)
+                .CountAsync();
+
+            var incidentsInReview = await _context.Reports
+                .Include(r => r.Session)
+                    .ThenInclude(s => s.Computer)
+                .Where(r => r.ReportStatus == "InReview" && r.Session.Computer.Status)
+                .CountAsync();
+
+            // Obtener lista de nombres de sucursales
+            var branchNames = await _context.Branches
+                .Where(b => b.Status)
+                .OrderBy(b => b.Name)
+                .Select(b => b.Name)
+                .ToListAsync();
+
             var stats = new
             {
                 // KPIs principales
                 totalBranches,
+                branchNames,
                 totalClassrooms,
                 totalComputers,
                 activeComputers,
                 activeComputersPercentage,
                 totalHoursThisMonth,
                 openIncidents,
+                incidentsPending,
+                incidentsInReview,
 
                 // Datos adicionales
                 totalUsers = await _context.Users.Where(u => u.Status).CountAsync(),

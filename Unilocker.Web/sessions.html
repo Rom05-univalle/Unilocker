@@ -38,14 +38,22 @@
                 <h3><i class="fa-solid fa-clock me-2"></i>Sesiones</h3>
             </div>
 
-            <!-- Filtro por usuario -->
+            <!-- Filtros -->
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
-                    <div class="row align-items-end">
-                        <div class="col-md-4">
-                            <label for="filterUsername" class="form-label">Buscar por persona</label>
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-3">
+                            <label for="filterUsername" class="form-label">Buscar por persona o computadora</label>
                             <input type="text" id="filterUsername" class="form-control" 
-                                   placeholder="Nombre completo..." />
+                                   placeholder="Nombre de persona o computadora..." />
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterStartDate" class="form-label">Fecha inicio</label>
+                            <input type="date" id="filterStartDate" class="form-control" />
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterEndDate" class="form-label">Fecha fin</label>
+                            <input type="date" id="filterEndDate" class="form-control" />
                         </div>
                         <div class="col-md-2">
                             <button type="button" id="btnFilterSessions" class="btn btn-primary w-100">
@@ -56,6 +64,42 @@
                             <button type="button" id="btnClearFilter" class="btn btn-outline-secondary w-100">
                                 <i class="fa-solid fa-times me-1"></i>Limpiar
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Totalizadores -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body p-3">
+                            <h6 class="mb-1">Total Sesiones</h6>
+                            <h3 class="mb-0" id="totalSessionsCount">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body p-3">
+                            <h6 class="mb-1">Sesiones Activas</h6>
+                            <h3 class="mb-0" id="activeSessionsCount">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body p-3">
+                            <h6 class="mb-1">Sesiones Cerradas</h6>
+                            <h3 class="mb-0" id="closedSessionsCount">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body p-3">
+                            <h6 class="mb-1">Horas Totales</h6>
+                            <h3 class="mb-0" id="totalHoursCount">0</h3>
                         </div>
                     </div>
                 </div>

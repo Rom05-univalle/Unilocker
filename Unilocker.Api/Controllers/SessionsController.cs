@@ -310,6 +310,8 @@ public class SessionsController : ControllerBase
         [FromQuery] string? username = null,
         [FromQuery] int? computerId = null,
         [FromQuery] bool? isActive = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
@@ -336,6 +338,17 @@ public class SessionsController : ControllerBase
 
             if (isActive.HasValue)
                 query = query.Where(s => s.IsActive == isActive.Value);
+
+            // Filtros de rango de fechas
+            if (startDate.HasValue)
+                query = query.Where(s => s.StartDateTime >= startDate.Value);
+
+            if (endDate.HasValue)
+            {
+                // Incluir todo el día final (hasta las 23:59:59)
+                var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(s => s.StartDateTime <= endOfDay);
+            }
 
             // Paginación con proyección
             var sessions = await query

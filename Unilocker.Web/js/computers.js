@@ -106,6 +106,19 @@ function applyFilter() {
     }
     
     renderComputers(filtered);
+    updateTotalizers(filtered);
+}
+
+function updateTotalizers(computers) {
+    const total = computers.length;
+    const active = computers.filter(c => c.computerStatus === 'Active').length;
+    const maintenance = computers.filter(c => c.computerStatus === 'Maintenance').length;
+    const inUse = computers.filter(c => c.inUse === true).length;
+
+    document.getElementById('totalComputersCount').innerText = total;
+    document.getElementById('activeComputersCount').innerText = active;
+    document.getElementById('maintenanceComputersCount').innerText = maintenance;
+    document.getElementById('inUseComputersCount').innerText = inUse;
 }
 
 async function loadComputers() {

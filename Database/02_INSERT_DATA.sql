@@ -47,9 +47,9 @@ VALUES
 -- 2. Sucursales (Branches)
 INSERT INTO [dbo].[Branch] ([Name], [Address], [Code], [Status], [CreatedAt])
 VALUES 
-('Sucursal America', 'Av. America', 'AME', 1, GETDATE()),
-('Sucursal Tiquipaya', 'Zona Tiquipaya', 'TIQ', 1, GETDATE()),
-('Sucursal Ayacucho', 'Av. Ayacucho', 'AYA', 1, GETDATE());
+('America', 'Av. America', 'AME', 1, GETDATE()),
+('Tiquipaya', 'Zona Tiquipaya', 'TIQ', 1, GETDATE()),
+('Ayacucho', 'Av. Ayacucho', 'AYA', 1, GETDATE());
 
 -- 3. Bloques (Blocks)
 INSERT INTO [dbo].[Block] ([Name], [Address], [BranchId], [Status], [CreatedAt])

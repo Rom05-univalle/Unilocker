@@ -48,12 +48,30 @@ function renderSessions(items) {
     });
 }
 
-export async function loadRecords(username = '') {
+function updateTotalizers(sessions) {
+    const total = sessions.length;
+    const active = sessions.filter(s => s.isActive).length;
+    const closed = total - active;
+    const totalHours = sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0) / 60;
+
+    document.getElementById('totalSessionsCount').innerText = total;
+    document.getElementById('activeSessionsCount').innerText = active;
+    document.getElementById('closedSessionsCount').innerText = closed;
+    document.getElementById('totalHoursCount').innerText = Math.round(totalHours) + 'h';
+}
+
+export async function loadRecords(username = '', startDate = '', endDate = '') {
     showLoading('Cargando sesiones...');
     try {
-        let url = '/api/sessions';
+        let url = '/api/sessions?pageSize=500'; // Aumentar límite para totalizadores
         if (username && username.trim() !== '') {
-            url += `?username=${encodeURIComponent(username.trim())}`;
+            url += `&username=${encodeURIComponent(username.trim())}`;
+        }
+        if (startDate) {
+            url += `&startDate=${encodeURIComponent(startDate)}`;
+        }
+        if (endDate) {
+            url += `&endDate=${encodeURIComponent(endDate)}`;
         }
 
         const res = await authFetch(url);
@@ -64,6 +82,7 @@ export async function loadRecords(username = '') {
         const data = await res.json();
         sessionsCache = data;
         renderSessions(sessionsCache);
+        updateTotalizers(sessionsCache);
     } catch (err) {
         window.handleApiError(err, err.message || 'Error al cargar sesiones');
     } finally {
@@ -101,25 +120,33 @@ function setupEvents() {
     const btnFilter = document.getElementById('btnFilterSessions');
     const btnClear = document.getElementById('btnClearFilter');
     const filterInput = document.getElementById('filterUsername');
+    const filterStartDate = document.getElementById('filterStartDate');
+    const filterEndDate = document.getElementById('filterEndDate');
 
     if (btnFilter) {
         btnFilter.addEventListener('click', async () => {
             const username = filterInput?.value || '';
-            await loadRecords(username);
+            const startDate = filterStartDate?.value || '';
+            const endDate = filterEndDate?.value || '';
+            await loadRecords(username, startDate, endDate);
         });
     }
 
     if (btnClear) {
         btnClear.addEventListener('click', async () => {
             if (filterInput) filterInput.value = '';
-            await loadRecords('');
+            if (filterStartDate) filterStartDate.value = '';
+            if (filterEndDate) filterEndDate.value = '';
+            await loadRecords('', '', '');
         });
     }
 
     if (filterInput) {
         filterInput.addEventListener('keypress', async (e) => {
             if (e.key === 'Enter') {
-                await loadRecords(filterInput.value || '');
+                const startDate = filterStartDate?.value || '';
+                const endDate = filterEndDate?.value || '';
+                await loadRecords(filterInput.value || '', startDate, endDate);
             }
         });
     }

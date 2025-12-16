@@ -51,7 +51,7 @@
                                             <i class="fa-solid fa-building me-1"></i>Infraestructuras
                                         </h6>
                                         <p class="display-6 mb-0 fw-bold text-primary" id="totalBranches">0</p>
-                                        <small class="text-muted">Sucursales registradas</small>
+                                        <small class="text-muted" id="branchNamesList">Sucursales registradas</small>
                                     </div>
                                     <div class="text-primary opacity-25" style="font-size: 3rem;">
                                         <i class="fa-solid fa-building"></i>
@@ -153,7 +153,7 @@
                                             <i class="fa-solid fa-triangle-exclamation me-1"></i>Incidencias Abiertas
                                         </h6>
                                         <p class="display-6 mb-0 fw-bold text-danger" id="openIncidents">0</p>
-                                        <small class="text-muted">No resueltas</small>
+                                        <small class="text-muted" id="incidentsBreakdown">Sin incidencias</small>
                                     </div>
                                     <div class="text-danger opacity-25" style="font-size: 3rem;">
                                         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -247,6 +247,16 @@
       document.getElementById('activeComputersPercentage').innerText = data.activeComputersPercentage ?? 0;
       document.getElementById('totalHoursThisMonth').innerText = data.totalHoursThisMonth ?? 0;
       document.getElementById('openIncidents').innerText = data.openIncidents ?? 0;
+      
+      // Lista de sucursales
+      if (data.branchNames && data.branchNames.length > 0) {
+        document.getElementById('branchNamesList').innerText = data.branchNames.join(', ');
+      }
+
+      // Desglose de incidencias - siempre mostrar el desglose
+      const pending = data.incidentsPending ?? 0;
+      const inReview = data.incidentsInReview ?? 0;
+      document.getElementById('incidentsBreakdown').innerText = `${pending} Pendientes, ${inReview} En Revisión`;
       
       // Información adicional
       document.getElementById('totalUsers').innerText = data.totalUsers ?? 0;
