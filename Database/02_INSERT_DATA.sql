@@ -34,34 +34,34 @@ EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';
 GO
 
 -- =============================================
--- INSERCI N DE DATOS
+-- INSERCIÓN DE DATOS
 -- =============================================
 
 -- 1. Roles
 INSERT INTO [dbo].[Role] ([Name], [Description], [Status], [CreatedAt])
 VALUES 
 ('Administrador', 'Acceso completo al sistema', 1, GETDATE()),
-('Docente', 'Gesti n de sesiones y reportes', 1, GETDATE()),
+('Docente', 'Gestión de sesiones y reportes', 1, GETDATE()),
 ('Estudiante', 'Uso de computadoras y reporte de problemas', 1, GETDATE());
 
 -- 2. Sucursales (Branches)
 INSERT INTO [dbo].[Branch] ([Name], [Address], [Code], [Status], [CreatedAt])
 VALUES 
-('America', 'Av. America', 'AME', 1, GETDATE()),
+('América', 'Av. América', 'AME', 1, GETDATE()),
 ('Tiquipaya', 'Zona Tiquipaya', 'TIQ', 1, GETDATE()),
 ('Ayacucho', 'Av. Ayacucho', 'AYA', 1, GETDATE());
 
 -- 3. Bloques (Blocks)
 INSERT INTO [dbo].[Block] ([Name], [Address], [BranchId], [Status], [CreatedAt])
 VALUES 
--- Bloques Sucursal America (BranchId = 1)
+-- Bloques Sucursal América (BranchId = 1)
 ('Bloque A', 'Edificio Principal', 1, 1, GETDATE()),
 ('Bloque B', 'Edificio Anexo', 1, 1, GETDATE()),
 -- Bloques Sucursal Tiquipaya (BranchId = 2)
-('Bloque T', 'Facultad de Informatica y Electronica', 2, 1, GETDATE()),
-('Bloque S', 'Facultad de Tecnologia', 2, 1, GETDATE()),
+('Bloque T', 'Facultad de Informática y Electrónica', 2, 1, GETDATE()),
+('Bloque S', 'Facultad de Tecnología', 2, 1, GETDATE()),
 -- Bloques Sucursal Ayacucho (BranchId = 3)
-('Bloque F', 'Edificio Unico', 3, 1, GETDATE()),
+('Bloque F', 'Edificio Único', 3, 1, GETDATE()),
 ('Bloque H', 'Edificio Posterior', 3, 1, GETDATE());
 
 -- 4. Aulas (Classrooms)
@@ -156,23 +156,23 @@ VALUES
 -- 6. Tipos de Problemas (ProblemTypes)
 INSERT INTO [dbo].[ProblemType] ([Name], [Description], [Status], [CreatedAt])
 VALUES 
-('Hardware', 'Problemas con componentes fisicos', 1, GETDATE()),
+('Hardware', 'Problemas con componentes físicos', 1, GETDATE()),
 ('Software', 'Problemas con aplicaciones y sistema operativo', 1, GETDATE()),
 ('Red', 'Problemas de conectividad y red', 1, GETDATE()),
-('Periferico', 'Problemas con mouse, teclado, monitor', 1, GETDATE()),
+('Periférico', 'Problemas con mouse, teclado, monitor', 1, GETDATE()),
 ('Rendimiento', 'Computadora lenta o con bajo rendimiento', 1, GETDATE()),
 ('Otro', 'Otros problemas no especificados', 1, GETDATE());
 
 -- 7. Usuarios (Users) - COMPLETAR CON TUS DATOS
--- NOTA: Debes reemplazar 'TU_PASSWORD_HASH_AQUI' con el hash real de la contrase a
+-- NOTA: Debes reemplazar 'TU_PASSWORD_HASH_AQUI' con el hash real de la contraseña
 INSERT INTO [dbo].[User] ([FirstName], [LastName], [SecondLastName], [Username], [Email], [PasswordHash], [Phone], [RoleId], [Status], [CreatedAt])
 VALUES 
 -- Usuario 1 - Administrador
-('Rodrigo', 'Gutierrez', 'Herrera', 'radmin', 'ro4t5sld@gmail.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '68683588', 1, 1, GETDATE()),
+('Rodrigo', 'Gutiérrez', 'Herrera', 'radmin', 'ro4t5sld@gmail.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '68683588', 1, 1, GETDATE()),
 -- Usuario 2 - Docente
-('Rommel', 'Gutierrez', 'Herrera', 'ruser', 'ro4t5sld10@gmail.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '68683599', 2, 1, GETDATE()),
+('Rommel', 'Gutiérrez', 'Herrera', 'ruser', 'ro4t5sld10@gmail.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '68683599', 2, 1, GETDATE()),
 -- Usuario 3 - Estudiante
-('Estudiante', 'Lopez', 'Garcia', 'estuser', 'email@ejemplo.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '77777777', 3, 1, GETDATE());
+('Estudiante', 'López', 'García', 'estuser', 'email@ejemplo.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '77777777', 3, 1, GETDATE());
 
 -- 8. Sesiones (Sessions) - Algunas sesiones de ejemplo
 INSERT INTO [dbo].[Session] ([UserId], [ComputerId], [StartDateTime], [EndDateTime], [IsActive], [EndMethod], [LastHeartbeat], [CreatedAt])
@@ -183,16 +183,16 @@ VALUES
 (2, 15, DATEADD(DAY, -3, GETDATE()), DATEADD(DAY, -3, DATEADD(HOUR, 3, GETDATE())), 0, 'Normal', DATEADD(DAY, -3, DATEADD(HOUR, 3, GETDATE())), DATEADD(DAY, -3, GETDATE())),
 (3, 5, DATEADD(DAY, -2, GETDATE()), DATEADD(DAY, -2, DATEADD(HOUR, 2, GETDATE())), 0, 'Normal', DATEADD(DAY, -2, DATEADD(HOUR, 2, GETDATE())), DATEADD(DAY, -2, GETDATE())),
 (3, 10, DATEADD(DAY, -1, GETDATE()), DATEADD(DAY, -1, DATEADD(HOUR, 1, GETDATE())), 0, 'Forced', DATEADD(DAY, -1, DATEADD(HOUR, 1, GETDATE())), DATEADD(DAY, -1, GETDATE())),
--- Sesi n activa actual
-(3, 3, DATEADD(HOUR, -1, GETDATE()), NULL, 1, NULL, GETDATE(), DATEADD(HOUR, -1, GETDATE()));
+-- Todas las sesiones están cerradas
+(3, 3, DATEADD(HOUR, -2, GETDATE()), DATEADD(HOUR, -1, GETDATE()), 0, 'Normal', DATEADD(HOUR, -1, GETDATE()), DATEADD(HOUR, -2, GETDATE()));
 
 -- 9. Reportes (Reports) - Algunos reportes de ejemplo
 INSERT INTO [dbo].[Report] ([SessionId], [ProblemTypeId], [Description], [ReportDate], [ReportStatus], [ResolutionDate], [CreatedAt])
 VALUES 
 (1, 4, 'El mouse no responde correctamente, se traba constantemente', DATEADD(DAY, -5, GETDATE()), 'Resolved', DATEADD(DAY, -4, GETDATE()), DATEADD(DAY, -5, GETDATE())),
 (2, 2, 'El navegador Chrome se cierra inesperadamente', DATEADD(DAY, -4, GETDATE()), 'Resolved', DATEADD(DAY, -3, GETDATE()), DATEADD(DAY, -4, GETDATE())),
-(3, 3, 'No hay conexion a Internet, no puedo acceder a los recursos en linea', DATEADD(DAY, -3, GETDATE()), 'InReview', NULL, DATEADD(DAY, -3, GETDATE())),
-(4, 5, 'La computadora esta muy lenta, tarda mucho en abrir programas', DATEADD(DAY, -2, GETDATE()), 'Pending', NULL, DATEADD(DAY, -2, GETDATE())),
-(5, 1, 'La computadora se apaga sola despues de unos minutos de uso', DATEADD(DAY, -1, GETDATE()), 'Pending', NULL, DATEADD(DAY, -1, GETDATE()));
+(3, 3, 'No hay conexión a Internet, no puedo acceder a los recursos en línea', DATEADD(DAY, -3, GETDATE()), 'InReview', NULL, DATEADD(DAY, -3, GETDATE())),
+(4, 5, 'La computadora está muy lenta, tarda mucho en abrir programas', DATEADD(DAY, -2, GETDATE()), 'Pending', NULL, DATEADD(DAY, -2, GETDATE())),
+(5, 1, 'La computadora se apaga sola después de unos minutos de uso', DATEADD(DAY, -1, GETDATE()), 'Pending', NULL, DATEADD(DAY, -1, GETDATE()));
 
 GO
