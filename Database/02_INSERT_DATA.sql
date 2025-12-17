@@ -47,9 +47,9 @@ VALUES
 -- 2. Sucursales (Branches)
 INSERT INTO [dbo].[Branch] ([Name], [Address], [Code], [Status], [CreatedAt])
 VALUES 
-('America', 'Av. America', 'AME', 1, GETDATE()),
-('Tiquipaya', 'Zona Tiquipaya', 'TIQ', 1, GETDATE()),
-('Ayacucho', 'Av. Ayacucho', 'AYA', 1, GETDATE());
+('Sucursal America', 'Av. America', 'AME', 1, GETDATE()),
+('Sucursal Tiquipaya', 'Zona Tiquipaya', 'TIQ', 1, GETDATE()),
+('Sucursal Ayacucho', 'Av. Ayacucho', 'AYA', 1, GETDATE());
 
 -- 3. Bloques (Blocks)
 INSERT INTO [dbo].[Block] ([Name], [Address], [BranchId], [Status], [CreatedAt])
@@ -168,7 +168,7 @@ VALUES
 INSERT INTO [dbo].[User] ([FirstName], [LastName], [SecondLastName], [Username], [Email], [PasswordHash], [Phone], [RoleId], [Status], [CreatedAt])
 VALUES 
 -- Usuario 1 - Administrador
-('Rodrigo', 'Gutierrez', 'Herrera', 'radmin', 'ro4t5sld@gmail.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '68683588', 1, 1, GETDATE()),
+('Rodrigo', 'Gutierrez', 'Herrera', 'radmin', 'wernersito321alasitas@gmail.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '68683588', 1, 1, GETDATE()),
 -- Usuario 2 - Docente
 ('Rommel', 'Gutierrez', 'Herrera', 'ruser', 'ro4t5sld10@gmail.com', '$2a$12$hYBbSnapVIr/bU5Ar0iV2urjxRkl9iX6KoFqYiN7PwcrwW.Ex3aW6', '68683599', 2, 1, GETDATE()),
 -- Usuario 3 - Estudiante
