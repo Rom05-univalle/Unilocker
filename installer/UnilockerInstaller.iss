@@ -43,8 +43,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "startupicon"; Description: "Ejecutar al iniciar Windows (Recomendado para modo laboratorio)"; GroupDescription: "Opciones de inicio:"
 
 [Files]
-; Archivos de la aplicación (todos los archivos de la carpeta installer excepto archivos de instalador)
-Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json,*.exe,*.iss,README.md"
+; Archivos de la aplicación desde la carpeta de publicación
+Source: "..\Unilocker.Client\bin\Release\net8.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
 ; NO copiar appsettings.json - se creará dinámicamente con la URL configurada por el usuario
 
 [Icons]
@@ -134,7 +134,7 @@ begin
   AppSettingsFile := ExpandConstant('{app}\appsettings.json');
   
   // Crear contenido del JSON
-  SetArrayLength(JsonContent, 9);
+  SetArrayLength(JsonContent, 10);
   JsonContent[0] := '{';
   JsonContent[1] := '  "ApiSettings": {';
   JsonContent[2] := '    "BaseUrl": "' + ConfiguredApiUrl + '"';

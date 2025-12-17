@@ -11,9 +11,9 @@ Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Rutas
-$ProjectRoot = $PSScriptRoot
+$InstallerDir = $PSScriptRoot
+$ProjectRoot = Split-Path $InstallerDir -Parent
 $ClientProject = Join-Path $ProjectRoot "Unilocker.Client"
-$InstallerDir = Join-Path $ProjectRoot "installer"
 $PublishDir = Join-Path $ClientProject "bin\Release\net8.0-windows\win-x64\publish"
 $IssFile = Join-Path $InstallerDir "UnilockerInstaller.iss"
 $InnoSetupPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
@@ -27,12 +27,31 @@ if (-not (Test-Path $InnoSetupPath)) {
 
 # Paso 1: Limpiar directorios anteriores
 Write-Host "[1/5] Limpiando directorios anteriores..." -ForegroundColor Yellow
-if (Test-Path $InstallerDir) {
-    Remove-Item "$InstallerDir\*" -Recurse -Force -Exclude "*.exe"
+
+# Eliminar instalador anterior
+$oldInstaller = Join-Path $InstallerDir "UnilockerClientSetup_v1.0.0.exe"
+if (Test-Path $oldInstaller) {
+    Remove-Item $oldInstaller -Force
+    Write-Host "      Instalador anterior eliminado" -ForegroundColor Green
 }
+
+# Limpiar directorio de publicación
 if (Test-Path $PublishDir) {
     Remove-Item $PublishDir -Recurse -Force
+    Write-Host "      Directorio de publicación limpiado" -ForegroundColor Green
 }
+
+# Limpiar archivos compilados anteriores del installer
+if (Test-Path $InstallerDir) {
+    Get-ChildItem $InstallerDir -Recurse | Where-Object {
+        $_.Name -ne "UnilockerInstaller.iss" -and 
+        $_.Name -ne "Build-Installer.ps1" -and 
+        $_.Name -ne "README.md" -and
+        -not $_.Name.StartsWith("UnilockerClientSetup")
+    } | Remove-Item -Recurse -Force
+    Write-Host "      Archivos compilados anteriores eliminados" -ForegroundColor Green
+}
+
 Write-Host "      Limpieza completada" -ForegroundColor Green
 Write-Host ""
 
@@ -49,22 +68,16 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "      Compilación exitosa (incluye runtime de .NET 8)" -ForegroundColor Green
 Write-Host ""
 
-# Paso 3: Copiar archivos al directorio installer
-Write-Host "[3/5] Copiando archivos al directorio installer..." -ForegroundColor Yellow
-if (-not (Test-Path $InstallerDir)) {
-    New-Item -ItemType Directory -Path $InstallerDir | Out-Null
+# Paso 3: Verificar directorio de publicación
+Write-Host "[3/5] Verificando archivos compilados..." -ForegroundColor Yellow
+if (-not (Test-Path $PublishDir)) {
+    Write-Host "ERROR: Directorio de publicación no encontrado" -ForegroundColor Red
+    exit 1
 }
 
-# Copiar todos los archivos publicados
-Copy-Item "$PublishDir\*" -Destination $InstallerDir -Recurse -Force
-
-# Eliminar appsettings.json del installer (se creará dinámicamente)
-$appSettingsInInstaller = Join-Path $InstallerDir "appsettings.json"
-if (Test-Path $appSettingsInInstaller) {
-    Remove-Item $appSettingsInInstaller -Force
-}
-
-Write-Host "      Archivos copiados correctamente" -ForegroundColor Green
+$fileCount = (Get-ChildItem $PublishDir -Recurse -File).Count
+Write-Host "      Encontrados $fileCount archivos en $PublishDir" -ForegroundColor Green
+Write-Host "      Inno Setup tomará los archivos directamente desde ahí" -ForegroundColor Cyan
 Write-Host ""
 
 # Paso 4: Compilar el instalador con Inno Setup
@@ -78,31 +91,18 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "      Instalador creado exitosamente" -ForegroundColor Green
 Write-Host ""
 
-# Paso 5: Limpiar archivos temporales
-Write-Host "[5/5] Limpiando archivos temporales..." -ForegroundColor Yellow
+# Paso 5: Limpiar directorio installer
+Write-Host "[5/5] Limpiando directorio installer..." -ForegroundColor Yellow
 
-# Eliminar archivos DLL, PDB y otros del directorio installer
+# Eliminar todos los archivos excepto los necesarios
 Get-ChildItem $InstallerDir -Recurse | Where-Object {
-    $_.Extension -in @('.dll', '.pdb', '.exe', '.json', '.config', '.xml') -and 
-    $_.Name -ne "UnilockerClientSetup_v1.0.0.exe"
-} | Remove-Item -Force
+    $_.Name -ne "UnilockerInstaller.iss" -and 
+    $_.Name -ne "Build-Installer.ps1" -and 
+    $_.Name -ne "README.md" -and
+    -not $_.Name.StartsWith("UnilockerClientSetup")
+} | Remove-Item -Recurse -Force
 
-# Eliminar carpetas temporales
-Get-ChildItem $InstallerDir -Directory | Remove-Item -Recurse -Force
-
-# Eliminar .rar si existe
-$rarFile = Join-Path $InstallerDir "UnilockerClientSetup_v1.0.0.rar"
-if (Test-Path $rarFile) {
-    Remove-Item $rarFile -Force
-}
-
-# Eliminar installer.rar de la raíz si existe
-$rootRarFile = Join-Path $ProjectRoot "installer.rar"
-if (Test-Path $rootRarFile) {
-    Remove-Item $rootRarFile -Force
-}
-
-Write-Host "      Limpieza completada" -ForegroundColor Green
+Write-Host "      Directorio limpiado - solo quedan archivos esenciales" -ForegroundColor Green
 Write-Host ""
 
 # Resumen
