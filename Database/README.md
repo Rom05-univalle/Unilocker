@@ -34,7 +34,7 @@ Script de inserción de datos de ejemplo para pruebas:
 
 ### 1. Crear la base de datos
 ```sql
--- Ejecutar en SQL Server Management Studio o Azure Data Studio
+-- Ejecutar en SQL Server Management Studio
 sqlcmd -S localhost -i 01_CREATE_DATABASE.sql
 ```
 
@@ -87,7 +87,7 @@ Users (1) ──→ (N) AuditLogs
 ## Requisitos
 
 - SQL Server 2019 o superior
-- SQL Server Management Studio (SSMS) o Azure Data Studio
+- SQL Server Management Studio (SSMS)
 - Permisos de administrador para crear bases de datos
 
 ## Configuración en la API
