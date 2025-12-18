@@ -272,10 +272,15 @@ public partial class MainWindow : Window
             // IMPORTANTE: Limpiar token para que el siguiente usuario tenga que hacer login
             _configService.ClearToken();
 
+            // Desactivar modo kiosco antes de volver al login
+            KioskModeHelper.DisableKioskMode();
+
             // Desuscribirse del evento
             SystemEvents.SessionEnding -= OnSystemSessionEnding;
 
-            // Cerrar aplicación
+            // Cerrar MainWindow y permitir que la app vuelva al flujo de inicio
+            // El App.xaml.cs detectará que no hay sesión activa y mostrará LoginWindow
+            _isClosingBySystem = true; // Evitar bloqueo del cierre
             Application.Current.Shutdown();
         }
         catch (Exception ex)
@@ -289,6 +294,10 @@ public partial class MainWindow : Window
             // Limpiar token incluso si hay error
             _configService.ClearToken();
 
+            // Desactivar modo kiosco
+            KioskModeHelper.DisableKioskMode();
+
+            // Cerrar aplicación en caso de error
             Application.Current.Shutdown();
         }
     }
@@ -315,6 +324,9 @@ public partial class MainWindow : Window
                 System.Diagnostics.Debug.WriteLine($"Error al cerrar sesión forzadamente: {ex.Message}");
             }
         }
+
+        // Nota: NO desactivamos KioskMode aquí porque ShowReportWindowAndEndSession ya lo hace
+        // Solo se desactiva si hay un cierre forzado sin pasar por el flujo normal
 
         base.OnClosed(e);
     }
@@ -389,6 +401,9 @@ public partial class MainWindow : Window
                     // Detener timers
                     _durationTimer?.Stop();
                     _sessionService.StopHeartbeatTimer();
+
+                    // Desactivar modo kiosco antes de cerrar
+                    KioskModeHelper.DisableKioskMode();
 
                     // Cerrar sin mostrar reportes ni finalizar sesión
                     _isClosingBySystem = true;

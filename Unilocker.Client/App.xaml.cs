@@ -53,4 +53,11 @@ public partial class App : Application
         var loginWindow = new LoginWindow();
         loginWindow.Show();
     }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        // Asegurar que el modo kiosco se desactive al cerrar la aplicación
+        KioskModeHelper.DisableKioskMode();
+        base.OnExit(e);
+    }
 }

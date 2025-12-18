@@ -123,6 +123,14 @@ public partial class LoginWindow : Window
                 _hasConnectionIssue = true;
                 ShowError("⚠️ No se puede conectar con el servidor. Presiona Alt+F4 para cerrar si necesitas salir.");
             }
+            else
+            {
+                // ✅ API conectada exitosamente - ACTIVAR MODO KIOSCO
+                KioskModeHelper.EnableKioskMode();
+                ShowSuccess("✅ Conectado al servidor UniLocker. Modo kiosco activo.");
+                await System.Threading.Tasks.Task.Delay(2000);
+                HideError(); // Ocultar mensaje después de 2 segundos
+            }
         }
         catch
         {
@@ -567,6 +575,16 @@ public partial class LoginWindow : Window
             {
                 e.Cancel = true;
             }
+            else
+            {
+                // Desactivar modo kiosco antes de cerrar si hay problemas de conexión
+                KioskModeHelper.DisableKioskMode();
+            }
+        }
+        else if (_allowClose)
+        {
+            // Login exitoso - NO desactivar modo kiosco aquí porque MainWindow lo necesita
+            // MainWindow será responsable de manejarlo
         }
     }
 
@@ -574,5 +592,11 @@ public partial class LoginWindow : Window
     {
         base.OnClosed(e);
         _countdownTimer?.Stop();
+        
+        // Si cerramos por problemas de conexión, asegurar que el modo kiosco se desactive
+        if (_hasConnectionIssue && !_allowClose)
+        {
+            KioskModeHelper.DisableKioskMode();
+        }
     }
 }
