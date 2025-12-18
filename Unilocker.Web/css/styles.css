@@ -235,3 +235,51 @@ footer {
 .table .btn i {
     pointer-events: none;
 }
+
+/* =========================
+   Responsive Sidebar
+   ========================= */
+
+/* En desktop (md y superior), el sidebar siempre está visible */
+@media (min-width: 768px) {
+    #sidebar {
+        display: block !important;
+    }
+}
+
+/* En móvil, el sidebar es position fixed y se muestra sobre el contenido */
+@media (max-width: 767.98px) {
+    #sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        z-index: 1050;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    /* Cuando no tiene d-none, se muestra */
+    #sidebar:not(.d-none) {
+        transform: translateX(0);
+    }
+    
+    /* Overlay oscuro cuando el sidebar está abierto */
+    body::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease-in-out;
+    }
+    
+    body.sidebar-open::after {
+        opacity: 1;
+        pointer-events: all;
+    }
+}
