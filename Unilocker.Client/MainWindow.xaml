@@ -24,19 +24,22 @@
         <!-- Header UNIVALLE -->
         <Border Grid.Row="0" Background="#800020" Padding="25">
             <Grid>
-                <StackPanel>
-                    <TextBlock Text="🎓 SESIÓN ACTIVA" 
-                               FontSize="28" 
-                               FontWeight="Bold" 
-                               Foreground="White"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="TxtWelcome"
-                               Text="Bienvenido" 
-                               FontSize="14" 
-                               Foreground="White"
-                               HorizontalAlignment="Center"
-                               Margin="0,8,0,0"
-                               Opacity="0.95"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Image Source="Logo-Univalle-.png" Width="60" Height="60" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                    <StackPanel>
+                        <TextBlock Text="🎓 SESIÓN ACTIVA" 
+                                   FontSize="28" 
+                                   FontWeight="Bold" 
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="TxtWelcome"
+                                   Text="Bienvenido" 
+                                   FontSize="14" 
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,0"
+                                   Opacity="0.95"/>
+                    </StackPanel>
                 </StackPanel>
                 
                 <!-- Botón Minimizar -->

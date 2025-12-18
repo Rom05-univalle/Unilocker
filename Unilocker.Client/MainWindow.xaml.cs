@@ -208,9 +208,11 @@ public partial class MainWindow : Window
     private async void BtnLogout_Click(object sender, RoutedEventArgs e)
     {
         var result = ModernDialog.ShowConfirm(
-            "¿Estás seguro de que deseas cerrar tu sesión?",
+            "ATENCIÓN: Al cerrar tu sesión el equipo se apagará automáticamente.\n\n" +
+            "Asegúrate de haber guardado todo tu trabajo antes de continuar.\n\n" +
+            "¿Estás seguro de que deseas cerrar tu sesión y apagar el equipo?",
             "Confirmar Cierre de Sesión",
-            ModernDialog.DialogType.Question);
+            ModernDialog.DialogType.Warning);
 
         if (result)
         {
@@ -277,6 +279,19 @@ public partial class MainWindow : Window
 
             // Desuscribirse del evento
             SystemEvents.SessionEnding -= OnSystemSessionEnding;
+
+            // Si es cierre normal (botón Cerrar Sesión), apagar el equipo
+            if (endMethod == "Normal")
+            {
+                // Ejecutar comando de apagado de Windows
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "shutdown",
+                    Arguments = "/s /t 5", // Apagar en 5 segundos
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+            }
 
             // Cerrar MainWindow y permitir que la app vuelva al flujo de inicio
             // El App.xaml.cs detectará que no hay sesión activa y mostrará LoginWindow

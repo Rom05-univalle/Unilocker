@@ -24,6 +24,7 @@
         <!-- Header UNIVALLE -->
         <Border Grid.Row="0" Background="#800020" Padding="20">
             <StackPanel>
+                <Image Source="../Logo-Univalle-.png" Width="80" Height="80" Margin="0,0,0,10" HorizontalAlignment="Center"/>
                 <TextBlock Text="🎓 UNILOCKER" 
                            FontSize="32" 
                            FontWeight="Bold" 

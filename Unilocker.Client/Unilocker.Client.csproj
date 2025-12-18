@@ -17,5 +17,6 @@
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+		<Resource Include="Logo-Univalle-.png" />
 	</ItemGroup>
 </Project>

@@ -41,7 +41,7 @@ function renderComputers(items) {
                 <button class="btn btn-sm btn-primary me-1" data-action="status" data-id="${pc.id}" data-name="${pc.name}" data-status="${pc.computerStatus}" title="Cambiar estado">
                     <i class="fa-solid fa-edit"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" data-action="delete" data-id="${pc.id}" data-name="${pc.name}" title="Desregistrar">
+                <button class="btn btn-sm btn-danger" data-action="delete" data-id="${pc.id}" data-name="${pc.name}" data-inuse="${pc.inUse}" title="${pc.inUse ? 'No se puede eliminar (En Uso)' : 'Desregistrar'}" ${pc.inUse ? 'disabled' : ''}>
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </td>
@@ -61,10 +61,18 @@ function renderComputers(items) {
         // Botón desregistrar
         const btnDelete = tr.querySelector('button[data-action="delete"]');
         if (btnDelete) {
+            const isInUse = btnDelete.getAttribute('data-inuse') === 'true';
+            if (isInUse) {
+                btnDelete.disabled = true;
+                btnDelete.title = 'No se puede eliminar (En Uso)';
+            }
             btnDelete.addEventListener('click', () => {
                 const id = parseInt(btnDelete.getAttribute('data-id'), 10);
                 const name = btnDelete.getAttribute('data-name');
-                confirmUnregister(id, name);
+                const inUse = btnDelete.getAttribute('data-inuse') === 'true';
+                if (!inUse) {
+                    confirmUnregister(id, name);
+                }
             });
         }
         
